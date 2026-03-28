@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GradientPaint;
 import java.awt.font.TextAttribute;
 import java.util.Map;
 
@@ -25,11 +26,10 @@ import com.minec.dati.GestoreDati;
 public class PannelloAggiungi extends JPanel {
 
     private int index = 0;
-    private String examRemoved = "";
     private PannelloVoti pv;
-    
+
     // Riferimenti ai componenti che devono cambiare nel tempo
-    private JPanel esamiPanel;   // Il contenitore della lista grafica
+    private JPanel esamiPanel; // Il contenitore della lista grafica
     private JComboBox<String> tendina; // Il menu a tendina
 
     public PannelloAggiungi(PannelloVoti pv) {
@@ -37,15 +37,15 @@ public class PannelloAggiungi extends JPanel {
 
         JPanel esamiAggiuntiPanel = new JPanel();
         JPanel aggiungiEsamePanel = new JPanel();
-        
+
         aggiungiEsamePanel.setPreferredSize(new Dimension(800, 250));
         this.setLayout(new BorderLayout());
         // Inizializziamo prima la struttura
-        setAddedExamsLayout(esamiAggiuntiPanel); 
-        setAddExamLayout(aggiungiEsamePanel, esamiAggiuntiPanel); 
+        setAddedExamsLayout(esamiAggiuntiPanel);
+        setAddExamLayout(aggiungiEsamePanel, esamiAggiuntiPanel);
 
-        this.add(aggiungiEsamePanel, BorderLayout.NORTH);  
-        this.add(esamiAggiuntiPanel, BorderLayout.CENTER); 
+        this.add(aggiungiEsamePanel, BorderLayout.NORTH);
+        this.add(esamiAggiuntiPanel, BorderLayout.CENTER);
         // Carichiamo i dati iniziali
         aggiornaTutto();
     }
@@ -67,19 +67,40 @@ public class PannelloAggiungi extends JPanel {
         for (String s : esami) {
             String[] parti = s.split(";");
             String nome = parti[0];
-            if (s != null) tendina.addItem(nome);
+            if (s != null)
+                tendina.addItem(nome);
         }
         tendina.setSelectedIndex(-1); // Deseleziona tutto
-        
+
         // 3. Forza il ridisegno della UI
         esamiPanel.revalidate();
         esamiPanel.repaint();
     }
 
     private void disegnaEsameSuSchermo(String raw) {
+        // la stringa 'raw' viene da esami.txt (es. "Analisi 1;true")
         String[] parti = raw.split(";");
         String nome = parti[0];
         boolean isCompletato = Boolean.parseBoolean(parti[1]);
+
+        // --- NOVITÀ: Cerca i CFU nel file voti.txt ---
+        int cfuSalvati = 0;
+        if (isCompletato) {
+            String[] votiRaw = GestoreDati.getVotiEsamiRaw();
+            for (String rigaVoto : votiRaw) {
+                String[] pVoto = rigaVoto.split(";");
+                // Se la riga corrisponde al nostro esame e ha 3 elementi (Voto;Nome;CFU)
+                if (pVoto.length >= 2 && pVoto[1].equals(nome)) {
+                    if (pVoto.length > 2) {
+                        try {
+                            cfuSalvati = Integer.parseInt(pVoto[2]);
+                        } catch (NumberFormatException e) {
+                        }
+                    }
+                    break;
+                }
+            }
+        }
 
         JPanel panelSingoloEsame = new JPanel(new BorderLayout());
         Dimension dimensioneFissa = new Dimension(750, 50);
@@ -90,15 +111,50 @@ public class PannelloAggiungi extends JPanel {
 
         JLabel nomeEsameLabel = new JLabel(nome);
         JCheckBox markAsDone = new JCheckBox();
-        markAsDone.setSelected(isCompletato); // Imposta lo stato iniziale senza scatenare dialog
+        markAsDone.setSelected(isCompletato);
 
         Font fontOriginale = new Font("Arial", Font.PLAIN, 18);
         nomeEsameLabel.setFont(fontOriginale);
-
-        // Funzione interna per aggiornare il font (sbarrato o normale)
         autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
 
-        // USARE ADD_ACTION_LISTENER (Scatta solo al click dell'utente)
+        // --- GESTIONE GRAFICA DEI CFU ---
+        JButton buttonCFU = new JButton("Agg. CFU");
+        JPanel pannelloCfuLocale = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+
+        if (cfuSalvati > 0) {
+            // Se ho già i CFU, mostro il testo e nascondo il bottone
+            JLabel textCfu = new JLabel(cfuSalvati + " CFU");
+            textCfu.setFont(new Font("Arial", Font.BOLD, 14));
+            pannelloCfuLocale.add(textCfu);
+            buttonCFU.setVisible(false);
+        } else {
+            // Se non ho i CFU, il bottone si vede SOLO se l'esame ha il voto (isCompletato)
+            buttonCFU.setVisible(isCompletato);
+        }
+
+        // Azione Bottone CFU
+        buttonCFU.addActionListener(e -> {
+            String[] opzioni = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15" };
+            String scelta = (String) JOptionPane.showInputDialog(null,
+                    "Seleziona il numero di CFU per " + nome + ":",
+                    "Selezione CFU", JOptionPane.QUESTION_MESSAGE, null, opzioni, opzioni[0]);
+            if (scelta != null) {
+                int cfu = Integer.parseInt(scelta);
+                GestoreDati.addCfuEsame(nome, cfu); // Scrive nel file
+
+                // Aggiorna l'interfaccia
+                JLabel textCfu = new JLabel(cfu + " CFU");
+                textCfu.setFont(new Font("Arial", Font.BOLD, 14));
+                pannelloCfuLocale.add(textCfu);
+                buttonCFU.setVisible(false); // Nasconde il bottone
+
+                pannelloCfuLocale.revalidate();
+                pannelloCfuLocale.repaint();
+                pv.refresh();
+            }
+        });
+
+        // Azione Checkbox Voti
         markAsDone.addActionListener(e -> {
             if (markAsDone.isSelected()) {
                 String input = JOptionPane.showInputDialog(this, "Inserire il voto per " + nome);
@@ -106,9 +162,11 @@ public class PannelloAggiungi extends JPanel {
                     try {
                         int voto = Integer.parseInt(input);
                         if (voto >= 18 && voto <= 31) {
-                            GestoreDati.setVotiEsami(voto, nome);
+                            GestoreDati.setVotiEsami(voto, nome, 0);
                             GestoreDati.aggiornaStatoEsame(nome, true);
                             autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
+
+                            buttonCFU.setVisible(true); //se il voto c'è faccio comparire il bottone CFU
                             pv.refresh();
                         } else {
                             throw new Exception();
@@ -121,25 +179,30 @@ public class PannelloAggiungi extends JPanel {
                     markAsDone.setSelected(false);
                 }
             } else {
-                // Se l'utente toglie la spunta
+                // SE TOLGO LA SPUNTA: Rimuovo tutto
                 GestoreDati.aggiornaStatoEsame(nome, false);
-                GestoreDati.removeVotiEsame(nome);
+                GestoreDati.removeVotiEsame(nome); // Elimina riga da voti.txt (inclusi i CFU)
                 autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
+                // Resetto l'interfaccia CFU per questo esame
+                pannelloCfuLocale.removeAll();
+                buttonCFU.setVisible(false); // Nascondo il bottone
+                pannelloCfuLocale.revalidate();
+                pannelloCfuLocale.repaint();
                 pv.refresh();
             }
         });
-
-        JButton buttonCFU = new JButton("Agg. CFU");
-
+        // Assemblaggio finale delle "scatole"
         JPanel pannelloSinistra = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         pannelloSinistra.add(markAsDone);
         pannelloSinistra.add(nomeEsameLabel);
 
         JPanel pannelloDestra = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
+        pannelloDestra.add(pannelloCfuLocale);
         pannelloDestra.add(buttonCFU);
 
         panelSingoloEsame.add(pannelloSinistra, BorderLayout.WEST);
         panelSingoloEsame.add(pannelloDestra, BorderLayout.EAST);
+
         esamiPanel.add(panelSingoloEsame);
         esamiPanel.add(Box.createRigidArea(new Dimension(0, 5)));
     }
@@ -157,7 +220,7 @@ public class PannelloAggiungi extends JPanel {
 
     public void setAddExamLayout(JPanel aggiungiEsame, JPanel esamiAggiunti) {
         aggiungiEsame.setLayout(null);
-        
+
         JLabel title = new JLabel("Aggiungi gli esami del tuo corso");
         title.setFont(new Font("Arial", Font.BOLD, 26));
         title.setBounds(200, 20, 700, 40);
@@ -167,13 +230,13 @@ public class PannelloAggiungi extends JPanel {
         text1.setFont(new Font("Arial", Font.BOLD, 20));
         text1.setBounds(60, 80, 150, 40);
         aggiungiEsame.add(text1);
-        
+
         JTextField campoNome = new JTextField();
         campoNome.setBounds(250, 80, 300, 40);
         campoNome.setFont(new Font("Arial", Font.PLAIN, 15));
         campoNome.setHorizontalAlignment(JTextField.CENTER);
         aggiungiEsame.add(campoNome);
-        
+
         JButton btnSalva = new JButton("Salva Esame");
         btnSalva.setBounds(600, 80, 150, 40);
         aggiungiEsame.add(btnSalva);
@@ -221,9 +284,9 @@ public class PannelloAggiungi extends JPanel {
     }
 
     public void setAddedExamsLayout(JPanel esamiAggiunti) {
-        esamiAggiunti.setLayout(new BorderLayout(0, 10)); 
+        esamiAggiunti.setLayout(new BorderLayout(0, 10));
         esamiAggiunti.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
-        
+
         JLabel titleB = new JLabel("Aggiunti di recente");
         titleB.setFont(new Font("Arial", Font.BOLD, 17));
         JPanel container = new JPanel();
@@ -233,9 +296,10 @@ public class PannelloAggiungi extends JPanel {
         esamiAggiunti.add(container, BorderLayout.NORTH);
 
         esamiPanel = new JPanel();
-        esamiPanel.setLayout(new BoxLayout(esamiPanel, BoxLayout.Y_AXIS)); 
+        esamiPanel.setLayout(new BoxLayout(esamiPanel, BoxLayout.Y_AXIS));
         JScrollPane scrollPane = new JScrollPane(esamiPanel);
         scrollPane.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2));
+        scrollPane.getVerticalScrollBar().setUnitIncrement(10);
         esamiAggiunti.add(scrollPane, BorderLayout.CENTER);
     }
 }

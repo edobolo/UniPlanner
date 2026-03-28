@@ -103,7 +103,7 @@ public class GestoreDati {
         }
     }
 
-    public static void setVotiEsami(int voto, String nome) {
+    public static void setVotiEsami(int voto, String nome, int CFU) {
         String rigaFinal = voto + ";" + nome;
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileVoti, true))) {
             bw.write(rigaFinal);
@@ -113,6 +113,23 @@ public class GestoreDati {
         } catch (IOException e) {
             salvato = false;
             System.out.println("Errore nell'apertura e scrittura del file");
+        }
+    }
+
+    public static void addCfuEsame(String nome, int CFU) {
+        String[] line = getVotiEsamiRaw();
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileVoti))) {
+            for(String riga: line) {
+                String[] parti = riga.split(";");
+                if (parti[1].equals(nome)) {
+                    bw.write(parti[0] + ";" + parti[1] + ";" + CFU);
+                } else {
+                    bw.write(riga);
+                }
+                bw.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

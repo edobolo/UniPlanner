@@ -1,2 +1,2 @@
-30;Fondamenti di informatica
-28;Analisi 1
+30;Fondamenti di informatica;12
+28;Analisi 1;12
