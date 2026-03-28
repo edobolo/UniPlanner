@@ -284,22 +284,30 @@ public class PannelloAggiungi extends JPanel {
     }
 
     public void setAddedExamsLayout(JPanel esamiAggiunti) {
-        esamiAggiunti.setLayout(new BorderLayout(0, 10));
-        esamiAggiunti.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
-
-        JLabel titleB = new JLabel("Aggiunti di recente");
-        titleB.setFont(new Font("Arial", Font.BOLD, 17));
-        JPanel container = new JPanel();
-        container.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 15));
-        container.add(titleB);
-
-        esamiAggiunti.add(container, BorderLayout.NORTH);
+        esamiAggiunti.setLayout(new BorderLayout());
+        esamiAggiunti.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
 
         esamiPanel = new JPanel();
         esamiPanel.setLayout(new BoxLayout(esamiPanel, BoxLayout.Y_AXIS));
+
         JScrollPane scrollPane = new JScrollPane(esamiPanel);
-        scrollPane.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2));
-        scrollPane.getVerticalScrollBar().setUnitIncrement(10);
+
+        // --- LA MODIFICA È QUI ---
+        // 1. Creiamo un MatteBorder con spessore 2 SOLO in alto (top, left, bottom,
+        // right)
+        javax.swing.border.Border bordoSoloSopra = BorderFactory.createMatteBorder(2, 0, 0, 0, Color.GRAY);
+
+        // 2. Lo inseriamo dentro il TitledBorder al posto della solita linea completa
+        scrollPane.setBorder(BorderFactory.createTitledBorder(
+                bordoSoloSopra,
+                "Aggiunti di recente",
+                javax.swing.border.TitledBorder.CENTER,
+                javax.swing.border.TitledBorder.TOP,
+                new Font("Arial", Font.BOLD, 16)));
+        // -------------------------
+
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
         esamiAggiunti.add(scrollPane, BorderLayout.CENTER);
     }
 }

@@ -1,255 +1,207 @@
 package com.minec.schermate;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
+import java.awt.*;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import javax.swing.*;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
-
+import com.github.lgooddatepicker.components.DatePicker;
 import com.minec.dati.GestoreDati;
 
 public class PannelloScadenze extends JPanel {
 
-    private JPanel scadenzePanel; // Contenitore della lista in basso
-    private JComboBox<String> tendinaRimozione; // Menu a tendina per rimuovere
+    private JPanel scadenzeListPanel;
+    private JComboBox<String> comboEsami;
+    private boolean ordinaPerData = false;
 
     public PannelloScadenze() {
         this.setLayout(new BorderLayout());
 
-        JPanel aggiungiScadenzaPanel = new JPanel();
-        aggiungiScadenzaPanel.setPreferredSize(new Dimension(800, 250));
+        JPanel moduloPanel = new JPanel();
+        moduloPanel.setPreferredSize(new Dimension(800, 150));
+        moduloPanel.setLayout(null);
 
-        JPanel listaScadenzePanel = new JPanel();
-        
-        setAddScadenzaLayout(aggiungiScadenzaPanel);
-        setListaScadenzeLayout(listaScadenzePanel);
-
-        this.add(aggiungiScadenzaPanel, BorderLayout.NORTH);
-        this.add(listaScadenzePanel, BorderLayout.CENTER);
-
-        aggiornaTutto();
-    }
-
-    private void aggiornaTutto() {
-        scadenzePanel.removeAll();
-        tendinaRimozione.removeAllItems();
-
-        String[] scadenzeRaw = GestoreDati.getScadenzeRaw();
-        if (scadenzeRaw != null) {
-            for (String riga : scadenzeRaw) {
-                if (riga != null && !riga.trim().isEmpty()) {
-                    disegnaScadenzaSuSchermo(riga);
-                    
-                    // Aggiungo anche al menu a tendina per la rimozione
-                    String nome = riga.split(";")[0];
-                    tendinaRimozione.addItem(nome);
-                }
-            }
-        }
-        tendinaRimozione.setSelectedIndex(-1);
-
-        scadenzePanel.revalidate();
-        scadenzePanel.repaint();
-    }
-
-    private void disegnaScadenzaSuSchermo(String riga) {
-        String[] parti = riga.split(";");
-        String nomeEsame = parti[0];
-        String dataStringa = parti[1]; // Es. "25/06/2026"
-
-        // --- MATEMATICA DELLE DATE ---
-        DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        LocalDate dataEsame = LocalDate.parse(dataStringa, formato);
-        LocalDate oggi = LocalDate.now();
-
-        // Calcoliamo la differenza in giorni
-        long giorniMancanti = ChronoUnit.DAYS.between(oggi, dataEsame);
-
-        // --- CREAZIONE GRAFICA ---
-        JPanel panelSingolaScadenza = new JPanel(new BorderLayout());
-        Dimension dim = new Dimension(750, 50);
-        panelSingolaScadenza.setPreferredSize(dim);
-        panelSingolaScadenza.setMaximumSize(dim);
-        panelSingolaScadenza.setMinimumSize(dim);
-        panelSingolaScadenza.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
-
-        // Testo a sinistra (Nome e Data)
-        JLabel infoLabel = new JLabel("⏳ " + nomeEsame + " - " + dataStringa);
-        infoLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        
-        JPanel pannelloSinistra = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 12));
-        pannelloSinistra.add(infoLabel);
-
-        // Testo a destra (Giorni mancanti con colori dinamici!)
-        String testoGiorni = "";
-        Color coloreGiorni = Color.BLACK;
-
-        if (giorniMancanti < 0) {
-            testoGiorni = "Scaduto da " + Math.abs(giorniMancanti) + " giorni";
-            coloreGiorni = Color.GRAY;
-        } else if (giorniMancanti == 0) {
-            testoGiorni = "È OGGI!";
-            coloreGiorni = Color.RED;
-        } else {
-            testoGiorni = "- " + giorniMancanti + " giorni";
-            if (giorniMancanti <= 7) coloreGiorni = Color.RED; // Meno di una settimana: Rosso!
-            else if (giorniMancanti <= 30) coloreGiorni = new Color(255, 140, 0); // Arancione
-            else coloreGiorni = new Color(0, 150, 0); // Verde
-        }
-
-        JLabel giorniLabel = new JLabel(testoGiorni);
-        giorniLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        giorniLabel.setForeground(coloreGiorni);
-        
-        JPanel pannelloDestra = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 12));
-        pannelloDestra.add(giorniLabel);
-
-        panelSingolaScadenza.add(pannelloSinistra, BorderLayout.WEST);
-        panelSingolaScadenza.add(pannelloDestra, BorderLayout.EAST);
-
-        scadenzePanel.add(panelSingolaScadenza);
-        scadenzePanel.add(Box.createRigidArea(new Dimension(0, 5)));
-    }
-
-    public void setAddScadenzaLayout(JPanel aggiungiScadenzaPanel) {
-        aggiungiScadenzaPanel.setLayout(null);
-
-        JLabel title = new JLabel("Aggiungi Scadenza Esame");
+        JLabel title = new JLabel("Imposta le date degli esami");
         title.setFont(new Font("Arial", Font.BOLD, 26));
-        title.setBounds(200, 20, 400, 40);
-        aggiungiScadenzaPanel.add(title);
+        title.setBounds(230, 20, 400, 40);
+        moduloPanel.add(title);
 
-        // --- RIGA 1: NOME ESAME ---
-        JLabel text1 = new JLabel("Nome:");
-        text1.setFont(new Font("Arial", Font.BOLD, 18));
-        text1.setBounds(40, 80, 80, 30);
-        aggiungiScadenzaPanel.add(text1);
+        comboEsami = new JComboBox<>();
+        comboEsami.setBounds(100, 80, 250, 35);
+        caricaEsamiNelMenu();
+        moduloPanel.add(comboEsami);
 
-        JTextField campoNome = new JTextField();
-        campoNome.setBounds(110, 80, 200, 30);
-        aggiungiScadenzaPanel.add(campoNome);
+        DatePicker datePicker = new DatePicker();
+        datePicker.setBounds(370, 80, 200, 35);
 
-        // --- RIGA 1: I 3 MENU A TENDINA PER LA DATA ---
-        JLabel textData = new JLabel("Data:");
-        textData.setFont(new Font("Arial", Font.BOLD, 18));
-        textData.setBounds(330, 80, 60, 30);
-        aggiungiScadenzaPanel.add(textData);
+        JButton btnCalendario = datePicker.getComponentToggleCalendarButton();
+        btnCalendario.setText("▼");
+        btnCalendario.setFont(new Font("Arial", Font.BOLD, 12));
+        btnCalendario.setIcon(null);
 
-        // Genero i numeri per Giorni (01-31) e Mesi (01-12)
-        String[] giorni = new String[31];
-        for(int i=0; i<31; i++) giorni[i] = String.format("%02d", i+1);
-        
-        String[] mesi = new String[12];
-        for(int i=0; i<12; i++) mesi[i] = String.format("%02d", i+1);
-        
-        // Genero gli anni (Anno corrente + i prossimi 5)
-        int annoCorrente = LocalDate.now().getYear();
-        String[] anni = new String[6];
-        for(int i=0; i<6; i++) anni[i] = String.valueOf(annoCorrente + i);
+        moduloPanel.add(datePicker);
 
-        JComboBox<String> comboGiorno = new JComboBox<>(giorni);
-        comboGiorno.setBounds(390, 80, 50, 30);
-        aggiungiScadenzaPanel.add(comboGiorno);
+        JButton btnSalva = new JButton("Salva Data");
+        btnSalva.setBounds(590, 80, 150, 35);
+        moduloPanel.add(btnSalva);
 
-        JComboBox<String> comboMese = new JComboBox<>(mesi);
-        comboMese.setBounds(450, 80, 50, 30);
-        aggiungiScadenzaPanel.add(comboMese);
+        // --- PARTE CENTRO: Lista delle scadenze ---
+        JPanel contenitoreLista = new JPanel(new BorderLayout());
+        contenitoreLista.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.GRAY, 2), "Prossimi Esami",
+                0, 0, new Font("Arial", Font.BOLD, 16)));
 
-        JComboBox<String> comboAnno = new JComboBox<>(anni);
-        comboAnno.setBounds(510, 80, 70, 30);
-        aggiungiScadenzaPanel.add(comboAnno);
+        // --- NOVITÀ 2: Creiamo un pannellino in alto a destra per il bottone di
+        // ordinamento ---
+        JPanel barraStrumentiLista = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton btnOrdina = new JButton("Ordina: Cronologico");
+        btnOrdina.setFont(new Font("Arial", Font.ITALIC, 12));
+        barraStrumentiLista.add(btnOrdina);
 
-        // --- PULSANTE SALVA ---
-        JButton btnSalva = new JButton("Salva");
-        btnSalva.setBounds(610, 80, 100, 30);
-        aggiungiScadenzaPanel.add(btnSalva);
+        contenitoreLista.add(barraStrumentiLista, BorderLayout.NORTH);
 
-        // --- RIGA 2: RIMOZIONE ---
-        JLabel textRem = new JLabel("Rimuovi:");
-        textRem.setFont(new Font("Arial", Font.BOLD, 18));
-        textRem.setBounds(40, 150, 100, 30);
-        aggiungiScadenzaPanel.add(textRem);
+        scadenzeListPanel = new JPanel();
+        scadenzeListPanel.setLayout(new BoxLayout(scadenzeListPanel, BoxLayout.Y_AXIS));
 
-        tendinaRimozione = new JComboBox<>();
-        tendinaRimozione.setBounds(130, 150, 250, 30);
-        aggiungiScadenzaPanel.add(tendinaRimozione);
+        JScrollPane scrollPane = new JScrollPane(scadenzeListPanel);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        contenitoreLista.add(scrollPane, BorderLayout.CENTER);
 
-        JButton btnRemove = new JButton("Elimina");
-        btnRemove.setBounds(400, 150, 100, 30);
-        aggiungiScadenzaPanel.add(btnRemove);
+        this.add(moduloPanel, BorderLayout.NORTH);
+        this.add(contenitoreLista, BorderLayout.CENTER);
 
+        aggiornaListaScadenze();
 
-        // --- LOGICA PULSANTI ---
         btnSalva.addActionListener(e -> {
-            String nome = campoNome.getText().trim();
-            if (nome.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Inserisci un nome per l'esame!");
+            String esameSelezionato = (String) comboEsami.getSelectedItem();
+            LocalDate dataSelezionata = datePicker.getDate();
+            if (esameSelezionato == null || dataSelezionata == null) {
+                JOptionPane.showMessageDialog(this, "Seleziona sia un esame che una data valida!");
                 return;
             }
-
-            // Costruisco la stringa della data unendo i menu a tendina
-            String g = (String) comboGiorno.getSelectedItem();
-            String m = (String) comboMese.getSelectedItem();
-            String a = (String) comboAnno.getSelectedItem();
-            String dataUnita = g + "/" + m + "/" + a;
-
-            // Controllo Sicurezza: Verifico che la data esista (evito il 31 Febbraio!)
-            try {
-                DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                LocalDate.parse(dataUnita, formato); // Provo a leggerla: se fallisce, va in errore
-                
-                // Se arrivo qui, la data è valida! Salvo nel file.
-                GestoreDati.salvaScadenza(nome, dataUnita);
-                campoNome.setText("");
-                aggiornaTutto();
-
-            } catch (DateTimeParseException ex) {
-                JOptionPane.showMessageDialog(this, "Attenzione: " + dataUnita + " non è una data valida sul calendario!", "Errore Data", JOptionPane.ERROR_MESSAGE);
-            }
+            GestoreDati.salvaScadenza(esameSelezionato, dataSelezionata.toString());
+            datePicker.clear();
+            aggiornaListaScadenze();
         });
 
-        btnRemove.addActionListener(e -> {
-            String selezionato = (String) tendinaRimozione.getSelectedItem();
-            if (selezionato != null) {
-                GestoreDati.removeScadenza(selezionato);
-                aggiornaTutto();
+        btnOrdina.addActionListener(e -> {
+            ordinaPerData = !ordinaPerData; // Inverte il valore (da falso a vero e viceversa)
+
+            if (ordinaPerData) {
+                btnOrdina.setText("Ordina: Aggiunta"); 
+            } else {
+                btnOrdina.setText("Ordina: Cronologico");
             }
+
+            aggiornaListaScadenze();
         });
     }
 
-    public void setListaScadenzeLayout(JPanel listaScadenzePanel) {
-        listaScadenzePanel.setLayout(new BorderLayout(0, 10));
-        listaScadenzePanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
+    private void caricaEsamiNelMenu() {
+        comboEsami.removeAllItems();
+        String[] esamiRaw = GestoreDati.getEsamiSalvatiRaw();
+        for (String riga : esamiRaw) {
+            String[] parti = riga.split(";");
+            if (parti.length >= 2 && parti[1].equals("false")) {
+                comboEsami.addItem(parti[0]);
+            }
+        }
+        comboEsami.setSelectedIndex(-1);
+    }
 
-        JLabel titleB = new JLabel("Scadenze Imminenti");
-        titleB.setFont(new Font("Arial", Font.BOLD, 18));
-        JPanel container = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 15));
-        container.add(titleB);
+    public void aggiornaListaScadenze() {
+        scadenzeListPanel.removeAll();
+        String[] scadenzeRaw = GestoreDati.getScadenzeRaw();
+        LocalDate oggi = LocalDate.now();
+        List<String> listaScadenze = new ArrayList<>(Arrays.asList(scadenzeRaw));
+        if (ordinaPerData) {
+            listaScadenze.sort((riga1, riga2) -> {
+                try {
+                    // Estraiamo le date (il secondo elemento della stringa)
+                    LocalDate data1 = LocalDate.parse(riga1.split(";")[1]);
+                    LocalDate data2 = LocalDate.parse(riga2.split(";")[1]);
+                    // Confrontiamo le due date (la più vicina andrà in alto)
+                    return data1.compareTo(data2);
+                } catch (Exception e) {
+                    return 0; // Se c'è un errore nella lettura, lasciali dove sono
+                }
+            });
+        }
 
-        listaScadenzePanel.add(container, BorderLayout.NORTH);
+        for (String riga : listaScadenze) {
+            String[] parti = riga.split(";");
+            if (parti.length >= 2) {
+                String nomeEsame = parti[0];
+                LocalDate dataEsame = LocalDate.parse(parti[1]);
+                long giorniMancanti = ChronoUnit.DAYS.between(oggi, dataEsame);
 
-        scadenzePanel = new JPanel();
-        scadenzePanel.setLayout(new BoxLayout(scadenzePanel, BoxLayout.Y_AXIS));
-        
-        JScrollPane scrollPane = new JScrollPane(scadenzePanel);
-        scrollPane.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2));
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16); // Scroll veloce
-        
-        listaScadenzePanel.add(scrollPane, BorderLayout.CENTER);
+                // --- CREAZIONE DEL RIQUADRO GRAFICO ---
+                JPanel panel = new JPanel(new BorderLayout());
+                Dimension dim = new Dimension(720, 50);
+                panel.setPreferredSize(dim);
+                panel.setMaximumSize(dim);
+                panel.setMinimumSize(dim);
+                panel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+
+                JLabel lblNome = new JLabel("  " + nomeEsame + " (" + parti[1] + ")");
+                lblNome.setFont(new Font("Arial", Font.BOLD, 16));
+
+                JLabel lblGiorni = new JLabel();
+                lblGiorni.setFont(new Font("Arial", Font.BOLD, 16));
+
+                if (giorniMancanti < 0) {
+                    lblGiorni.setText("Scaduto da " + Math.abs(giorniMancanti) + " gg");
+                    lblGiorni.setForeground(Color.GRAY);
+                } else if (giorniMancanti == 0) {
+                    lblGiorni.setText("È OGGI!");
+                    lblGiorni.setForeground(Color.RED);
+                } else if (giorniMancanti <= 7) {
+                    lblGiorni.setText("-" + giorniMancanti + " gg!");
+                    lblGiorni.setForeground(Color.RED);
+                } else {
+                    lblGiorni.setText("-" + giorniMancanti + " gg");
+                    lblGiorni.setForeground(new Color(0, 150, 0));
+                }
+
+                // --- BOTTONE RIMOZIONE ---
+                JButton btnRimuovi = new JButton("X");
+                btnRimuovi.setForeground(Color.RED);
+                btnRimuovi.setFont(new Font("Arial", Font.BOLD, 14));
+                btnRimuovi.setMargin(new Insets(2, 5, 2, 5));
+
+                btnRimuovi.addActionListener(e -> {
+                    int conferma = JOptionPane.showConfirmDialog(this,
+                            "Vuoi davvero rimuovere la data per " + nomeEsame + "?",
+                            "Conferma rimozione", JOptionPane.YES_NO_OPTION);
+
+                    if (conferma == JOptionPane.YES_OPTION) {
+                        GestoreDati.removeScadenza(nomeEsame);
+                        aggiornaListaScadenze();
+                    }
+                });
+
+                JPanel pannelloDestra = new JPanel();
+                pannelloDestra.setLayout(new BoxLayout(pannelloDestra, BoxLayout.X_AXIS));
+                pannelloDestra.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 15));
+
+                pannelloDestra.add(lblGiorni);
+                pannelloDestra.add(Box.createRigidArea(new Dimension(15, 0)));
+                pannelloDestra.add(btnRimuovi);
+
+                panel.add(lblNome, BorderLayout.WEST);
+                panel.add(pannelloDestra, BorderLayout.EAST);
+
+                scadenzeListPanel.add(panel);
+                scadenzeListPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+            }
+        }
+
+        caricaEsamiNelMenu();
+        scadenzeListPanel.revalidate();
+        scadenzeListPanel.repaint();
     }
 }

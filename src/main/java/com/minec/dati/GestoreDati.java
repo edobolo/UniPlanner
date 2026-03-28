@@ -239,6 +239,7 @@ public class GestoreDati {
             System.out.println("Errore rimozione scadenza");
         }
     }
+    
 
     public static boolean getSalvato() {
         return salvato;

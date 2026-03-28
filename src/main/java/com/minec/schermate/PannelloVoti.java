@@ -44,7 +44,7 @@ public class PannelloVoti extends JPanel {
     }
 
     public void setPanelMedia(JPanel mediaPanel) {
-        mediaPanel.setBounds(40, 40, 200, 200);
+        mediaPanel.setBounds(50, 40, 200, 200);
         mediaPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2, true));
         mediaPanel.setLayout(new BorderLayout());
         String[] voti = GestoreDati.getVotiEsamiRaw();
@@ -84,8 +84,9 @@ public class PannelloVoti extends JPanel {
     }
 
     public void setExamLeft(JPanel examLeftPanel) {
-        examLeftPanel.setBounds(40, 240, 200, 80);
+        examLeftPanel.setBounds(50, 255, 200, 80);
         examLeftPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        examLeftPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2, true));
         int examAdded = GestoreDati.numeroEsami();
         int numVoti = GestoreDati.numeroVoti();
         for(int i = 0; i < examAdded; i++) {
@@ -104,7 +105,7 @@ public class PannelloVoti extends JPanel {
     }
 
     public void setPanelInfo(JPanel panelInfo) {
-        panelInfo.setBounds(40, 320, 200, 200);
+        panelInfo.setBounds(50, 350, 200, 200);
         panelInfo.setLayout(new GridLayout(3, 1));
 
         JPanel panel1 = new JPanel();
@@ -187,7 +188,6 @@ public class PannelloVoti extends JPanel {
 
         //pannello crediti rimanenti
         JLabel title4 = new JLabel("Crediti");
-        title4.setFont(f);
         title4.setHorizontalAlignment(JLabel.CENTER);
         JLabel cfuRimasti = new JLabel(sommaCfu + "/180");
         cfuRimasti.setFont(f);
@@ -198,7 +198,7 @@ public class PannelloVoti extends JPanel {
         jp.setForeground(new Color(36, 166, 6));
         jp.setBackground(Color.WHITE);
         JPanel progressPanel = new JPanel(new BorderLayout());
-        progressPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        progressPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         progressPanel.add(jp, BorderLayout.CENTER);
         panel4.add(progressPanel ,BorderLayout.SOUTH);
         panel4.add(cfuRimasti, BorderLayout.CENTER);
