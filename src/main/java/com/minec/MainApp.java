@@ -1,16 +1,28 @@
 package com.minec;
 
-import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import com.minec.schermate.PannelloAggiungi;
 import com.minec.schermate.PannelloScadenze;
 import com.minec.schermate.PannelloVoti;
 
-import java.awt.*;
-
 public class MainApp {
 
     public static void main(String[] args) {
+        try {
+            // Forza Java ad usare il tema moderno del tuo sistema operativo
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            e.printStackTrace(); // Se fallisce, usa il tema di default
+        }
         SwingUtilities.invokeLater(() -> creaEmostraGUI());
     }
 

@@ -5,7 +5,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.GradientPaint;
 import java.awt.font.TextAttribute;
 import java.util.Map;
 
@@ -65,10 +64,11 @@ public class PannelloAggiungi extends JPanel {
         // 2. Aggiorna il JComboBox
         tendina.removeAllItems();
         for (String s : esami) {
+            if (s != null) {
             String[] parti = s.split(";");
             String nome = parti[0];
-            if (s != null)
-                tendina.addItem(nome);
+            tendina.addItem(nome);
+            }
         }
         tendina.setSelectedIndex(-1); // Deseleziona tutto
 

@@ -8,11 +8,15 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.util.ArrayList;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
 import javax.swing.border.Border;
-
-import org.ietf.jgss.GSSException;
-import org.w3c.dom.css.Rect;
 
 import com.minec.dati.GestoreDati;
 
@@ -194,7 +198,7 @@ public class PannelloVoti extends JPanel {
         jp.setForeground(new Color(36, 166, 6));
         jp.setBackground(Color.WHITE);
         JPanel progressPanel = new JPanel(new BorderLayout());
-        progressPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        progressPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         progressPanel.add(jp, BorderLayout.CENTER);
         panel4.add(progressPanel ,BorderLayout.SOUTH);
         panel4.add(cfuRimasti, BorderLayout.CENTER);
@@ -256,7 +260,6 @@ public class PannelloVoti extends JPanel {
         String rotella = "\u21BB";
         JButton refreshBut = new JButton(rotella);
         refreshBut.addActionListener(e -> {
-            refresh();
         });
         JPanel butPanel = new JPanel();
         butPanel.setBounds(710, 30, 50, 40);
