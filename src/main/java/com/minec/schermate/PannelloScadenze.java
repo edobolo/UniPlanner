@@ -38,9 +38,9 @@ public class PannelloScadenze extends JPanel {
         datePicker.setBounds(370, 80, 200, 35);
 
         JButton btnCalendario = datePicker.getComponentToggleCalendarButton();
-        btnCalendario.setText("▼");
-        btnCalendario.setFont(new Font("Arial", Font.BOLD, 12));
-        btnCalendario.setIcon(null);
+        btnCalendario.setText("");
+        btnCalendario.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/calendar.png", 20, 20));
+        btnCalendario.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
         moduloPanel.add(datePicker);
 
@@ -49,13 +49,12 @@ public class PannelloScadenze extends JPanel {
         moduloPanel.add(btnSalva);
 
         // --- PARTE CENTRO: Lista delle scadenze ---
+        javax.swing.border.Border bordoSoloSopra = BorderFactory.createMatteBorder(2, 0, 0, 0, Color.GRAY);
         JPanel contenitoreLista = new JPanel(new BorderLayout());
         contenitoreLista.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.GRAY, 2), "Prossimi Esami",
-                0, 0, new Font("Arial", Font.BOLD, 16)));
+                bordoSoloSopra, "Prossimi Esami",0, 
+                0, new Font("Arial", Font.BOLD, 16)));
 
-        // --- NOVITÀ 2: Creiamo un pannellino in alto a destra per il bottone di
-        // ordinamento ---
         JPanel barraStrumentiLista = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton btnOrdina = new JButton("Ordina: Cronologico");
         btnOrdina.setFont(new Font("Arial", Font.ITALIC, 12));
@@ -168,10 +167,11 @@ public class PannelloScadenze extends JPanel {
                 }
 
                 // --- BOTTONE RIMOZIONE ---
-                JButton btnRimuovi = new JButton("X");
-                btnRimuovi.setForeground(Color.RED);
-                btnRimuovi.setFont(new Font("Arial", Font.BOLD, 14));
-                btnRimuovi.setMargin(new Insets(2, 5, 2, 5));
+                JButton btnRimuovi = new JButton("");
+                btnRimuovi.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/close.png", 16, 16));
+                btnRimuovi.setContentAreaFilled(false);
+                btnRimuovi.setBorderPainted(false);
+                btnRimuovi.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
                 btnRimuovi.addActionListener(e -> {
                     int conferma = JOptionPane.showConfirmDialog(this,
@@ -203,5 +203,11 @@ public class PannelloScadenze extends JPanel {
         caricaEsamiNelMenu();
         scadenzeListPanel.revalidate();
         scadenzeListPanel.repaint();
+    }
+    private ImageIcon creaIconaScalata(String percorso, int larghezza, int altezza) {
+        ImageIcon iconaOriginale = new ImageIcon(percorso);
+        // Rimpicciolisce l'immagine mantenendo i bordi morbidi (SCALE_SMOOTH)
+        java.awt.Image immagineScalata = iconaOriginale.getImage().getScaledInstance(larghezza, altezza, java.awt.Image.SCALE_SMOOTH);
+        return new ImageIcon(immagineScalata);
     }
 }

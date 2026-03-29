@@ -6,6 +6,9 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
@@ -13,6 +16,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
@@ -28,6 +32,8 @@ public class PannelloVoti extends JPanel {
     private JPanel examLeftPanel = new JPanel();
     private JPanel votiEsamiPanel = new JPanel();
     private JPanel panelInfo = new JPanel();
+    
+    private int obiettivo = 25;
     
     public PannelloVoti() {
         this.setLayout(null);
@@ -48,39 +54,68 @@ public class PannelloVoti extends JPanel {
         mediaPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2, true));
         mediaPanel.setLayout(new BorderLayout());
         String[] voti = GestoreDati.getVotiEsamiRaw();
-       
-        int sommaVoti = 0;
+        int sommaVoti = 0; // Per la ponderata (voto * cfu)
+        int sommaVotiSemplice = 0; // Per l'aritmetica (solo voto)
         int sommaCfu = 0;
+        int esamiValidi = 0;
+
         for(int i = 0; i < voti.length; i++) {
             String[] pair = voti[i].split(";");
             if (pair.length >= 3) {
                 try {
-                    sommaVoti += Integer.parseInt(pair[0]) * Integer.parseInt(pair[2]);
-                    sommaCfu += Integer.parseInt(pair[2]);
+                    int votoSingolo = Integer.parseInt(pair[0]);
+                    int cfuSingolo = Integer.parseInt(pair[2]);
+
+                    sommaVoti += votoSingolo * cfuSingolo;
+                    sommaVotiSemplice += votoSingolo; // Sommo solo il voto!
+                    sommaCfu += cfuSingolo;
+                    esamiValidi++;
                 } catch (NumberFormatException e) {
                 }
             }
         }
-        double mediaVoti = 0;
+        double mediaVotiP = 0;
         if(sommaCfu != 0)
-            mediaVoti = Math.round(((double) sommaVoti / sommaCfu)*10.0)/10.0;
-        JLabel title = new JLabel("Media ponderata");
+            mediaVotiP = Math.round(((double) sommaVoti / sommaCfu)*10.0)/10.0;
+        double mediaVotiA = 0;
+        if(esamiValidi != 0)
+            mediaVotiA = Math.round(((double) sommaVotiSemplice / esamiValidi)*10.0)/10.0;
+        final String textP = "" + mediaVotiP;
+        final String textA = "" + mediaVotiA;
+
+        JLabel title = new JLabel("Media Ponderata");
         title.setFont(new Font("Arial", Font.BOLD, 15));
         title.setHorizontalAlignment(JLabel.CENTER);
 
         JPanel mediaF = new JPanel();
         mediaF.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 60));
-        JLabel mediaLabel = new JLabel("" + mediaVoti);
+        JLabel mediaLabel = new JLabel(textP);
         mediaLabel.setFont(new Font("Arial", Font.BOLD, 35));
         mediaLabel.setHorizontalAlignment(JLabel.CENTER);
         JLabel outOfLabel = new JLabel("/30");
         outOfLabel.setFont(new Font("Arial", Font.BOLD, 27));
         outOfLabel.setHorizontalAlignment(JLabel.CENTER);
+        
         mediaF.add(mediaLabel);
         mediaF.add(outOfLabel);
 
         mediaPanel.add(title, BorderLayout.NORTH);
         mediaPanel.add(mediaF, BorderLayout.CENTER);
+        mediaPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                // Ora le maiuscole combaciano e non c'è più il refresh()!
+                if(title.getText().equals("Media Ponderata")) {
+                    title.setText("Media Aritmetica");
+                    mediaLabel.setText(textA);
+                }
+                else {
+                    title.setText("Media Ponderata");
+                    mediaLabel.setText(textP);
+                }
+            }
+        });
+        mediaPanel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
     }
 
     public void setExamLeft(JPanel examLeftPanel) {
@@ -166,7 +201,28 @@ public class PannelloVoti extends JPanel {
         JPanel votoOb = new JPanel();
         votoOb.setLayout(new GridLayout(2, 1));
         votoOb.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
-        int obiettivo = 26;
+        panel3.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                String newOb = JOptionPane.showInputDialog(PannelloVoti.this, "Inserire obiettivo");
+                if(newOb != null && !newOb.trim().isEmpty()) {
+                    try {
+                        obiettivo = Integer.parseInt(newOb);
+                        if(obiettivo < 18 || obiettivo > 30)
+                            throw  new NumberFormatException();
+                        refresh();
+                    } catch (NumberFormatException e1) {
+                        JOptionPane.showMessageDialog(PannelloVoti.this, "Inserire un voto valido tra 18 e 30");
+                        obiettivo = 25;
+                    }
+                }
+                else {
+                    obiettivo = 25;
+                    refresh();
+                }
+            }
+        });
+        panel3.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         double differenza = mediaVoti - obiettivo;
         differenza = Math.round(differenza * 10.0) / 10.0;
         JLabel obb = new JLabel(obiettivo + "/30");
@@ -212,7 +268,7 @@ public class PannelloVoti extends JPanel {
     }
 
     public void setVotiEsami(JPanel votiEsamePanel) {
-        votiEsamePanel.setBounds(400, 70, 300, 400);
+        votiEsamePanel.setBounds(350, 70, 300, 400);
         votiEsamePanel.setLayout(new BorderLayout());
         
         JLabel text1 = new JLabel("Voti salvati");

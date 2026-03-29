@@ -3,7 +3,12 @@ package com.minec;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.FlowLayout;
+import java.awt.Font;
 
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -18,10 +23,9 @@ public class MainApp {
 
     public static void main(String[] args) {
         try {
-            // Forza Java ad usare il tema moderno del tuo sistema operativo
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
-            e.printStackTrace(); // Se fallisce, usa il tema di default
+            e.printStackTrace();
         }
         SwingUtilities.invokeLater(() -> creaEmostraGUI());
     }
@@ -36,37 +40,82 @@ public class MainApp {
         CardLayout cardLayout = new CardLayout();
         JPanel pannelloSchermate = new JPanel(cardLayout);
 
-        // Ora creiamo le schermate usando le nostre nuove CLASSI personalizzate!
         PannelloVoti schermataVoti = new PannelloVoti();
         PannelloAggiungi schermataAggiungi = new PannelloAggiungi(schermataVoti);
         PannelloScadenze schermataScadenze = new PannelloScadenze();
 
-        // Le aggiungiamo al pannello principale
         pannelloSchermate.add(schermataVoti, "Voti");
         pannelloSchermate.add(schermataAggiungi, "Aggiungi");
         pannelloSchermate.add(schermataScadenze, "Scadenze");
 
-        // Menu di navigazione
-        JPanel pannelloMenu = new JPanel();
-        pannelloMenu.setBackground(Color.LIGHT_GRAY);
+        // --- BARRA DI NAVIGAZIONE MODERNA ---
+        // Usiamo un FlowLayout con margini più ampi (30px tra un bottone e l'altro)
+        JPanel pannelloMenu = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 10));
+        
+        // Colore di sfondo moderno (un blu scuro/grigio ardesia)
+        Color coloreSfondoMenu = new Color(44, 62, 80); 
+        pannelloMenu.setBackground(coloreSfondoMenu);
+        // Aggiungiamo un bordino colorato in alto alla barra per staccarla dal contenuto
+        pannelloMenu.setBorder(BorderFactory.createMatteBorder(3, 0, 0, 0, new Color(41, 128, 185)));
 
-        JButton btnVoti = new JButton("Voti e Media");
+        // Creiamo i bottoni usando il nostro metodo personalizzato
+        JButton btnVoti = creaBottoneMenu(" Voti e Media", coloreSfondoMenu);
         btnVoti.addActionListener(e -> cardLayout.show(pannelloSchermate, "Voti"));
+        btnVoti.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/bar-graph.png", 20, 20));
 
-        JButton btnAggiungi = new JButton("Aggiungi Esame");
+        JButton btnAggiungi = creaBottoneMenu(" Aggiungi Esame", coloreSfondoMenu);
         btnAggiungi.addActionListener(e -> cardLayout.show(pannelloSchermate, "Aggiungi"));
+        btnAggiungi.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/add.png", 20, 20));
 
-        JButton btnScadenze = new JButton("Timer Scadenze");
+        JButton btnScadenze = creaBottoneMenu(" Timer Scadenze", coloreSfondoMenu);
         btnScadenze.addActionListener(e -> cardLayout.show(pannelloSchermate, "Scadenze"));
+        btnScadenze.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/calendar.png", 20, 20));
 
         pannelloMenu.add(btnVoti);
         pannelloMenu.add(btnAggiungi);
         pannelloMenu.add(btnScadenze);
 
-        //assemblo la finestra
+        // Assemblo la finestra
         finestra.add(pannelloMenu, BorderLayout.SOUTH);
         finestra.add(pannelloSchermate, BorderLayout.CENTER);
 
         finestra.setVisible(true);
+    }
+    private static JButton creaBottoneMenu(String testo, Color coloreSfondo) {
+        JButton btn = new JButton(testo);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        btn.setForeground(Color.WHITE);
+        btn.setBackground(coloreSfondo);
+        
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        
+        // Diamo un po' di spazio "interno" al bottone
+        btn.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15)); 
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        Color coloreHover = new Color(48, 68, 88);
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btn.setBackground(coloreHover);
+                btn.setForeground(Color.BLACK);
+                btn.setBorderPainted(true);
+            }
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(coloreSfondo);
+                btn.setForeground(Color.WHITE);
+                btn.setBorderPainted(false);
+            }
+        });
+
+        return btn;
+    }
+    private static ImageIcon creaIconaScalata(String percorso, int larghezza, int altezza) {
+        ImageIcon iconaOriginale = new ImageIcon(percorso);
+        // Rimpicciolisce l'immagine mantenendo i bordi morbidi (SCALE_SMOOTH)
+        java.awt.Image immagineScalata = iconaOriginale.getImage().getScaledInstance(larghezza, altezza, java.awt.Image.SCALE_SMOOTH);
+        return new ImageIcon(immagineScalata);
     }
 }

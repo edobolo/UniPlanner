@@ -26,10 +26,8 @@ public class PannelloAggiungi extends JPanel {
 
     private int index = 0;
     private PannelloVoti pv;
-
-    // Riferimenti ai componenti che devono cambiare nel tempo
-    private JPanel esamiPanel; // Il contenitore della lista grafica
-    private JComboBox<String> tendina; // Il menu a tendina
+    private JPanel esamiPanel;
+    private JComboBox<String> tendina;
 
     public PannelloAggiungi(PannelloVoti pv) {
         this.pv = pv;
@@ -37,7 +35,7 @@ public class PannelloAggiungi extends JPanel {
         JPanel esamiAggiuntiPanel = new JPanel();
         JPanel aggiungiEsamePanel = new JPanel();
 
-        aggiungiEsamePanel.setPreferredSize(new Dimension(800, 250));
+        aggiungiEsamePanel.setPreferredSize(new Dimension(800, 240));
         this.setLayout(new BorderLayout());
         // Inizializziamo prima la struttura
         setAddedExamsLayout(esamiAggiuntiPanel);
@@ -161,18 +159,17 @@ public class PannelloAggiungi extends JPanel {
                 if (input != null && !input.trim().isEmpty()) {
                     try {
                         int voto = Integer.parseInt(input);
-                        if (voto >= 18 && voto <= 31) {
+                        if (voto >= 18 && voto <= 30) {
                             GestoreDati.setVotiEsami(voto, nome, 0);
                             GestoreDati.aggiornaStatoEsame(nome, true);
                             autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
-
                             buttonCFU.setVisible(true); //se il voto c'è faccio comparire il bottone CFU
                             pv.refresh();
                         } else {
                             throw new Exception();
                         }
                     } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(this, "Voto non valido! Inserire un numero tra 18 e 31.");
+                        JOptionPane.showMessageDialog(this, "Voto non valido! Inserire un numero tra 18 e 30.");
                         markAsDone.setSelected(false);
                     }
                 } else {
@@ -285,29 +282,18 @@ public class PannelloAggiungi extends JPanel {
 
     public void setAddedExamsLayout(JPanel esamiAggiunti) {
         esamiAggiunti.setLayout(new BorderLayout());
-        esamiAggiunti.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
-
+        esamiAggiunti.setBorder(BorderFactory.createEmptyBorder(10, 4, 10, 4));
         esamiPanel = new JPanel();
         esamiPanel.setLayout(new BoxLayout(esamiPanel, BoxLayout.Y_AXIS));
-
         JScrollPane scrollPane = new JScrollPane(esamiPanel);
-
-        // --- LA MODIFICA È QUI ---
-        // 1. Creiamo un MatteBorder con spessore 2 SOLO in alto (top, left, bottom,
-        // right)
         javax.swing.border.Border bordoSoloSopra = BorderFactory.createMatteBorder(2, 0, 0, 0, Color.GRAY);
-
-        // 2. Lo inseriamo dentro il TitledBorder al posto della solita linea completa
         scrollPane.setBorder(BorderFactory.createTitledBorder(
                 bordoSoloSopra,
                 "Aggiunti di recente",
                 javax.swing.border.TitledBorder.CENTER,
                 javax.swing.border.TitledBorder.TOP,
                 new Font("Arial", Font.BOLD, 16)));
-        // -------------------------
-
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-
         esamiAggiunti.add(scrollPane, BorderLayout.CENTER);
     }
 }
