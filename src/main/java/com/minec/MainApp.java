@@ -8,14 +8,12 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 
-import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.minec.schermate.PannelloAggiungi;
 import com.minec.schermate.PannelloScadenze;
 import com.minec.schermate.PannelloVoti;
@@ -23,7 +21,12 @@ import com.minec.schermate.PannelloVoti;
 public class MainApp {
 
     public static void main(String[] args) {
-        FlatLightLaf.setup();
+        // Leggiamo la memoria: l'utente aveva scelto il tema scuro?
+        if (com.minec.dati.GestoreDati.isTemaScuro()) {
+            com.formdev.flatlaf.FlatDarkLaf.setup(); // Tema Scuro
+        } else {
+            com.formdev.flatlaf.FlatLightLaf.setup(); // Tema Chiaro
+        }
         SwingUtilities.invokeLater(() -> creaEmostraGUI());
     }
 
@@ -57,18 +60,18 @@ public class MainApp {
         // Creiamo i bottoni usando il nostro metodo personalizzato
         JButton btnVoti = creaBottoneMenu(" Voti e Media", coloreSfondoMenu);
         btnVoti.addActionListener(e -> cardLayout.show(pannelloSchermate, "Voti"));
-        btnVoti.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/bar-graph.png", 20, 20));
+        btnVoti.setIcon(new FlatSVGIcon("icone/bar.svg", 24, 24));
 
         JButton btnAggiungi = creaBottoneMenu(" Aggiungi Esame", coloreSfondoMenu);
         btnAggiungi.addActionListener(e -> cardLayout.show(pannelloSchermate, "Aggiungi"));
-        btnAggiungi.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/add.png", 20, 20));
+        btnAggiungi.setIcon(new FlatSVGIcon("icone/plus.svg", 24, 24));
 
         JButton btnScadenze = creaBottoneMenu(" Timer Scadenze", coloreSfondoMenu);
         btnScadenze.addActionListener(e -> {
             schermataScadenze.refreshOrdineScadenze();
             cardLayout.show(pannelloSchermate, "Scadenze");
         });
-        btnScadenze.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/calendar.png", 20, 20));
+        btnScadenze.setIcon(new FlatSVGIcon("icone/hourglass.svg", 24, 24));
 
         pannelloMenu.add(btnVoti);
         pannelloMenu.add(btnAggiungi);
@@ -98,23 +101,15 @@ public class MainApp {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 btn.setBackground(coloreHover);
-                btn.setForeground(Color.BLACK);
                 btn.setBorderPainted(true);
             }
             @Override
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 btn.setBackground(coloreSfondo);
-                btn.setForeground(Color.WHITE);
                 btn.setBorderPainted(false);
             }
         });
 
         return btn;
-    }
-    private static ImageIcon creaIconaScalata(String percorso, int larghezza, int altezza) {
-        ImageIcon iconaOriginale = new ImageIcon(percorso);
-        // Rimpicciolisce l'immagine mantenendo i bordi morbidi (SCALE_SMOOTH)
-        java.awt.Image immagineScalata = iconaOriginale.getImage().getScaledInstance(larghezza, altezza, java.awt.Image.SCALE_SMOOTH);
-        return new ImageIcon(immagineScalata);
     }
 }

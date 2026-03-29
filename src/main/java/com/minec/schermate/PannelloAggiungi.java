@@ -153,36 +153,51 @@ public class PannelloAggiungi extends JPanel {
         });
 
         // Azione Checkbox Voti
+        // Azione Checkbox Voti
         markAsDone.addActionListener(e -> {
             if (markAsDone.isSelected()) {
                 String input = JOptionPane.showInputDialog(this, "Inserire il voto per " + nome);
                 if (input != null && !input.trim().isEmpty()) {
-                    try {
-                        int voto = Integer.parseInt(input);
-                        if (voto >= 18 && voto <= 30) {
-                            GestoreDati.setVotiEsami(voto, nome, 0);
-                            GestoreDati.aggiornaStatoEsame(nome, true);
-                            autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
-                            buttonCFU.setVisible(true); //se il voto c'è faccio comparire il bottone CFU
-                            pv.refresh();
-                        } else {
-                            throw new Exception();
+                    String votoPulito = input.trim().toUpperCase(); // Rimuove spazi e fa tutto maiuscolo (30L)
+                    boolean valido = false;
+                    String votoDaSalvare = "";
+                    // 1. Controlliamo se è un 30L
+                    if (votoPulito.equals("30L") || votoPulito.equals("30 E LODE")) {
+                        valido = true;
+                        votoDaSalvare = "30L"; // Standardizziamo il formato per il salvataggio
+                    } else {
+                        // 2. Altrimenti, controlliamo se è un numero valido
+                        try {
+                            int votoNumerico = Integer.parseInt(votoPulito);
+                            if (votoNumerico >= 18 && votoNumerico <= 30) {
+                                valido = true;
+                                votoDaSalvare = String.valueOf(votoNumerico);
+                            }
+                        } catch (NumberFormatException ex) {
+                            // Non è né "30L" né un numero
                         }
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(this, "Voto non valido! Inserire un numero tra 18 e 30.");
+                    }
+                    if (valido) {
+                        // Se ha superato i test, salviamo usando il GestoreDati!
+                        GestoreDati.setVotiEsami(votoDaSalvare, nome, 0);
+                        GestoreDati.aggiornaStatoEsame(nome, true);
+                        autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
+                        buttonCFU.setVisible(true); 
+                        pv.refresh();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Voto non valido! Inserisci un numero tra 18 e 30, oppure '30L'.");
                         markAsDone.setSelected(false);
                     }
                 } else {
-                    markAsDone.setSelected(false);
+                    markAsDone.setSelected(false); // Utente ha annullato l'inserimento
                 }
             } else {
                 // SE TOLGO LA SPUNTA: Rimuovo tutto
                 GestoreDati.aggiornaStatoEsame(nome, false);
-                GestoreDati.removeVotiEsame(nome); // Elimina riga da voti.txt (inclusi i CFU)
+                GestoreDati.removeVotiEsame(nome); 
                 autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
-                // Resetto l'interfaccia CFU per questo esame
                 pannelloCfuLocale.removeAll();
-                buttonCFU.setVisible(false); // Nascondo il bottone
+                buttonCFU.setVisible(false); 
                 pannelloCfuLocale.revalidate();
                 pannelloCfuLocale.repaint();
                 pv.refresh();
@@ -192,14 +207,11 @@ public class PannelloAggiungi extends JPanel {
         JPanel pannelloSinistra = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         pannelloSinistra.add(markAsDone);
         pannelloSinistra.add(nomeEsameLabel);
-
         JPanel pannelloDestra = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
         pannelloDestra.add(pannelloCfuLocale);
         pannelloDestra.add(buttonCFU);
-
         panelSingoloEsame.add(pannelloSinistra, BorderLayout.WEST);
         panelSingoloEsame.add(pannelloDestra, BorderLayout.EAST);
-
         esamiPanel.add(panelSingoloEsame);
         esamiPanel.add(Box.createRigidArea(new Dimension(0, 5)));
     }

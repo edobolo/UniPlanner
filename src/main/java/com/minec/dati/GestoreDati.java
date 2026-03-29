@@ -104,7 +104,7 @@ public class GestoreDati {
 
     //FILE VOTI
 
-    public static void setVotiEsami(int voto, String nome, int CFU) {
+    public static void setVotiEsami(String voto, String nome, int CFU) {
         String rigaFinal = voto + ";" + nome;
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileVoti, true))) {
             bw.write(rigaFinal);
@@ -304,7 +304,12 @@ public class GestoreDati {
     public static int getBonusLode() {
         return Integer.parseInt(getImpostazione("BONUS_LODE", "0"));
     }
-
+    public static boolean isTemaScuro() {
+        return Boolean.parseBoolean(getImpostazione("TEMA_SCURO", "false"));
+    }
+    public static void salvaTemaScuro(boolean scuro) {
+        salvaImpostazione("TEMA_SCURO", String.valueOf(scuro));
+    }
     public static void resetTutto() {
         try {
             new java.io.PrintWriter(fileEsami).close();
@@ -315,7 +320,6 @@ public class GestoreDati {
             System.out.println("Errore durante il reset dei dati.");
         }
     }
-
     public static boolean getSalvato() {
         return salvato;
     }

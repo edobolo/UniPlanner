@@ -14,14 +14,15 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.border.EmptyBorder;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.github.lgooddatepicker.components.DatePicker;
 import com.minec.dati.GestoreDati;
 
@@ -54,7 +55,7 @@ public class PannelloScadenze extends JPanel {
 
         JButton btnCalendario = datePicker.getComponentToggleCalendarButton();
         btnCalendario.setText("");
-        btnCalendario.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/calendar.png", 20, 20));
+        btnCalendario.setIcon(new FlatSVGIcon("icone/calendar.svg", 24, 24));
         btnCalendario.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
         moduloPanel.add(datePicker);
@@ -81,7 +82,7 @@ public class PannelloScadenze extends JPanel {
         scadenzeListPanel.setLayout(new BoxLayout(scadenzeListPanel, BoxLayout.Y_AXIS));
 
         JScrollPane scrollPane = new JScrollPane(scadenzeListPanel);
-        scrollPane.setBorder(null);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         contenitoreLista.add(scrollPane, BorderLayout.CENTER);
 
@@ -156,7 +157,9 @@ public class PannelloScadenze extends JPanel {
                 panel.setMinimumSize(dim);
                 panel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
 
-                JLabel lblNome = new JLabel("  " + nomeEsame + " (" + parti[1] + ")");
+                JLabel lblNome = new JLabel(" " + nomeEsame + " (" + parti[1] + ")");
+                lblNome.setBorder(new EmptyBorder(0, 15, 0, 0));
+                lblNome.setIcon(new FlatSVGIcon("icone/books.svg", 20, 20));
                 lblNome.setFont(new Font("Arial", Font.BOLD, 16));
 
                 JLabel lblGiorni = new JLabel();
@@ -178,7 +181,7 @@ public class PannelloScadenze extends JPanel {
 
                 // --- BOTTONE RIMOZIONE ---
                 JButton btnRimuovi = new JButton("");
-                btnRimuovi.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/close.png", 16, 16));
+                btnRimuovi.setIcon(new FlatSVGIcon("icone/x.svg", 24, 24));
                 btnRimuovi.setContentAreaFilled(false);
                 btnRimuovi.setBorderPainted(false);
                 btnRimuovi.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -221,12 +224,5 @@ public class PannelloScadenze extends JPanel {
             btnOrdina.setText(ordinaPerData ? "Ordina: Aggiunta" : "Ordina: Cronologico");
         }
         aggiornaListaScadenze();
-    }
-
-    private ImageIcon creaIconaScalata(String percorso, int larghezza, int altezza) {
-        ImageIcon iconaOriginale = new ImageIcon(percorso);
-        // Rimpicciolisce l'immagine mantenendo i bordi morbidi (SCALE_SMOOTH)
-        java.awt.Image immagineScalata = iconaOriginale.getImage().getScaledInstance(larghezza, altezza, java.awt.Image.SCALE_SMOOTH);
-        return new ImageIcon(immagineScalata);
     }
 }

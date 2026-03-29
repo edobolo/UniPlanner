@@ -1,3 +1,1 @@
 Algebra lineare e geometria;2026-04-10
-Fisica 1;2026-04-16
-Dati e algoritmi;2026-03-31

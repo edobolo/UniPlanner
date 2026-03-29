@@ -11,19 +11,15 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Image;
-import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -40,15 +36,15 @@ import com.minec.dati.GestoreDati;
 
 // Questa riga significa: "SchermataVoti è un tipo personalizzato di JPanel"
 public class PannelloVoti extends JPanel {
-    
+
     private ArrayList<JPanel> examsList = new ArrayList<>();
     private JPanel mediaPanel = new JPanel();
     private JPanel examLeftPanel = new JPanel();
     private JPanel votiEsamiPanel = new JPanel();
     private JPanel panelInfo = new JPanel();
-    
+
     private int obiettivo = 25;
-    
+
     public PannelloVoti() {
         this.setLayout(null);
         setPanelMedia(mediaPanel);
@@ -72,16 +68,22 @@ public class PannelloVoti extends JPanel {
         int sommaVotiSemplice = 0; // Per l'aritmetica (solo voto)
         int sommaCfu = 0;
         int esamiValidi = 0;
-
-        for(int i = 0; i < voti.length; i++) {
+        int pesoLode = GestoreDati.getPesoLode();
+        for (int i = 0; i < voti.length; i++) {
             String[] pair = voti[i].split(";");
             if (pair.length >= 3) {
                 try {
-                    int votoSingolo = Integer.parseInt(pair[0]);
                     int cfuSingolo = Integer.parseInt(pair[2]);
+                    int votoSingolo = 0;
+
+                    if (pair[0].equalsIgnoreCase("30L") || pair[0].equalsIgnoreCase("30 e lode")) {
+                        votoSingolo = pesoLode;
+                    } else {
+                        votoSingolo = Integer.parseInt(pair[0]);
+                    }
 
                     sommaVoti += votoSingolo * cfuSingolo;
-                    sommaVotiSemplice += votoSingolo; // Sommo solo il voto!
+                    sommaVotiSemplice += votoSingolo;
                     sommaCfu += cfuSingolo;
                     esamiValidi++;
                 } catch (NumberFormatException e) {
@@ -89,11 +91,13 @@ public class PannelloVoti extends JPanel {
             }
         }
         double mediaVotiP = 0;
-        if(sommaCfu != 0)
-            mediaVotiP = Math.round(((double) sommaVoti / sommaCfu)*10.0)/10.0;
+        if (sommaCfu != 0) {
+            mediaVotiP = Math.round(((double) sommaVoti / sommaCfu) * 10.0) / 10.0;
+        }
         double mediaVotiA = 0;
-        if(esamiValidi != 0)
-            mediaVotiA = Math.round(((double) sommaVotiSemplice / esamiValidi)*10.0)/10.0;
+        if (esamiValidi != 0) {
+            mediaVotiA = Math.round(((double) sommaVotiSemplice / esamiValidi) * 10.0) / 10.0;
+        }
         final String textP = "" + mediaVotiP;
         final String textA = "" + mediaVotiA;
 
@@ -109,7 +113,7 @@ public class PannelloVoti extends JPanel {
         JLabel outOfLabel = new JLabel("/30");
         outOfLabel.setFont(new Font("Arial", Font.BOLD, 27));
         outOfLabel.setHorizontalAlignment(JLabel.CENTER);
-        
+
         mediaF.add(mediaLabel);
         mediaF.add(outOfLabel);
 
@@ -119,11 +123,10 @@ public class PannelloVoti extends JPanel {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 // Ora le maiuscole combaciano e non c'è più il refresh()!
-                if(title.getText().equals("Media Ponderata")) {
+                if (title.getText().equals("Media Ponderata")) {
                     title.setText("Media Aritmetica");
                     mediaLabel.setText(textA);
-                }
-                else {
+                } else {
                     title.setText("Media Ponderata");
                     mediaLabel.setText(textP);
                 }
@@ -138,13 +141,12 @@ public class PannelloVoti extends JPanel {
         examLeftPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2, true));
         int examAdded = GestoreDati.numeroEsami();
         int numVoti = GestoreDati.numeroVoti();
-        for(int i = 0; i < examAdded; i++) {
+        for (int i = 0; i < examAdded; i++) {
             JPanel panel = new JPanel();
-            panel.setPreferredSize(new Dimension(10,20));
-            if(i < numVoti) {
+            panel.setPreferredSize(new Dimension(10, 20));
+            if (i < numVoti) {
                 panel.setBackground(new Color(36, 166, 6));
-            }
-            else {
+            } else {
                 panel.setBackground(Color.WHITE);
             }
             panel.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
@@ -162,12 +164,15 @@ public class PannelloVoti extends JPanel {
         JPanel panel3 = new JPanel();
         JPanel panel4 = new JPanel();
 
-        
-        Border b = BorderFactory.createLineBorder(Color.GRAY, 2,true);
-        panel1.setBorder(b); panel1.setLayout(new BorderLayout());
-        panel2.setBorder(b); panel2.setLayout(new BorderLayout());
-        panel3.setBorder(b); panel3.setLayout(new BorderLayout());
-        panel4.setBorder(b); panel4.setLayout(new BorderLayout());
+        Border b = BorderFactory.createLineBorder(Color.GRAY, 2, true);
+        panel1.setBorder(b);
+        panel1.setLayout(new BorderLayout());
+        panel2.setBorder(b);
+        panel2.setLayout(new BorderLayout());
+        panel3.setBorder(b);
+        panel3.setLayout(new BorderLayout());
+        panel4.setBorder(b);
+        panel4.setLayout(new BorderLayout());
 
         //pannello esami fatti
         Font f = new Font("Arial", Font.BOLD, 15);
@@ -182,15 +187,28 @@ public class PannelloVoti extends JPanel {
         panel1.add(title1, BorderLayout.NORTH);
 
         //pannello voto base di laurea
+        //pannello voto base di laurea
         String[] voti = GestoreDati.getVotiEsamiRaw();
         int sommaVoti = 0;
         int sommaCfu = 0;
+        int numeroLodi = 0; // Nuovo contatore per le lodi!
+        int pesoLode = GestoreDati.getPesoLode();
+        int bonusLode = GestoreDati.getBonusLode();
         for (int i = 0; i < voti.length; i++) {
             String[] pair = voti[i].split(";");
             if (pair.length >= 3) {
                 try {
-                    sommaVoti += Integer.parseInt(pair[0]) * Integer.parseInt(pair[2]);
-                    sommaCfu += Integer.parseInt(pair[2]);
+                    int cfuSingolo = Integer.parseInt(pair[2]);
+                    int votoSingolo;
+                    // Se l'utente ha scritto "30L" o "30l"
+                    if (pair[0].equalsIgnoreCase("30L") || pair[0].equalsIgnoreCase("30 e lode")) {
+                        votoSingolo = pesoLode; // Usiamo il valore scelto (es. 30 o 31)
+                        numeroLodi++; // Trovata una lode!
+                    } else {
+                        votoSingolo = Integer.parseInt(pair[0]); // Numero normale
+                    }
+                    sommaVoti += votoSingolo * cfuSingolo;
+                    sommaCfu += cfuSingolo;
                 } catch (NumberFormatException e) {
                 }
             }
@@ -198,8 +216,9 @@ public class PannelloVoti extends JPanel {
         double mediaVoti = 0;
         double baseL = 0;
         if (sommaCfu != 0) {
-            mediaVoti = Math.round(((double) sommaVoti / sommaCfu)*10.0)/10.0;
-            baseL = (mediaVoti*110)/30;
+            mediaVoti = (double) sommaVoti / sommaCfu;
+            baseL = (mediaVoti * 110) / 30;
+            baseL += (numeroLodi * bonusLode); // MAGIA: Aggiungiamo i punti bonus!
         }
         JLabel title2 = new JLabel("Base Laurea");
         title2.setHorizontalAlignment(JLabel.CENTER);
@@ -219,18 +238,18 @@ public class PannelloVoti extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 String newOb = JOptionPane.showInputDialog(PannelloVoti.this, "Inserire obiettivo");
-                if(newOb != null && !newOb.trim().isEmpty()) {
+                if (newOb != null && !newOb.trim().isEmpty()) {
                     try {
                         obiettivo = Integer.parseInt(newOb);
-                        if(obiettivo < 18 || obiettivo > 30)
-                            throw  new NumberFormatException();
+                        if (obiettivo < 18 || obiettivo > 30) {
+                            throw new NumberFormatException();
+                        }
                         refresh();
                     } catch (NumberFormatException e1) {
                         JOptionPane.showMessageDialog(PannelloVoti.this, "Inserire un voto valido tra 18 e 30");
                         obiettivo = 25;
                     }
-                }
-                else {
+                } else {
                     obiettivo = 25;
                     refresh();
                 }
@@ -269,17 +288,17 @@ public class PannelloVoti extends JPanel {
         JProgressBar jp = new JProgressBar(0, maxCfu);
         jp.setValue(Math.min(sommaCfu, maxCfu));
         jp.setStringPainted(true);
-        jp.setString(Math.round(((double)sommaCfu/maxCfu)*100.0) + "%");
-        jp.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
+        jp.setString(Math.round(((double) sommaCfu / maxCfu) * 100.0) + "%");
+        jp.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         jp.setForeground(new Color(36, 166, 6));
-        jp.setBackground(Color.WHITE);
+        //!jp.setBackground(Color.WHITE);
         JPanel progressPanel = new JPanel(new BorderLayout());
         progressPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         progressPanel.add(jp, BorderLayout.CENTER);
-        panel4.add(progressPanel ,BorderLayout.SOUTH);
+        panel4.add(progressPanel, BorderLayout.SOUTH);
         panel4.add(cfuRimasti, BorderLayout.CENTER);
         panel4.add(title4, BorderLayout.NORTH);
-        
+
         panelInfo.add(panel1);
         panelInfo.add(panel2);
         panelInfo.add(panel3);
@@ -289,27 +308,28 @@ public class PannelloVoti extends JPanel {
     public void setVotiEsami(JPanel votiEsamePanel) {
         votiEsamePanel.setBounds(350, 70, 300, 400);
         votiEsamePanel.setLayout(new BorderLayout());
-        
+        votiEsamePanel.setBorder(BorderFactory.createEmptyBorder());
+
         JLabel text1 = new JLabel("Voti salvati");
         text1.setFont(new Font("Arial", Font.BOLD, 16));
-        text1.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0)); 
+        text1.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         text1.setHorizontalAlignment(JLabel.CENTER);
         votiEsamePanel.add(text1, BorderLayout.NORTH);
-        
+
         String[] votiRaw = GestoreDati.getVotiEsamiRaw();
         int numVoti = GestoreDati.numeroVoti();
-        
+
         JPanel votiOnly = new JPanel();
         votiOnly.setLayout(new BoxLayout(votiOnly, BoxLayout.Y_AXIS));
-        
+
         JScrollPane scrollPane = new JScrollPane(votiOnly);
-        scrollPane.setBorder(null);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.getVerticalScrollBar().setUnitIncrement(10);
         votiEsamePanel.add(scrollPane, BorderLayout.CENTER);
 
-        for(int i = 0; i < numVoti; i++) {
+        for (int i = 0; i < numVoti; i++) {
             String rigaVoto = votiRaw[i];
             String[] parti = rigaVoto.split(";");
             String voto = parti[0];
@@ -333,12 +353,37 @@ public class PannelloVoti extends JPanel {
 
     public void setOptionButton() {
         JButton refreshBut = new JButton("");
-        refreshBut.setIcon(new FlatSVGIcon("/icon/option.svg", 24, 24));
+        if (GestoreDati.isTemaScuro()) {
+            refreshBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24)); 
+        }else {
+            refreshBut.setIcon(new FlatSVGIcon("icone/opzioni.svg", 24, 24));
+        }
         refreshBut.setBorderPainted(false);
         refreshBut.setFocusPainted(false);
         refreshBut.setContentAreaFilled(false);
         refreshBut.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
+        refreshBut.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (GestoreDati.isTemaScuro()) {
+                    refreshBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24)); 
+                }else {
+                    refreshBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24));
+                }
+                refresh();
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (GestoreDati.isTemaScuro()) {
+                    refreshBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24)); 
+                }else {
+                    refreshBut.setIcon(new FlatSVGIcon("icone/opzioni.svg", 24, 24));
+                }
+                refresh();
+            }
+        });
         refreshBut.addActionListener(e -> {
             JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
             JPanel shadowOverlay = new JPanel() {
@@ -358,7 +403,7 @@ public class PannelloVoti extends JPanel {
 
             JPanel pannelloImpostazioni = new JPanel();
             pannelloImpostazioni.setPreferredSize(new Dimension(360, 480));
-            pannelloImpostazioni.setBackground(Color.WHITE);
+            //!pannelloImpostazioni.setBackground(Color.WHITE);
             pannelloImpostazioni.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
             pannelloImpostazioni.setLayout(new BorderLayout());
 
@@ -370,15 +415,15 @@ public class PannelloVoti extends JPanel {
             // --- CONTENUTO CENTRALE ---
             JPanel centro = new JPanel();
             centro.setLayout(new BoxLayout(centro, BoxLayout.Y_AXIS));
-            centro.setBackground(Color.WHITE);
+            //!centro.setBackground(Color.WHITE);
             centro.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
             // 1. Cambio CFU
             JPanel pnlCfu = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            pnlCfu.setBackground(Color.WHITE);
+            //!pnlCfu.setBackground(Color.WHITE);
             JLabel lblCfu = new JLabel("Obiettivo CFU totali: ");
-            lblCfu.setIcon(new FlatSVGIcon("/icon/target.svg", 24, 24));
-            pnlCfu.setBorder(BorderFactory.createEmptyBorder(20, 40, 0, 40));
+            lblCfu.setIcon(new FlatSVGIcon("icone/target.svg", 22, 22));
+            pnlCfu.setBorder(BorderFactory.createEmptyBorder(20, 10, 0, 10));
             JTextField txtCfu = new JTextField(String.valueOf(GestoreDati.getObiettivoCFU()), 4);
             JButton btnSalvaCfu = new JButton("Salva");
             btnSalvaCfu.addActionListener(ev -> {
@@ -396,11 +441,11 @@ public class PannelloVoti extends JPanel {
 
             // 2. Ordine scadenze
             JPanel pnlOrdine = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            pnlOrdine.setBackground(Color.WHITE);
-            pnlOrdine.setBorder(BorderFactory.createEmptyBorder(0, 35, 0, 0));
+            //!pnlOrdine.setBackground(Color.WHITE);
+            pnlOrdine.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
             JLabel lblOrdine = new JLabel("Ordine predefinito scadenze: ");
-            lblOrdine.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/calendar.png",
-             20, 20));
+            lblOrdine.setIcon(new FlatSVGIcon("icone/calendar.svg", 22, 22));
+            lblOrdine.setIconTextGap(5);
             boolean ordinePreferito = GestoreDati.getOrdineScadenza();
             JButton btnOrdine = new JButton(ordinePreferito ? "Aggiunta" : "Cronologico");
             btnOrdine.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -420,18 +465,18 @@ public class PannelloVoti extends JPanel {
             // 3. MENU A SCOMPARSA: Parametri Laurea
             JPanel pnlGruppoParametri = new JPanel();
             pnlGruppoParametri.setLayout(new BoxLayout(pnlGruppoParametri, BoxLayout.Y_AXIS));
-            pnlGruppoParametri.setBackground(Color.WHITE);
+            //!pnlGruppoParametri.setBackground(Color.WHITE);
             pnlGruppoParametri.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true));
             pnlGruppoParametri.setMaximumSize(new Dimension(340, 200));
 
             // A. L'Intestazione (Cliccabile)
             JPanel pnlHeader = new JPanel(new BorderLayout());
-            pnlHeader.setBackground(new Color(245, 245, 250));
-            pnlHeader.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+            //!pnlHeader.setBackground(new Color(245, 245, 250));
+            pnlHeader.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
             pnlHeader.setCursor(new Cursor(Cursor.HAND_CURSOR));
             JLabel lblTitoloParam = new JLabel("Parametri Laurea");
-            lblTitoloParam.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/graduation-hat.png",
-             20, 20));
+            lblTitoloParam.setIcon(new FlatSVGIcon("icone/hat.svg", 22, 22));
+            lblTitoloParam.setIconTextGap(5);
             lblTitoloParam.setFont(new Font("Arial", Font.BOLD, 14));
             JLabel lblFreccia = new JLabel("▼");
             pnlHeader.add(lblTitoloParam, BorderLayout.WEST);
@@ -439,7 +484,7 @@ public class PannelloVoti extends JPanel {
 
             // B. Il Contenuto (Invisibile all'inizio)
             JPanel pnlContenuto = new JPanel(new GridLayout(3, 2, 10, 10));
-            pnlContenuto.setBackground(Color.WHITE);
+            //!pnlContenuto.setBackground(Color.WHITE);
             pnlContenuto.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
             pnlContenuto.setVisible(false);
             pnlContenuto.add(new JLabel(" Valore Lode (es. 30):"));
@@ -473,11 +518,10 @@ public class PannelloVoti extends JPanel {
 
             // 4. Bottone Reset
             JPanel pnlReset = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            pnlReset.setBackground(Color.WHITE);
-            pnlReset.setBorder(BorderFactory.createEmptyBorder(40, 60, 0, 0));
+            //!pnlReset.setBackground(Color.WHITE);
+            pnlReset.setBorder(BorderFactory.createEmptyBorder(20, 60, 0, 0));
             JButton btnReset = new JButton("Cancella tutti i dati");
-            btnReset.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/delete.png",
-             20, 20));
+            btnReset.setIcon(new FlatSVGIcon("icone/bin1.svg", 22, 22));
             btnReset.setForeground(Color.RED);
             btnReset.setFont(new Font("Arial", Font.BOLD, 14));
             btnReset.addActionListener(ev -> {
@@ -491,10 +535,44 @@ public class PannelloVoti extends JPanel {
             });
             pnlReset.add(btnReset);
 
+            // 5. cambia modalità colore
+            JPanel pnlTema = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            pnlTema.setBorder(BorderFactory.createEmptyBorder(0, 85, 0, 0));
+            JLabel lblTema = new JLabel("Modalità Scura: ");
+            if (GestoreDati.isTemaScuro()) {
+                lblTema.setIcon(new FlatSVGIcon("icone/dark2.svg", 20, 20)); 
+            }else {
+                lblTema.setIcon(new FlatSVGIcon("icone/dark1.svg", 20, 20));
+            }
+            JCheckBox chkTema = new JCheckBox();
+            chkTema.setSelected(GestoreDati.isTemaScuro()); // Mette la spunta se era già scuro
+            chkTema.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            chkTema.addActionListener(ev -> {
+                boolean isScuro = chkTema.isSelected();
+                GestoreDati.salvaTemaScuro(isScuro);
+                try {
+                    if (isScuro) {
+                        javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatDarkLaf());
+                        lblTema.setIcon(new FlatSVGIcon("icone/dark2.svg", 20, 20));
+                        refreshBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24));
+                    } else {
+                        javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatLightLaf());
+                        lblTema.setIcon(new FlatSVGIcon("icone/dark1.svg", 20, 20));
+                        refreshBut.setIcon(new FlatSVGIcon("icone/opzioni.svg", 24, 24));
+                    }
+                    SwingUtilities.updateComponentTreeUI(frame);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            });
+            pnlTema.add(lblTema);
+            pnlTema.add(chkTema);
+
             // ASSEMBLIAMO I PEZZI NELL'ORDINE GIUSTO NEL CENTRO
             centro.add(Box.createRigidArea(new Dimension(0, 10)));
             centro.add(pnlCfu);
             centro.add(pnlOrdine);
+            centro.add(pnlTema);
             centro.add(Box.createRigidArea(new Dimension(0, 10)));
             centro.add(pnlGruppoParametri); // <--- Inserito qui!
             centro.add(pnlReset);
@@ -509,7 +587,7 @@ public class PannelloVoti extends JPanel {
             });
 
             JPanel panelBottone = new JPanel(new FlowLayout(FlowLayout.CENTER));
-            panelBottone.setBackground(Color.WHITE);
+            //!panelBottone.setBackground(Color.WHITE);
             panelBottone.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
             panelBottone.add(btnChiudi);
             pannelloImpostazioni.add(panelBottone, BorderLayout.SOUTH);
@@ -527,6 +605,7 @@ public class PannelloVoti extends JPanel {
                 refreshBut.setContentAreaFilled(true);
                 refreshBut.setBackground(coloreHover);
             }
+
             @Override
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 refreshBut.setContentAreaFilled(false);
@@ -553,18 +632,5 @@ public class PannelloVoti extends JPanel {
 
         this.revalidate();
         this.repaint();
-    }
-    
-    private ImageIcon creaIconaScalata(String percorso, int larghezza, int altezza) {
-        ImageIcon iconaOriginale = new ImageIcon(percorso);
-        Image img = iconaOriginale.getImage();
-        BufferedImage immagineNitida = new BufferedImage(larghezza, altezza, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = immagineNitida.createGraphics();
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2d.drawImage(img, 0, 0, larghezza, altezza, null);
-        g2d.dispose(); // Liberiamo la memoria
-        return new ImageIcon(immagineNitida);
     }
 }
