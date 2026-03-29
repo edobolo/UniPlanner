@@ -376,7 +376,7 @@ public class PannelloVoti extends JPanel {
             lblCfu.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/target.png", 20, 20));
             JTextField txtCfu = new JTextField(String.valueOf(GestoreDati.getObiettivoCFU()), 4);
             JButton btnSalvaCfu = new JButton("Salva");
-
+            btnSalvaCfu.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnSalvaCfu.addActionListener(ev -> {
                 try {
                     int nuovoObiettivo = Integer.parseInt(txtCfu.getText());
@@ -399,6 +399,7 @@ public class PannelloVoti extends JPanel {
             pnlReset.setBackground(Color.WHITE);
             pnlReset.setBorder(BorderFactory.createEmptyBorder(60, 15, 0, 0));
             JButton btnReset = new JButton("Cancella tutti i dati");
+            btnReset.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnReset.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/delete.png", 20, 20));
             btnReset.setIconTextGap(10);
             btnReset.setForeground(Color.RED);
@@ -420,7 +421,7 @@ public class PannelloVoti extends JPanel {
             });
             pnlReset.add(btnReset);
 
-            // 3. Ordine predefinito
+            // 3. Ordine predefinito scadenze
             JPanel pnlOrdine = new JPanel(new FlowLayout(FlowLayout.LEFT));
             pnlOrdine.setBackground(Color.WHITE);
             pnlOrdine.setBorder(BorderFactory.createEmptyBorder(60, 0, 0, 0));
@@ -428,6 +429,7 @@ public class PannelloVoti extends JPanel {
             lblOrdine.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/calendar.png", 18, 18));
             boolean ordinePreferito = GestoreDati.getOrdineScadenza();
             JButton btnOrdine = new JButton(ordinePreferito ? "Aggiunta" : "Cronologico");
+            btnOrdine.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnOrdine.addActionListener(ez -> {
                 String text1 = btnOrdine.getText();
                 if(text1.equals("Cronologico")) {
@@ -442,9 +444,24 @@ public class PannelloVoti extends JPanel {
             pnlOrdine.add(lblOrdine);
             pnlOrdine.add(btnOrdine);
 
+            // 4. Parametri laurea
+            JPanel pnlLaurea = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            pnlLaurea.setBackground(Color.WHITE);
+            pnlLaurea.setBorder(BorderFactory.createEmptyBorder(50,30,0,0));
+            pnlLaurea.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            JLabel lblLaurea = new JLabel("Modifica parametri laurea");
+            lblLaurea.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/graduation-hat.png", 18, 18));
+            pnlLaurea.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                }
+            });
+            pnlLaurea.add(lblLaurea);
+            
             // Aggiungiamo i blocchi al centro
             centro.add(Box.createRigidArea(new Dimension(0, 15)));
             centro.add(pnlCfu);
+            centro.add(pnlLaurea);
             centro.add(pnlOrdine);
             centro.add(pnlReset);
 
