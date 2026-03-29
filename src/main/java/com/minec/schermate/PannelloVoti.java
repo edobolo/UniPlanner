@@ -2,9 +2,14 @@ package com.minec.schermate;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -14,12 +19,17 @@ import java.util.ArrayList;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 
 import com.minec.dati.GestoreDati;
@@ -41,7 +51,7 @@ public class PannelloVoti extends JPanel {
         setExamLeft(examLeftPanel);
         setVotiEsami(votiEsamiPanel);
         setPanelInfo(panelInfo);
-        setRefreshButton();
+        setOptionButton();
 
         this.add(mediaPanel);
         this.add(examLeftPanel);
@@ -312,15 +322,169 @@ public class PannelloVoti extends JPanel {
         }
     }
 
-    public void setRefreshButton() {
-        String rotella = "\u21BB";
-        JButton refreshBut = new JButton(rotella);
+    public void setOptionButton() {
+        JButton refreshBut = new JButton("");
+        refreshBut.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/option.png", 24, 24));
+        refreshBut.setBorderPainted(false);
+        refreshBut.setFocusPainted(false);
+        refreshBut.setContentAreaFilled(false);
+        refreshBut.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
         refreshBut.addActionListener(e -> {
+            JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
+
+            JPanel shadowOverlay = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    Graphics2D g2d = (Graphics2D) g.create();
+                    g2d.setColor(new Color(0, 0, 0, 150));
+                    g2d.fillRect(0, 0, getWidth(), getHeight());
+                    g2d.dispose();
+                }
+            };
+            shadowOverlay.setOpaque(false);
+            shadowOverlay.setLayout(new GridBagLayout());
+            shadowOverlay.addMouseListener(new java.awt.event.MouseAdapter() {
+            }); // Blocca i click sotto
+
+            JPanel pannelloImpostazioni = new JPanel();
+            pannelloImpostazioni.setPreferredSize(new Dimension(350, 400)); // L'ho fatto leggermente più largo
+            pannelloImpostazioni.setBackground(Color.WHITE);
+            pannelloImpostazioni.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
+            pannelloImpostazioni.setLayout(new BorderLayout());
+
+            JLabel titolo = new JLabel("Impostazioni", SwingConstants.CENTER);
+            titolo.setFont(new Font("Arial", Font.BOLD, 22));
+            titolo.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
+            pannelloImpostazioni.add(titolo, BorderLayout.NORTH);
+
+            // --- CONTENUTO DELLE IMPOSTAZIONI ---
+            JPanel centro = new JPanel();
+            centro.setLayout(new BoxLayout(centro, BoxLayout.Y_AXIS));
+            centro.setBackground(Color.WHITE);
+            centro.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+
+            // 1. Calcolo Voto Base Laurea (Formula: Media Ponderata * 11 / 3)
+            double mediaPonderata = calcolaMediaPonderataPerImpostazioni();
+            double votoBase = Math.round((mediaPonderata * 11) / 3.0 * 100.0) / 100.0;
+
+            JPanel pnlVoto = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            pnlVoto.setBackground(Color.WHITE);
+            JLabel lblVoto = new JLabel("🎓 Voto Base stimato: " + votoBase + " / 110");
+            lblVoto.setFont(new Font("Arial", Font.BOLD, 15));
+            pnlVoto.add(lblVoto);
+
+            // 2. Cambio Obiettivo CFU
+            JPanel pnlCfu = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            pnlCfu.setBackground(Color.WHITE);
+            JLabel lblCfu = new JLabel( "Obiettivo CFU totali: ");
+            JTextField txtCfu = new JTextField(String.valueOf(GestoreDati.getObiettivoCFU()), 4);
+            JButton btnSalvaCfu = new JButton("Salva");
+
+            btnSalvaCfu.addActionListener(ev -> {
+                try {
+                    int nuovoObiettivo = Integer.parseInt(txtCfu.getText());
+                    GestoreDati.salvaObiettivoCfu(nuovoObiettivo);
+                    JOptionPane.showMessageDialog(pannelloImpostazioni,
+                            "Obiettivo salvato! Riavvia l'app per aggiornare la barra.");
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Inserisci un numero valido!");
+                }
+            });
+            pnlCfu.add(lblCfu);
+            pnlCfu.add(txtCfu);
+            pnlCfu.add(btnSalvaCfu);
+
+            // 3. Reset Totale dei Dati
+            JPanel pnlReset = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            pnlReset.setBackground(Color.WHITE);
+            pnlReset.setBorder(BorderFactory.createEmptyBorder(30, 0, 0, 0)); // Lo spingo un po' in giù
+            JButton btnReset = new JButton("🗑️ Cancella tutti i dati");
+            btnReset.setForeground(Color.RED);
+            btnReset.setFont(new Font("Arial", Font.BOLD, 14));
+
+            btnReset.addActionListener(ev -> {
+                int conferma1 = JOptionPane.showConfirmDialog(pannelloImpostazioni,
+                        "ATTENZIONE: Vuoi davvero svuotare il libretto?", "Conferma Reset", JOptionPane.YES_NO_OPTION);
+                if (conferma1 == JOptionPane.YES_OPTION) {
+                    int conferma2 = JOptionPane.showConfirmDialog(pannelloImpostazioni,
+                            "Azione IRREVERSIBILE. Sei sicuro al 100%?", "Ultimo Avviso", JOptionPane.YES_NO_OPTION);
+                    if (conferma2 == JOptionPane.YES_OPTION) {
+                        GestoreDati.resetTutto();
+                        JOptionPane.showMessageDialog(pannelloImpostazioni,
+                                "Dati azzerati. L'applicazione si chiuderà per applicare le modifiche.");
+                        System.exit(0); // Chiude l'app per forzare un riavvio pulito
+                    }
+                }
+            });
+            pnlReset.add(btnReset);
+            // Aggiungiamo i blocchi al centro
+            centro.add(pnlVoto);
+            centro.add(Box.createRigidArea(new Dimension(0, 15)));
+            centro.add(pnlCfu);
+            centro.add(pnlReset);
+
+            pannelloImpostazioni.add(centro, BorderLayout.CENTER);
+
+            // --- BOTTONE CHIUDI ---
+            JButton btnChiudi = new JButton("Chiudi");
+            btnChiudi.setFont(new Font("Arial", Font.BOLD, 14));
+            btnChiudi.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnChiudi.addActionListener(chiudiEvent -> {
+                shadowOverlay.setVisible(false);
+            });
+
+            JPanel panelBottone = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            panelBottone.setBackground(Color.WHITE);
+            panelBottone.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
+            panelBottone.add(btnChiudi);
+            pannelloImpostazioni.add(panelBottone, BorderLayout.SOUTH);
+
+            shadowOverlay.add(pannelloImpostazioni, new GridBagConstraints());
+            frame.setGlassPane(shadowOverlay);
+            shadowOverlay.setVisible(true);
         });
+
+        Color coloreHover = new Color(48, 68, 88);
+        Color coloreSfondo = mediaPanel.getBackground();
+
+        refreshBut.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                refreshBut.setContentAreaFilled(true);
+                refreshBut.setBackground(coloreHover);
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                refreshBut.setContentAreaFilled(false);
+                refreshBut.setBackground(coloreSfondo);
+            }
+        });
+
         JPanel butPanel = new JPanel();
-        butPanel.setBounds(710, 30, 50, 40);
-        butPanel.add(refreshBut);
+        butPanel.setBounds(710, 30, 40, 40);
+        butPanel.setLayout(new BorderLayout());
+        butPanel.add(refreshBut, BorderLayout.CENTER);
         this.add(butPanel);
+    }
+    // Metodo di supporto per calcolare la media al volo dentro le impostazioni
+    private double calcolaMediaPonderataPerImpostazioni() {
+        String[] voti = GestoreDati.getVotiEsamiRaw();
+        int sommaVoti = 0;
+        int sommaCfu = 0;
+        for (String v : voti) {
+            String[] p = v.split(";");
+            if (p.length >= 3) {
+                try {
+                    sommaVoti += Integer.parseInt(p[0]) * Integer.parseInt(p[2]);
+                    sommaCfu += Integer.parseInt(p[2]);
+                } catch (Exception ex) {
+                }
+            }
+        }
+        return sommaCfu == 0 ? 0 : (double) sommaVoti / sommaCfu;
     }
 
     public void refresh() {
@@ -335,5 +499,11 @@ public class PannelloVoti extends JPanel {
 
         this.revalidate();
         this.repaint();
+    }
+    private ImageIcon creaIconaScalata(String percorso, int larghezza, int altezza) {
+        ImageIcon iconaOriginale = new ImageIcon(percorso);
+        // Rimpicciolisce l'immagine mantenendo i bordi morbidi (SCALE_SMOOTH)
+        java.awt.Image immagineScalata = iconaOriginale.getImage().getScaledInstance(larghezza, altezza, java.awt.Image.SCALE_SMOOTH);
+        return new ImageIcon(immagineScalata);
     }
 }

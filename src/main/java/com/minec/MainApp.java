@@ -31,7 +31,7 @@ public class MainApp {
     }
 
     private static void creaEmostraGUI() {
-        JFrame finestra = new JFrame("Gestore Esami Universitari");
+        JFrame finestra = new JFrame("UniPlanner");
         finestra.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         finestra.setSize(800, 600);
         finestra.setResizable(false);
@@ -48,7 +48,6 @@ public class MainApp {
         pannelloSchermate.add(schermataAggiungi, "Aggiungi");
         pannelloSchermate.add(schermataScadenze, "Scadenze");
 
-        // --- BARRA DI NAVIGAZIONE MODERNA ---
         // Usiamo un FlowLayout con margini più ampi (30px tra un bottone e l'altro)
         JPanel pannelloMenu = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 10));
         

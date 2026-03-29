@@ -12,6 +12,7 @@ public class GestoreDati {
     private static final String fileEsami = "src/main/java/com/minec/dati/esami.txt";
     private static final String fileVoti = "src/main/java/com/minec/dati/voti.txt";
     private static final String fileScadenze = "src/main/java/com/minec/dati/scadenze.txt";
+    private static final String fileImpostazioni = "src/main/java/com/minec/dati/impostazioni.txt";
     private static boolean salvato = false;
 
     //FILE ESAMI
@@ -239,8 +240,33 @@ public class GestoreDati {
             System.out.println("Errore rimozione scadenza");
         }
     }
-    
 
+    //FILE IMPOSTAZIONI
+
+    public static int getObiettivoCFU() {
+        try (Scanner scan = new Scanner(new FileReader(fileImpostazioni))) {
+            if (scan.hasNextLine()) {
+                return Integer.parseInt(scan.nextLine().trim());
+            }
+        } catch (Exception e) {
+        }
+        return 180;
+    }
+    public static void salvaObiettivoCfu(int cfu) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileImpostazioni))) {
+            bw.write(String.valueOf(cfu));
+        } catch (IOException e) {
+        }
+    }
+    public static void resetTutto() {
+        try {
+            new java.io.PrintWriter(fileEsami).close();
+            new java.io.PrintWriter(fileVoti).close();
+            new java.io.PrintWriter(fileScadenze).close();
+        } catch (Exception e) {
+            System.out.println("Errore durante il reset dei dati.");
+        }
+    }
     public static boolean getSalvato() {
         return salvato;
     }
