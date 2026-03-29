@@ -11,8 +11,11 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
@@ -20,6 +23,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -31,6 +35,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.minec.dati.GestoreDati;
 
 // Questa riga significa: "SchermataVoti è un tipo personalizzato di JPanel"
@@ -328,7 +333,7 @@ public class PannelloVoti extends JPanel {
 
     public void setOptionButton() {
         JButton refreshBut = new JButton("");
-        refreshBut.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/option.png", 24, 24));
+        refreshBut.setIcon(new FlatSVGIcon("/icon/option.svg", 24, 24));
         refreshBut.setBorderPainted(false);
         refreshBut.setFocusPainted(false);
         refreshBut.setContentAreaFilled(false);
@@ -336,7 +341,6 @@ public class PannelloVoti extends JPanel {
 
         refreshBut.addActionListener(e -> {
             JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
-
             JPanel shadowOverlay = new JPanel() {
                 @Override
                 protected void paintComponent(Graphics g) {
@@ -350,10 +354,10 @@ public class PannelloVoti extends JPanel {
             shadowOverlay.setOpaque(false);
             shadowOverlay.setLayout(new GridBagLayout());
             shadowOverlay.addMouseListener(new java.awt.event.MouseAdapter() {
-            }); // Blocca i click sotto
+            });
 
             JPanel pannelloImpostazioni = new JPanel();
-            pannelloImpostazioni.setPreferredSize(new Dimension(350, 400)); // L'ho fatto leggermente più largo
+            pannelloImpostazioni.setPreferredSize(new Dimension(360, 480));
             pannelloImpostazioni.setBackground(Color.WHITE);
             pannelloImpostazioni.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
             pannelloImpostazioni.setLayout(new BorderLayout());
@@ -363,29 +367,25 @@ public class PannelloVoti extends JPanel {
             titolo.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
             pannelloImpostazioni.add(titolo, BorderLayout.NORTH);
 
-            // --- CONTENUTO DELLE IMPOSTAZIONI ---
+            // --- CONTENUTO CENTRALE ---
             JPanel centro = new JPanel();
             centro.setLayout(new BoxLayout(centro, BoxLayout.Y_AXIS));
             centro.setBackground(Color.WHITE);
-            centro.setBorder(BorderFactory.createEmptyBorder(10, 55, 0, 20));
+            centro.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
-            // 1. Cambio Obiettivo CFU
+            // 1. Cambio CFU
             JPanel pnlCfu = new JPanel(new FlowLayout(FlowLayout.LEFT));
             pnlCfu.setBackground(Color.WHITE);
-            JLabel lblCfu = new JLabel( "Obiettivo CFU totali: ");
-            lblCfu.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/target.png", 20, 20));
+            JLabel lblCfu = new JLabel("Obiettivo CFU totali: ");
+            lblCfu.setIcon(new FlatSVGIcon("/icon/target.svg", 24, 24));
+            pnlCfu.setBorder(BorderFactory.createEmptyBorder(20, 40, 0, 40));
             JTextField txtCfu = new JTextField(String.valueOf(GestoreDati.getObiettivoCFU()), 4);
             JButton btnSalvaCfu = new JButton("Salva");
-            btnSalvaCfu.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnSalvaCfu.addActionListener(ev -> {
                 try {
                     int nuovoObiettivo = Integer.parseInt(txtCfu.getText());
-                    if (nuovoObiettivo <= 0) {
-                        throw new NumberFormatException();
-                    }
                     GestoreDati.salvaObiettivoCfu(nuovoObiettivo);
                     JOptionPane.showMessageDialog(pannelloImpostazioni, "Obiettivo salvato!");
-                    refresh();
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(pannelloImpostazioni, "Inserisci un numero valido!");
                 }
@@ -394,49 +394,22 @@ public class PannelloVoti extends JPanel {
             pnlCfu.add(txtCfu);
             pnlCfu.add(btnSalvaCfu);
 
-            // 2. Reset Totale dei Dati
-            JPanel pnlReset = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            pnlReset.setBackground(Color.WHITE);
-            pnlReset.setBorder(BorderFactory.createEmptyBorder(60, 15, 0, 0));
-            JButton btnReset = new JButton("Cancella tutti i dati");
-            btnReset.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            btnReset.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/delete.png", 20, 20));
-            btnReset.setIconTextGap(10);
-            btnReset.setForeground(Color.RED);
-            btnReset.setFont(new Font("Arial", Font.BOLD, 14));
-
-            btnReset.addActionListener(ev -> {
-                int conferma1 = JOptionPane.showConfirmDialog(pannelloImpostazioni,
-                        "ATTENZIONE: Vuoi davvero svuotare il libretto?", "Conferma Reset", JOptionPane.YES_NO_OPTION);
-                if (conferma1 == JOptionPane.YES_OPTION) {
-                    int conferma2 = JOptionPane.showConfirmDialog(pannelloImpostazioni,
-                            "Azione IRREVERSIBILE. Sei sicuro al 100%?", "Ultimo Avviso", JOptionPane.YES_NO_OPTION);
-                    if (conferma2 == JOptionPane.YES_OPTION) {
-                        GestoreDati.resetTutto();
-                        JOptionPane.showMessageDialog(pannelloImpostazioni,
-                                "Dati azzerati. L'applicazione si chiuderà per applicare le modifiche.");
-                        System.exit(0); // Chiude l'app per forzare un riavvio pulito
-                    }
-                }
-            });
-            pnlReset.add(btnReset);
-
-            // 3. Ordine predefinito scadenze
+            // 2. Ordine scadenze
             JPanel pnlOrdine = new JPanel(new FlowLayout(FlowLayout.LEFT));
             pnlOrdine.setBackground(Color.WHITE);
-            pnlOrdine.setBorder(BorderFactory.createEmptyBorder(60, 0, 0, 0));
-            JLabel lblOrdine = new JLabel( "Ordine predefinito scadenze: ");
-            lblOrdine.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/calendar.png", 18, 18));
+            pnlOrdine.setBorder(BorderFactory.createEmptyBorder(0, 35, 0, 0));
+            JLabel lblOrdine = new JLabel("Ordine predefinito scadenze: ");
+            lblOrdine.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/calendar.png",
+             20, 20));
             boolean ordinePreferito = GestoreDati.getOrdineScadenza();
             JButton btnOrdine = new JButton(ordinePreferito ? "Aggiunta" : "Cronologico");
             btnOrdine.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnOrdine.addActionListener(ez -> {
                 String text1 = btnOrdine.getText();
-                if(text1.equals("Cronologico")) {
+                if (text1.equals("Cronologico")) {
                     btnOrdine.setText("Aggiunta");
                     GestoreDati.salvaOrdineScadenze(true);
-                }
-                else {
+                } else {
                     btnOrdine.setText("Cronologico");
                     GestoreDati.salvaOrdineScadenze(false);
                 }
@@ -444,27 +417,87 @@ public class PannelloVoti extends JPanel {
             pnlOrdine.add(lblOrdine);
             pnlOrdine.add(btnOrdine);
 
-            // 4. Parametri laurea
-            JPanel pnlLaurea = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            pnlLaurea.setBackground(Color.WHITE);
-            pnlLaurea.setBorder(BorderFactory.createEmptyBorder(50,30,0,0));
-            pnlLaurea.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            JLabel lblLaurea = new JLabel("Modifica parametri laurea");
-            lblLaurea.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/graduation-hat.png", 18, 18));
-            pnlLaurea.addMouseListener(new MouseAdapter() {
+            // 3. MENU A SCOMPARSA: Parametri Laurea
+            JPanel pnlGruppoParametri = new JPanel();
+            pnlGruppoParametri.setLayout(new BoxLayout(pnlGruppoParametri, BoxLayout.Y_AXIS));
+            pnlGruppoParametri.setBackground(Color.WHITE);
+            pnlGruppoParametri.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true));
+            pnlGruppoParametri.setMaximumSize(new Dimension(340, 200));
+
+            // A. L'Intestazione (Cliccabile)
+            JPanel pnlHeader = new JPanel(new BorderLayout());
+            pnlHeader.setBackground(new Color(245, 245, 250));
+            pnlHeader.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+            pnlHeader.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            JLabel lblTitoloParam = new JLabel("Parametri Laurea");
+            lblTitoloParam.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/graduation-hat.png",
+             20, 20));
+            lblTitoloParam.setFont(new Font("Arial", Font.BOLD, 14));
+            JLabel lblFreccia = new JLabel("▼");
+            pnlHeader.add(lblTitoloParam, BorderLayout.WEST);
+            pnlHeader.add(lblFreccia, BorderLayout.EAST);
+
+            // B. Il Contenuto (Invisibile all'inizio)
+            JPanel pnlContenuto = new JPanel(new GridLayout(3, 2, 10, 10));
+            pnlContenuto.setBackground(Color.WHITE);
+            pnlContenuto.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            pnlContenuto.setVisible(false);
+            pnlContenuto.add(new JLabel(" Valore Lode (es. 30):"));
+            JTextField txtLode = new JTextField(GestoreDati.getImpostazione("LODE", "30"));
+            pnlContenuto.add(txtLode);
+            pnlContenuto.add(new JLabel(" Punti Bonus extra:"));
+            JTextField txtBonus = new JTextField(GestoreDati.getImpostazione("BONUS_LODE", "0"));
+            pnlContenuto.add(txtBonus);
+            JButton btnSalvaParametri = new JButton("Salva");
+            btnSalvaParametri.addActionListener(ev -> {
+                GestoreDati.salvaImpostazione("LODE", txtLode.getText());
+                GestoreDati.salvaImpostazione("BONUS_LODE", txtBonus.getText());
+                JOptionPane.showMessageDialog(pannelloImpostazioni, "Parametri salvati!");
+            });
+            pnlContenuto.add(new JLabel(""));
+            pnlContenuto.add(btnSalvaParametri);
+
+            // C. L'Azione del Click sull'Intestazione
+            pnlHeader.addMouseListener(new java.awt.event.MouseAdapter() {
                 @Override
-                public void mouseClicked(MouseEvent e) {
+                public void mouseClicked(java.awt.event.MouseEvent e) {
+                    boolean isVisible = pnlContenuto.isVisible();
+                    pnlContenuto.setVisible(!isVisible);
+                    lblFreccia.setText(isVisible ? "▼" : "▲");
+                    pannelloImpostazioni.revalidate();
+                    pannelloImpostazioni.repaint();
                 }
             });
-            pnlLaurea.add(lblLaurea);
-            
-            // Aggiungiamo i blocchi al centro
-            centro.add(Box.createRigidArea(new Dimension(0, 15)));
-            centro.add(pnlCfu);
-            centro.add(pnlLaurea);
-            centro.add(pnlOrdine);
-            centro.add(pnlReset);
+            pnlGruppoParametri.add(pnlHeader);
+            pnlGruppoParametri.add(pnlContenuto);
 
+            // 4. Bottone Reset
+            JPanel pnlReset = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            pnlReset.setBackground(Color.WHITE);
+            pnlReset.setBorder(BorderFactory.createEmptyBorder(40, 60, 0, 0));
+            JButton btnReset = new JButton("Cancella tutti i dati");
+            btnReset.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/delete.png",
+             20, 20));
+            btnReset.setForeground(Color.RED);
+            btnReset.setFont(new Font("Arial", Font.BOLD, 14));
+            btnReset.addActionListener(ev -> {
+                int conf1 = JOptionPane.showConfirmDialog(pannelloImpostazioni,
+                        "Vuoi davvero svuotare il libretto?", "Conferma Reset", JOptionPane.YES_NO_OPTION);
+                if (conf1 == JOptionPane.YES_OPTION) {
+                    GestoreDati.resetTutto();
+                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Dati azzerati. L'applicazione si chiuderà.");
+                    System.exit(0);
+                }
+            });
+            pnlReset.add(btnReset);
+
+            // ASSEMBLIAMO I PEZZI NELL'ORDINE GIUSTO NEL CENTRO
+            centro.add(Box.createRigidArea(new Dimension(0, 10)));
+            centro.add(pnlCfu);
+            centro.add(pnlOrdine);
+            centro.add(Box.createRigidArea(new Dimension(0, 10)));
+            centro.add(pnlGruppoParametri); // <--- Inserito qui!
+            centro.add(pnlReset);
             pannelloImpostazioni.add(centro, BorderLayout.CENTER);
 
             // --- BOTTONE CHIUDI ---
@@ -474,6 +507,7 @@ public class PannelloVoti extends JPanel {
             btnChiudi.addActionListener(chiudiEvent -> {
                 shadowOverlay.setVisible(false);
             });
+
             JPanel panelBottone = new JPanel(new FlowLayout(FlowLayout.CENTER));
             panelBottone.setBackground(Color.WHITE);
             panelBottone.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
@@ -499,6 +533,7 @@ public class PannelloVoti extends JPanel {
                 refreshBut.setBackground(coloreSfondo);
             }
         });
+
         JPanel butPanel = new JPanel();
         butPanel.setBounds(710, 30, 40, 40);
         butPanel.setLayout(new BorderLayout());
@@ -519,10 +554,17 @@ public class PannelloVoti extends JPanel {
         this.revalidate();
         this.repaint();
     }
+    
     private ImageIcon creaIconaScalata(String percorso, int larghezza, int altezza) {
         ImageIcon iconaOriginale = new ImageIcon(percorso);
-        // Rimpicciolisce l'immagine mantenendo i bordi morbidi (SCALE_SMOOTH)
-        java.awt.Image immagineScalata = iconaOriginale.getImage().getScaledInstance(larghezza, altezza, java.awt.Image.SCALE_SMOOTH);
-        return new ImageIcon(immagineScalata);
+        Image img = iconaOriginale.getImage();
+        BufferedImage immagineNitida = new BufferedImage(larghezza, altezza, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = immagineNitida.createGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.drawImage(img, 0, 0, larghezza, altezza, null);
+        g2d.dispose(); // Liberiamo la memoria
+        return new ImageIcon(immagineNitida);
     }
 }

@@ -15,6 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import com.formdev.flatlaf.FlatLightLaf;
 import com.minec.schermate.PannelloAggiungi;
 import com.minec.schermate.PannelloScadenze;
 import com.minec.schermate.PannelloVoti;
@@ -22,11 +23,7 @@ import com.minec.schermate.PannelloVoti;
 public class MainApp {
 
     public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        FlatLightLaf.setup();
         SwingUtilities.invokeLater(() -> creaEmostraGUI());
     }
 

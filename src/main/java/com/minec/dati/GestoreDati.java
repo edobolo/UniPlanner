@@ -243,52 +243,81 @@ public class GestoreDati {
 
     //FILE IMPOSTAZIONI
     
-    public static int getObiettivoCFU() {
+    public static String getImpostazione(String chiave, String valoreDefault) {
         try (Scanner scan = new Scanner(new FileReader(fileImpostazioni))) {
-            if (scan.hasNextLine()) {
+            while (scan.hasNextLine()) {
                 String line = scan.nextLine();
-                String[] parts = line.split(";");
-                return Integer.parseInt(parts[0]);
+                if (line.startsWith(chiave + "=")) {
+                    return line.split("=")[1]; // Prende il valore dopo l'uguale
+                }
             }
         } catch (Exception e) {
         }
-        return 180;
+        return valoreDefault;
+    }
+    public static void salvaImpostazione(String chiave, String valore) {
+        java.util.List<String> righe = new java.util.ArrayList<>();
+        boolean trovata = false;
+        try (Scanner scan = new Scanner(new FileReader(fileImpostazioni))) {
+            while (scan.hasNextLine()) {
+                String line = scan.nextLine();
+                // Se trova la chiave, la aggiorna con il nuovo valore
+                if (line.startsWith(chiave + "=")) {
+                    righe.add(chiave + "=" + valore);
+                    trovata = true;
+                } else {
+                    righe.add(line);
+                }
+            }
+        } catch (Exception e) { }
+        if (!trovata) {
+            righe.add(chiave + "=" + valore);
+        }
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileImpostazioni))) {
+            for (String riga : righe) {
+                bw.write(riga);
+                bw.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println("Errore nel salvataggio delle impostazioni");
+        }
+    }
+
+    // --- I TUOI METODI ORIGINALI (Ora usano il nuovo "motore" in modo invisibile) ---
+    public static int getObiettivoCFU() {
+        return Integer.parseInt(getImpostazione("CFU", "180"));
     }
     public static void salvaObiettivoCfu(int cfu) {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileImpostazioni))) {
-            boolean getPref = getOrdineScadenza();
-            bw.write(String.valueOf(cfu) + ";" + String.valueOf(getPref));
-        } catch (IOException e) {
-        }
+        salvaImpostazione("CFU", String.valueOf(cfu));
     }
     public static boolean getOrdineScadenza() {
-        try (Scanner scan = new Scanner(new FileReader(fileImpostazioni))) {
-            if (scan.hasNextLine()) {
-                String line = scan.nextLine();
-                String[] parts = line.split(";");
-                return Boolean.parseBoolean(parts[1]);
-            }
-        } catch (Exception e) {
-        }
-        return false;
+        return Boolean.parseBoolean(getImpostazione("ORDINE", "false"));
     }
     public static void salvaOrdineScadenze(boolean s) {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileImpostazioni))) {
-            int cfu = getObiettivoCFU();
-            bw.write(String.valueOf(cfu) + ";" + String.valueOf(s));
-        } catch (IOException e) {
-        }
+        salvaImpostazione("ORDINE", String.valueOf(s));
     }
+
+    // --- I NUOVI METODI PER I PARAMETRI DELLA LAUREA ---
+    public static int getPesoLode() {
+        return Integer.parseInt(getImpostazione("LODE", "30"));
+    }
+    public static int getBonusLode() {
+        return Integer.parseInt(getImpostazione("BONUS_LODE", "0"));
+    }
+
     public static void resetTutto() {
         try {
             new java.io.PrintWriter(fileEsami).close();
             new java.io.PrintWriter(fileVoti).close();
             new java.io.PrintWriter(fileScadenze).close();
+            new java.io.PrintWriter(fileImpostazioni).close(); // Resettiamo anche questo per sicurezza!
         } catch (Exception e) {
             System.out.println("Errore durante il reset dei dati.");
         }
     }
+
     public static boolean getSalvato() {
         return salvato;
     }
 }
+
