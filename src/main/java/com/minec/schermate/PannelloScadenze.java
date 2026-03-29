@@ -1,12 +1,26 @@
 package com.minec.schermate;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.swing.*;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 
 import com.github.lgooddatepicker.components.DatePicker;
 import com.minec.dati.GestoreDati;
@@ -15,7 +29,8 @@ public class PannelloScadenze extends JPanel {
 
     private JPanel scadenzeListPanel;
     private JComboBox<String> comboEsami;
-    private boolean ordinaPerData = false;
+    private JButton btnOrdina;
+    private boolean ordinaPerData = GestoreDati.getOrdineScadenza();
 
     public PannelloScadenze() {
         this.setLayout(new BorderLayout());
@@ -56,7 +71,7 @@ public class PannelloScadenze extends JPanel {
                 0, new Font("Arial", Font.BOLD, 16)));
 
         JPanel barraStrumentiLista = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnOrdina = new JButton("Ordina: Cronologico");
+        btnOrdina = new JButton(ordinaPerData ? "Ordina: Aggiunta" : "Ordina: Cronologico");
         btnOrdina.setFont(new Font("Arial", Font.ITALIC, 12));
         barraStrumentiLista.add(btnOrdina);
 
@@ -89,13 +104,8 @@ public class PannelloScadenze extends JPanel {
 
         btnOrdina.addActionListener(e -> {
             ordinaPerData = !ordinaPerData; // Inverte il valore (da falso a vero e viceversa)
-
-            if (ordinaPerData) {
-                btnOrdina.setText("Ordina: Aggiunta"); 
-            } else {
-                btnOrdina.setText("Ordina: Cronologico");
-            }
-
+            GestoreDati.salvaOrdineScadenze(ordinaPerData);
+            btnOrdina.setText(ordinaPerData ? "Ordina: Aggiunta" : "Ordina: Cronologico");
             aggiornaListaScadenze();
         });
     }
@@ -204,6 +214,15 @@ public class PannelloScadenze extends JPanel {
         scadenzeListPanel.revalidate();
         scadenzeListPanel.repaint();
     }
+
+    public void refreshOrdineScadenze() {
+        ordinaPerData = GestoreDati.getOrdineScadenza();
+        if (btnOrdina != null) {
+            btnOrdina.setText(ordinaPerData ? "Ordina: Aggiunta" : "Ordina: Cronologico");
+        }
+        aggiornaListaScadenze();
+    }
+
     private ImageIcon creaIconaScalata(String percorso, int larghezza, int altezza) {
         ImageIcon iconaOriginale = new ImageIcon(percorso);
         // Rimpicciolisce l'immagine mantenendo i bordi morbidi (SCALE_SMOOTH)

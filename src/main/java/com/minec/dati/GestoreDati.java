@@ -242,11 +242,13 @@ public class GestoreDati {
     }
 
     //FILE IMPOSTAZIONI
-
+    
     public static int getObiettivoCFU() {
         try (Scanner scan = new Scanner(new FileReader(fileImpostazioni))) {
             if (scan.hasNextLine()) {
-                return Integer.parseInt(scan.nextLine().trim());
+                String line = scan.nextLine();
+                String[] parts = line.split(";");
+                return Integer.parseInt(parts[0]);
             }
         } catch (Exception e) {
         }
@@ -254,7 +256,26 @@ public class GestoreDati {
     }
     public static void salvaObiettivoCfu(int cfu) {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileImpostazioni))) {
-            bw.write(String.valueOf(cfu));
+            boolean getPref = getOrdineScadenza();
+            bw.write(String.valueOf(cfu) + ";" + String.valueOf(getPref));
+        } catch (IOException e) {
+        }
+    }
+    public static boolean getOrdineScadenza() {
+        try (Scanner scan = new Scanner(new FileReader(fileImpostazioni))) {
+            if (scan.hasNextLine()) {
+                String line = scan.nextLine();
+                String[] parts = line.split(";");
+                return Boolean.parseBoolean(parts[1]);
+            }
+        } catch (Exception e) {
+        }
+        return false;
+    }
+    public static void salvaOrdineScadenze(boolean s) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileImpostazioni))) {
+            int cfu = getObiettivoCFU();
+            bw.write(String.valueOf(cfu) + ";" + String.valueOf(s));
         } catch (IOException e) {
         }
     }

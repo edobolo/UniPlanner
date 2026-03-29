@@ -13,7 +13,6 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
@@ -255,12 +254,18 @@ public class PannelloVoti extends JPanel {
         //pannello crediti rimanenti
         JLabel title4 = new JLabel("Crediti");
         title4.setHorizontalAlignment(JLabel.CENTER);
-        JLabel cfuRimasti = new JLabel(sommaCfu + "/180");
+        int maxCfu = GestoreDati.getObiettivoCFU();
+        if (maxCfu <= 0) {
+            maxCfu = 1;
+        }
+        JLabel cfuRimasti = new JLabel(sommaCfu + "/" + maxCfu);
         cfuRimasti.setFont(f);
         cfuRimasti.setHorizontalAlignment(JLabel.CENTER);
-        JProgressBar jp = new JProgressBar(0, 180);
-        jp.setValue(sommaCfu);
-        jp.setBorder(BorderFactory.createEmptyBorder());
+        JProgressBar jp = new JProgressBar(0, maxCfu);
+        jp.setValue(Math.min(sommaCfu, maxCfu));
+        jp.setStringPainted(true);
+        jp.setString(Math.round(((double)sommaCfu/maxCfu)*100.0) + "%");
+        jp.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
         jp.setForeground(new Color(36, 166, 6));
         jp.setBackground(Color.WHITE);
         JPanel progressPanel = new JPanel(new BorderLayout());
@@ -269,7 +274,6 @@ public class PannelloVoti extends JPanel {
         panel4.add(progressPanel ,BorderLayout.SOUTH);
         panel4.add(cfuRimasti, BorderLayout.CENTER);
         panel4.add(title4, BorderLayout.NORTH);
-
         
         panelInfo.add(panel1);
         panelInfo.add(panel2);
@@ -363,31 +367,25 @@ public class PannelloVoti extends JPanel {
             JPanel centro = new JPanel();
             centro.setLayout(new BoxLayout(centro, BoxLayout.Y_AXIS));
             centro.setBackground(Color.WHITE);
-            centro.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+            centro.setBorder(BorderFactory.createEmptyBorder(10, 55, 0, 20));
 
-            // 1. Calcolo Voto Base Laurea (Formula: Media Ponderata * 11 / 3)
-            double mediaPonderata = calcolaMediaPonderataPerImpostazioni();
-            double votoBase = Math.round((mediaPonderata * 11) / 3.0 * 100.0) / 100.0;
-
-            JPanel pnlVoto = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            pnlVoto.setBackground(Color.WHITE);
-            JLabel lblVoto = new JLabel("🎓 Voto Base stimato: " + votoBase + " / 110");
-            lblVoto.setFont(new Font("Arial", Font.BOLD, 15));
-            pnlVoto.add(lblVoto);
-
-            // 2. Cambio Obiettivo CFU
+            // 1. Cambio Obiettivo CFU
             JPanel pnlCfu = new JPanel(new FlowLayout(FlowLayout.LEFT));
             pnlCfu.setBackground(Color.WHITE);
             JLabel lblCfu = new JLabel( "Obiettivo CFU totali: ");
+            lblCfu.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/target.png", 20, 20));
             JTextField txtCfu = new JTextField(String.valueOf(GestoreDati.getObiettivoCFU()), 4);
             JButton btnSalvaCfu = new JButton("Salva");
 
             btnSalvaCfu.addActionListener(ev -> {
                 try {
                     int nuovoObiettivo = Integer.parseInt(txtCfu.getText());
+                    if (nuovoObiettivo <= 0) {
+                        throw new NumberFormatException();
+                    }
                     GestoreDati.salvaObiettivoCfu(nuovoObiettivo);
-                    JOptionPane.showMessageDialog(pannelloImpostazioni,
-                            "Obiettivo salvato! Riavvia l'app per aggiornare la barra.");
+                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Obiettivo salvato!");
+                    refresh();
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(pannelloImpostazioni, "Inserisci un numero valido!");
                 }
@@ -396,11 +394,13 @@ public class PannelloVoti extends JPanel {
             pnlCfu.add(txtCfu);
             pnlCfu.add(btnSalvaCfu);
 
-            // 3. Reset Totale dei Dati
+            // 2. Reset Totale dei Dati
             JPanel pnlReset = new JPanel(new FlowLayout(FlowLayout.LEFT));
             pnlReset.setBackground(Color.WHITE);
-            pnlReset.setBorder(BorderFactory.createEmptyBorder(30, 0, 0, 0)); // Lo spingo un po' in giù
-            JButton btnReset = new JButton("🗑️ Cancella tutti i dati");
+            pnlReset.setBorder(BorderFactory.createEmptyBorder(60, 15, 0, 0));
+            JButton btnReset = new JButton("Cancella tutti i dati");
+            btnReset.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/delete.png", 20, 20));
+            btnReset.setIconTextGap(10);
             btnReset.setForeground(Color.RED);
             btnReset.setFont(new Font("Arial", Font.BOLD, 14));
 
@@ -419,10 +419,33 @@ public class PannelloVoti extends JPanel {
                 }
             });
             pnlReset.add(btnReset);
+
+            // 3. Ordine predefinito
+            JPanel pnlOrdine = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            pnlOrdine.setBackground(Color.WHITE);
+            pnlOrdine.setBorder(BorderFactory.createEmptyBorder(60, 0, 0, 0));
+            JLabel lblOrdine = new JLabel( "Ordine predefinito scadenze: ");
+            lblOrdine.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/calendar.png", 18, 18));
+            boolean ordinePreferito = GestoreDati.getOrdineScadenza();
+            JButton btnOrdine = new JButton(ordinePreferito ? "Aggiunta" : "Cronologico");
+            btnOrdine.addActionListener(ez -> {
+                String text1 = btnOrdine.getText();
+                if(text1.equals("Cronologico")) {
+                    btnOrdine.setText("Aggiunta");
+                    GestoreDati.salvaOrdineScadenze(true);
+                }
+                else {
+                    btnOrdine.setText("Cronologico");
+                    GestoreDati.salvaOrdineScadenze(false);
+                }
+            });
+            pnlOrdine.add(lblOrdine);
+            pnlOrdine.add(btnOrdine);
+
             // Aggiungiamo i blocchi al centro
-            centro.add(pnlVoto);
             centro.add(Box.createRigidArea(new Dimension(0, 15)));
             centro.add(pnlCfu);
+            centro.add(pnlOrdine);
             centro.add(pnlReset);
 
             pannelloImpostazioni.add(centro, BorderLayout.CENTER);
@@ -434,7 +457,6 @@ public class PannelloVoti extends JPanel {
             btnChiudi.addActionListener(chiudiEvent -> {
                 shadowOverlay.setVisible(false);
             });
-
             JPanel panelBottone = new JPanel(new FlowLayout(FlowLayout.CENTER));
             panelBottone.setBackground(Color.WHITE);
             panelBottone.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
@@ -448,43 +470,23 @@ public class PannelloVoti extends JPanel {
 
         Color coloreHover = new Color(48, 68, 88);
         Color coloreSfondo = mediaPanel.getBackground();
-
         refreshBut.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 refreshBut.setContentAreaFilled(true);
                 refreshBut.setBackground(coloreHover);
             }
-
             @Override
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 refreshBut.setContentAreaFilled(false);
                 refreshBut.setBackground(coloreSfondo);
             }
         });
-
         JPanel butPanel = new JPanel();
         butPanel.setBounds(710, 30, 40, 40);
         butPanel.setLayout(new BorderLayout());
         butPanel.add(refreshBut, BorderLayout.CENTER);
         this.add(butPanel);
-    }
-    // Metodo di supporto per calcolare la media al volo dentro le impostazioni
-    private double calcolaMediaPonderataPerImpostazioni() {
-        String[] voti = GestoreDati.getVotiEsamiRaw();
-        int sommaVoti = 0;
-        int sommaCfu = 0;
-        for (String v : voti) {
-            String[] p = v.split(";");
-            if (p.length >= 3) {
-                try {
-                    sommaVoti += Integer.parseInt(p[0]) * Integer.parseInt(p[2]);
-                    sommaCfu += Integer.parseInt(p[2]);
-                } catch (Exception ex) {
-                }
-            }
-        }
-        return sommaCfu == 0 ? 0 : (double) sommaVoti / sommaCfu;
     }
 
     public void refresh() {

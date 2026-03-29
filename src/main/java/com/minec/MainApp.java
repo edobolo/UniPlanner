@@ -67,7 +67,10 @@ public class MainApp {
         btnAggiungi.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/add.png", 20, 20));
 
         JButton btnScadenze = creaBottoneMenu(" Timer Scadenze", coloreSfondoMenu);
-        btnScadenze.addActionListener(e -> cardLayout.show(pannelloSchermate, "Scadenze"));
+        btnScadenze.addActionListener(e -> {
+            schermataScadenze.refreshOrdineScadenze();
+            cardLayout.show(pannelloSchermate, "Scadenze");
+        });
         btnScadenze.setIcon(creaIconaScalata("src/main/java/com/minec/res/icon/calendar.png", 20, 20));
 
         pannelloMenu.add(btnVoti);
