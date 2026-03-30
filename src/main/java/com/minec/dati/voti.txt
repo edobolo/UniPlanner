@@ -1,2 +1,6 @@
 30;Fondamenti di informatica;12
 28;Analisi 1;12
+18;Architettura degli elaboratori;12
+23;Fisica 1;12
+23;Algebra lineare e geometria;12
+27;Dati e algoritmi;12

@@ -11,6 +11,7 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
+import javax.swing.border.TitledBorder;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.minec.dati.GestoreDati;
@@ -42,6 +44,8 @@ public class PannelloVoti extends JPanel {
     private JPanel examLeftPanel = new JPanel();
     private JPanel votiEsamiPanel = new JPanel();
     private JPanel panelInfo = new JPanel();
+    private JPanel panelGraph = new JPanel();
+    private JPanel graphVoti = new JPanel();
 
     private int obiettivo = 25;
 
@@ -51,11 +55,13 @@ public class PannelloVoti extends JPanel {
         setExamLeft(examLeftPanel);
         setVotiEsami(votiEsamiPanel);
         setPanelInfo(panelInfo);
+        setGraphPanel(panelGraph);
         setOptionButton();
 
         this.add(mediaPanel);
         this.add(examLeftPanel);
         this.add(votiEsamiPanel);
+        this.add(panelGraph);
         this.add(panelInfo);
     }
 
@@ -137,7 +143,7 @@ public class PannelloVoti extends JPanel {
 
     public void setExamLeft(JPanel examLeftPanel) {
         examLeftPanel.setBounds(50, 255, 200, 80);
-        examLeftPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        examLeftPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 7, 5));
         examLeftPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2, true));
         int examAdded = GestoreDati.numeroEsami();
         int numVoti = GestoreDati.numeroVoti();
@@ -306,15 +312,9 @@ public class PannelloVoti extends JPanel {
     }
 
     public void setVotiEsami(JPanel votiEsamePanel) {
-        votiEsamePanel.setBounds(350, 70, 300, 400);
+        votiEsamePanel.setBounds(300, 35, 350, 270);
         votiEsamePanel.setLayout(new BorderLayout());
-        votiEsamePanel.setBorder(BorderFactory.createEmptyBorder());
-
-        JLabel text1 = new JLabel("Voti salvati");
-        text1.setFont(new Font("Arial", Font.BOLD, 16));
-        text1.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-        text1.setHorizontalAlignment(JLabel.CENTER);
-        votiEsamePanel.add(text1, BorderLayout.NORTH);
+        Border b = BorderFactory.createMatteBorder(2, 0, 0, 0, Color.GRAY);
 
         String[] votiRaw = GestoreDati.getVotiEsamiRaw();
         int numVoti = GestoreDati.numeroVoti();
@@ -323,7 +323,11 @@ public class PannelloVoti extends JPanel {
         votiOnly.setLayout(new BoxLayout(votiOnly, BoxLayout.Y_AXIS));
 
         JScrollPane scrollPane = new JScrollPane(votiOnly);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setBorder(BorderFactory.createTitledBorder(b, 
+                      "Voti salvati", 
+                            TitledBorder.CENTER, 
+                            TitledBorder.TOP, 
+                            new Font("Arial", Font.BOLD, 16)));
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.getVerticalScrollBar().setUnitIncrement(10);
@@ -348,6 +352,137 @@ public class PannelloVoti extends JPanel {
             votiOnly.add(panel);
             // Aggiungiamo un piccolo spazio vuoto tra una riga e l'altra per l'estetica
             votiOnly.add(Box.createRigidArea(new Dimension(0, 5)));
+        }
+    }
+
+    public void setGraphPanel(JPanel panelGraph) {
+        panelGraph.setBounds(300, 330 , 350, 150);
+        panelGraph.setLayout(new BorderLayout());
+        Border b = BorderFactory.createMatteBorder(2, 0, 0, 0, Color.GRAY);
+        panelGraph.setBorder(BorderFactory.createTitledBorder(b,
+                "Grafico voti",
+                TitledBorder.CENTER,
+                TitledBorder.TOP,
+                new Font("Arial", Font.BOLD, 16)));
+        GraphVotiMaker gp = new GraphVotiMaker(350, 150);
+        panelGraph.add(gp, BorderLayout.CENTER);
+    }
+    class GraphVotiMaker extends JPanel {
+        private static final int MIN_VOTO = 18;
+        private String[] etichette;
+        private int[] voti;
+
+        public GraphVotiMaker(int x, int y) {
+            this.setPreferredSize(new Dimension(x, y));
+            caricaVoti();
+        }
+        private void caricaVoti() {
+            String[] votiRaw = GestoreDati.getVotiEsamiRaw();
+            int numVoti = GestoreDati.numeroVoti();
+            ArrayList<Integer> valori = new ArrayList<>();
+            ArrayList<String> labels = new ArrayList<>();
+            for (int i = 0; i < numVoti && i < votiRaw.length; i++) {
+                String[] parti = votiRaw[i].split(";");
+                if (parti.length < 2) {
+                    continue;
+                }
+                try {
+                    int votoNumerico = parseVoto(parti[0]);
+                    valori.add(votoNumerico);
+                    labels.add(creaSigla(parti[1]));
+                } catch (NumberFormatException ex) {
+                }
+            }
+            voti = new int[valori.size()];
+            for (int i = 0; i < valori.size(); i++) {
+                voti[i] = valori.get(i);
+            }
+            etichette = labels.toArray(new String[0]);
+        }
+        private int parseVoto(String votoRaw) {
+            if (votoRaw.equalsIgnoreCase("30L") || votoRaw.equalsIgnoreCase("30 e lode")) {
+                return GestoreDati.getPesoLode();
+            }
+            return Integer.parseInt(votoRaw.trim());
+        }
+        private String creaSigla(String nomeEsame) {
+            String[] paroleDivise = nomeEsame.trim().split("\\s+");
+            StringBuilder sigla = new StringBuilder();
+            for (String parola : paroleDivise) {
+                if (!parola.isEmpty()) {
+                    sigla.append(Character.toUpperCase(parola.charAt(0)));
+                }
+            }
+            return sigla.length() == 0 ? "?" : sigla.toString();
+        }
+        @Override
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            // Abilita l'antialiasing per linee e testo
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            
+            // Definisci i colori in base al tema
+            boolean isDarkMode = GestoreDati.isTemaScuro();
+            Color colorAssi = isDarkMode ? new Color(150, 150, 150) : Color.GRAY;
+            Color colorGridLine = isDarkMode ? new Color(80, 80, 80) : new Color(210, 210, 210);
+            Color colorTesto = isDarkMode ? new Color(200, 200, 200) : Color.DARK_GRAY;
+            Color colorLinea = new Color(36, 166, 6); // Verde sempre uguale
+            
+            final int left = 30;
+            final int right = 10;
+            final int top = 12;
+            final int bottom = 22;
+            int graphW = getWidth() - left - right;
+            int graphH = getHeight() - top - bottom;
+            if (graphW <= 0 || graphH <= 0) {
+                g2.dispose();
+                return;
+            }
+            // Disegna assi
+            g2.setColor(colorAssi);
+            g2.drawLine(left, top + graphH, left + graphW, top + graphH);
+            g2.drawLine(left, top, left, top + graphH);
+
+            if (voti.length == 0) {
+                g2.setColor(colorTesto);
+                g2.drawString("Nessun voto disponibile", left + 35, top + (graphH / 2));
+                g2.dispose();
+                return;
+            }
+            int maxVoto = Math.max(30, GestoreDati.getPesoLode());
+            int rangeVoti = Math.max(1, maxVoto - MIN_VOTO);
+            
+            // Disegna griglia di livelli
+            g2.setColor(colorGridLine);
+            for (int livello = MIN_VOTO; livello <= 30; livello += 3) {
+                int yLinea = top + ((maxVoto - livello) * graphH) / rangeVoti;
+                g2.drawLine(left, yLinea, left + graphW, yLinea);
+            }
+            int prevX = -1;
+            int prevY = -1;
+            g2.setColor(colorLinea);
+
+            // Disegna la linea del grafico e i punti
+            for (int i = 0; i < voti.length; i++) {
+                int x = voti.length == 1
+                        ? left + (graphW / 2)
+                        : left + (i * graphW) / (voti.length - 1);
+                int y = top + ((maxVoto - voti[i]) * graphH) / rangeVoti;
+                if (i > 0) {
+                    g2.drawLine(prevX, prevY, x, y);
+                }
+                g2.fillOval(x - 3, y - 3, 6, 6);
+                if (i < etichette.length) {
+                    g2.setColor(colorTesto);
+                    g2.drawString(etichette[i], x - 6, top + graphH + 15);
+                    g2.setColor(colorLinea);
+                }
+                prevX = x;
+                prevY = y;
+            }
+            g2.dispose();
         }
     }
 
@@ -629,6 +764,8 @@ public class PannelloVoti extends JPanel {
         setVotiEsami(votiEsamiPanel);
         panelInfo.removeAll();
         setPanelInfo(panelInfo);
+        panelGraph.removeAll();
+        setGraphPanel(panelGraph);
 
         this.revalidate();
         this.repaint();
