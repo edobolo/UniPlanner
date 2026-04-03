@@ -1,9 +1,4 @@
 Fondamenti di informatica;true
 Analisi 1;true
-Architettura degli elaboratori;true
-Fisica 1;true
-Algebra lineare e geometria;true
-Dati e algoritmi;true
-Fondamenti di analisi matematica e probabilità;false
-Elementi di fisica 2;false
-Teoria dei circuiti;false
+Algebra lineare e geometria;false
+Architettura degli elaboratori;false

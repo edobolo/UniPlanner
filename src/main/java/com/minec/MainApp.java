@@ -14,6 +14,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.extras.FlatSVGUtils;
 import com.minec.schermate.PannelloAggiungi;
 import com.minec.schermate.PannelloScadenze;
 import com.minec.schermate.PannelloVoti;
@@ -36,6 +37,7 @@ public class MainApp {
         finestra.setSize(800, 600);
         finestra.setResizable(false);
         finestra.setLocationRelativeTo(null);
+        finestra.setIconImages(FlatSVGUtils.createWindowIconImages("/icone/u.svg"));
 
         CardLayout cardLayout = new CardLayout();
         JPanel pannelloSchermate = new JPanel(cardLayout);
@@ -59,11 +61,17 @@ public class MainApp {
 
         // Creiamo i bottoni usando il nostro metodo personalizzato
         JButton btnVoti = creaBottoneMenu(" Voti e Media", coloreSfondoMenu);
-        btnVoti.addActionListener(e -> cardLayout.show(pannelloSchermate, "Voti"));
+        btnVoti.addActionListener(e -> {
+            cardLayout.show(pannelloSchermate, "Voti");
+            schermataVoti.refresh();
+        });
         btnVoti.setIcon(new FlatSVGIcon("icone/bar.svg", 24, 24));
 
         JButton btnAggiungi = creaBottoneMenu(" Aggiungi Esame", coloreSfondoMenu);
-        btnAggiungi.addActionListener(e -> cardLayout.show(pannelloSchermate, "Aggiungi"));
+        btnAggiungi.addActionListener(e -> {
+            cardLayout.show(pannelloSchermate, "Aggiungi");
+            schermataAggiungi.aggiornaTutto();
+        });
         btnAggiungi.setIcon(new FlatSVGIcon("icone/plus.svg", 24, 24));
 
         JButton btnScadenze = creaBottoneMenu(" Timer Scadenze", coloreSfondoMenu);

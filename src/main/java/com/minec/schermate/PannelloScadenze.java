@@ -20,6 +20,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
@@ -31,6 +32,7 @@ public class PannelloScadenze extends JPanel {
     private JPanel scadenzeListPanel;
     private JComboBox<String> comboEsami;
     private JButton btnOrdina;
+    private DatePicker datePicker;
     private boolean ordinaPerData = GestoreDati.getOrdineScadenza();
 
     public PannelloScadenze() {
@@ -50,8 +52,10 @@ public class PannelloScadenze extends JPanel {
         caricaEsamiNelMenu();
         moduloPanel.add(comboEsami);
 
-        DatePicker datePicker = new DatePicker();
+        datePicker = new DatePicker();
         datePicker.setBounds(370, 80, 200, 35);
+        datePicker.setBackground(getBackground());
+        applicaTemaCampoData();
 
         JButton btnCalendario = datePicker.getComponentToggleCalendarButton();
         btnCalendario.setText("");
@@ -109,6 +113,28 @@ public class PannelloScadenze extends JPanel {
             btnOrdina.setText(ordinaPerData ? "Ordina: Aggiunta" : "Ordina: Cronologico");
             aggiornaListaScadenze();
         });
+    }
+
+    private void applicaTemaCampoData() {
+        if (datePicker == null) {
+            return;
+        }
+        JTextField campoData = datePicker.getComponentDateTextField();
+        if (GestoreDati.isTemaScuro()) {
+            campoData.setBackground(new Color(60, 63, 65));
+            campoData.setForeground(new Color(230, 230, 230));
+            campoData.setCaretColor(new Color(230, 230, 230));
+        } else {
+            campoData.setBackground(Color.WHITE);
+            campoData.setForeground(Color.BLACK);
+            campoData.setCaretColor(Color.BLACK);
+        }
+    }
+
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        applicaTemaCampoData();
     }
 
     private void caricaEsamiNelMenu() {

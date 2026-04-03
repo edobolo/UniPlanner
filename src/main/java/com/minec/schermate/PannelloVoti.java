@@ -14,6 +14,8 @@ import java.awt.GridLayout;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
@@ -21,6 +23,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -32,6 +35,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.minec.dati.GestoreDati;
@@ -45,9 +49,6 @@ public class PannelloVoti extends JPanel {
     private JPanel votiEsamiPanel = new JPanel();
     private JPanel panelInfo = new JPanel();
     private JPanel panelGraph = new JPanel();
-    private JPanel graphVoti = new JPanel();
-
-    private int obiettivo = 25;
 
     public PannelloVoti() {
         this.setLayout(null);
@@ -234,37 +235,37 @@ public class PannelloVoti extends JPanel {
         panel2.add(title2, BorderLayout.NORTH);
         panel2.add(baseLaurea, BorderLayout.CENTER);
 
-        //pannello obiettivo
+        // pannello obiettivo
         JLabel title3 = new JLabel("Obiettivo");
         title3.setHorizontalAlignment(JLabel.CENTER);
         JPanel votoOb = new JPanel();
         votoOb.setLayout(new GridLayout(2, 1));
         votoOb.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
+        // 1. LEGGE L'OBIETTIVO SALVATO!
+        int obiettivoSalvato = GestoreDati.getObiettivoMedia();
         panel3.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 String newOb = JOptionPane.showInputDialog(PannelloVoti.this, "Inserire obiettivo");
                 if (newOb != null && !newOb.trim().isEmpty()) {
                     try {
-                        obiettivo = Integer.parseInt(newOb);
-                        if (obiettivo < 18 || obiettivo > 30) {
+                        int nuovoObiettivo = Integer.parseInt(newOb);
+                        if (nuovoObiettivo < 18 || nuovoObiettivo > 30) {
                             throw new NumberFormatException();
                         }
+                        // 2. SALVA IL NUOVO OBIETTIVO NEL FILE!
+                        GestoreDati.salvaObiettivoMedia(nuovoObiettivo);
                         refresh();
                     } catch (NumberFormatException e1) {
                         JOptionPane.showMessageDialog(PannelloVoti.this, "Inserire un voto valido tra 18 e 30");
-                        obiettivo = 25;
                     }
-                } else {
-                    obiettivo = 25;
-                    refresh();
                 }
             }
         });
         panel3.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        double differenza = mediaVoti - obiettivo;
+        double differenza = mediaVoti - obiettivoSalvato;
         differenza = Math.round(differenza * 10.0) / 10.0;
-        JLabel obb = new JLabel(obiettivo + "/30");
+        JLabel obb = new JLabel(obiettivoSalvato + "/30");
         String testoDifferenza = (differenza > 0 ? "+" : "") + differenza;
         JLabel diff = new JLabel(testoDifferenza);
         if (differenza >= 0) {
@@ -703,11 +704,37 @@ public class PannelloVoti extends JPanel {
             pnlTema.add(lblTema);
             pnlTema.add(chkTema);
 
+            // --- 6. Bottone ESPORTA/IMPORTA EXCEL ---
+            JPanel pnlImportExport = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
+            pnlImportExport.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+            // Bottone ESPORTA
+            JButton btnExport = new JButton("Esporta CSV");
+            btnExport.setFont(new Font("Arial", Font.BOLD, 14));
+            btnExport.setForeground(new Color(33, 115, 70)); // Verde Excel
+            btnExport.setIcon(new FlatSVGIcon("icone/excel.svg", 22, 22));
+            btnExport.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnExport.addActionListener(ev -> {
+                esportaLibrettoInExcel(pannelloImpostazioni);
+            });
+            // Bottone IMPORTA
+            JButton btnImport = new JButton("Importa CSV");
+            btnImport.setFont(new Font("Arial", Font.BOLD, 14));
+            btnImport.setForeground(new Color(0, 102, 204)); // Blu classico
+            btnImport.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnImport.addActionListener(ev -> {
+                importaLibrettoDaExcel(pannelloImpostazioni);
+                shadowOverlay.setVisible(false);
+                refresh();
+            });
+            pnlImportExport.add(btnExport);
+            pnlImportExport.add(btnImport);
+
             // ASSEMBLIAMO I PEZZI NELL'ORDINE GIUSTO NEL CENTRO
             centro.add(Box.createRigidArea(new Dimension(0, 10)));
             centro.add(pnlCfu);
             centro.add(pnlOrdine);
             centro.add(pnlTema);
+            centro.add(pnlImportExport);
             centro.add(Box.createRigidArea(new Dimension(0, 10)));
             centro.add(pnlGruppoParametri); // <--- Inserito qui!
             centro.add(pnlReset);
@@ -753,6 +780,168 @@ public class PannelloVoti extends JPanel {
         butPanel.setLayout(new BorderLayout());
         butPanel.add(refreshBut, BorderLayout.CENTER);
         this.add(butPanel);
+    }
+
+    private void esportaLibrettoInExcel(JPanel parentComponent) {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Esporta Backup Completo (CSV)");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("File CSV", "csv"));
+        int scelta = fileChooser.showSaveDialog(parentComponent);
+        if (scelta == JFileChooser.APPROVE_OPTION) {
+            java.io.File fileDaSalvare = fileChooser.getSelectedFile();
+            String percorso = fileDaSalvare.getAbsolutePath();
+            if (!percorso.toLowerCase().endsWith(".csv"))
+                percorso += ".csv";
+            try (java.io.FileWriter fw = new java.io.FileWriter(percorso)) {
+                // --- SEZIONE 1: TUTTI GLI ESAMI ---
+                fw.write("### ESAMI ###\n");
+                fw.write("NOME ESAME;VOTO;CFU;COMPLETATO\n");
+                String[] tuttiEsami = GestoreDati.getEsamiSalvatiRaw(); // Prende tutti i nomi
+                String[] tuttiVoti = GestoreDati.getVotiEsamiRaw(); // Prende solo quelli coi voti
+                int sommaVoti = 0;
+                int sommaCfu = 0;
+                for (String esameRaw : tuttiEsami) {
+                    if (esameRaw == null)
+                        continue;
+                    String[] parti = esameRaw.split(";");
+                    String nome = parti[0];
+                    boolean completato = Boolean.parseBoolean(parti[1]);
+                    String votoDaScrivere = "";
+                    String cfuDaScrivere = "0";
+                    if (completato) {
+                        for (String v : tuttiVoti) {
+                            if (v == null)
+                                continue;
+                            String[] pVoto = v.split(";");
+                            if (pVoto.length >= 2 && pVoto[1].equals(nome)) {
+                                votoDaScrivere = pVoto[0];
+                                if (pVoto.length > 2)
+                                    cfuDaScrivere = pVoto[2];
+
+                                try { // Calcoliamo i totali per il foglio Excel
+                                    int cfuNum = Integer.parseInt(cfuDaScrivere);
+                                    int votoNum = (votoDaScrivere.equalsIgnoreCase("30L")
+                                            || votoDaScrivere.equalsIgnoreCase("30 E LODE"))
+                                                    ? GestoreDati.getPesoLode()
+                                                    : Integer.parseInt(votoDaScrivere);
+                                    sommaVoti += votoNum * cfuNum;
+                                    sommaCfu += cfuNum;
+                                } catch (Exception e) {
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    fw.write(nome + ";" + votoDaScrivere + ";" + cfuDaScrivere + ";" + completato + "\n");
+                }
+                fw.write("\nTOTALE CFU;" + sommaCfu + ";\n");
+                if (sommaCfu > 0) {
+                    double media = Math.round(((double) sommaVoti / sommaCfu) * 100.0) / 100.0;
+                    fw.write("MEDIA PONDERATA;" + media + ";\n");
+                }
+
+                // --- SEZIONE 2: IMPOSTAZIONI GLOBALI ---
+                fw.write("\n### IMPOSTAZIONI ###\n");
+                fw.write("OBIETTIVO_CFU;" + GestoreDati.getObiettivoCFU() + "\n");
+                fw.write("OBIETTIVO_MEDIA;" + GestoreDati.getObiettivoMedia() + "\n");
+                fw.write("TEMA_SCURO;" + GestoreDati.isTemaScuro() + "\n");
+                fw.write("ORDINE_SCADENZE;" + GestoreDati.getOrdineScadenza() + "\n");
+                fw.write("LODE;" + GestoreDati.getImpostazione("LODE", "30") + "\n");
+                fw.write("BONUS_LODE;" + GestoreDati.getImpostazione("BONUS_LODE", "0") + "\n");
+
+                // --- SEZIONE 3: SCADENZE ---
+                fw.write("\n### SCADENZE ###\n");
+                String[] scadenze = GestoreDati.getScadenzeRaw();
+                if (scadenze != null) {
+                    for (String sc : scadenze) {
+                        if (sc != null && !sc.trim().isEmpty()) {
+                            fw.write(sc + "\n");
+                        }
+                    }
+                }
+                JOptionPane.showMessageDialog(parentComponent, "Backup esportato con successo in:\n" + percorso);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(parentComponent, "Errore durante l'esportazione.", "Errore",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    private void importaLibrettoDaExcel(JPanel parentComponent) {
+        if (GestoreDati.getEsamiSalvatiRaw().length != 0 || GestoreDati.getScadenzeRaw().length != 0 || 
+            GestoreDati.getVotiEsamiRaw().length != 0) {
+            JOptionPane.showMessageDialog(this, "Assicurati di aver cancellato tutti i dati");
+            return;
+        }
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Importa Backup Completo (CSV)");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("File CSV", "csv"));
+        int scelta = fileChooser.showOpenDialog(parentComponent);
+        if (scelta == JFileChooser.APPROVE_OPTION) {
+            java.io.File fileDaLeggere = fileChooser.getSelectedFile();
+            try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(fileDaLeggere))) {
+                String linea;
+                String sezioneAttuale = "ESAMI";
+                int esamiImportati = 0;
+                while ((linea = br.readLine()) != null) {
+                    linea = linea.trim();
+                    if (linea.isEmpty()) continue;
+                    // Gestione delle Sezioni
+                    if (linea.startsWith("### ESAMI ###")) { sezioneAttuale = "ESAMI"; continue; }
+                    if (linea.startsWith("### IMPOSTAZIONI ###")) { sezioneAttuale = "IMPOSTAZIONI"; continue; }
+                    if (linea.startsWith("### SCADENZE ###")) { sezioneAttuale = "SCADENZE"; continue; }
+                    if (sezioneAttuale.equals("ESAMI")) {
+                        if (linea.startsWith("NOME ESAME") || linea.startsWith("TOTALE") || linea.startsWith("MEDIA")) continue;
+                        
+                        String[] parti = linea.split(";");
+                        if (parti.length >= 1) { 
+                            String nomeEsame = parti[0];
+                            String voto = (parti.length > 1) ? parti[1].trim() : "";
+                            String cfuStr = (parti.length > 2) ? parti[2].trim() : "0";
+                            boolean completato = (parti.length > 3) ? Boolean.parseBoolean(parti[3].trim()) : (!voto.isEmpty());
+                            GestoreDati.salvaEsame(nomeEsame);
+                            if (completato) {
+                                GestoreDati.aggiornaStatoEsame(nomeEsame, true);
+                                if (!voto.isEmpty()) GestoreDati.setVotiEsami(voto, nomeEsame, 0);
+                                try { GestoreDati.addCfuEsame(nomeEsame, Integer.parseInt(cfuStr)); } catch (Exception e){}
+                            }
+                            esamiImportati++;
+                        }
+                    } 
+                    else if (sezioneAttuale.equals("IMPOSTAZIONI")) {
+                        String[] parti = linea.split(";");
+                        if (parti.length == 2) {
+                            String chiave = parti[0];
+                            String valore = parti[1];
+                            switch (chiave) {
+                                case "OBIETTIVO_CFU": GestoreDati.salvaObiettivoCfu(Integer.parseInt(valore)); break;
+                                case "OBIETTIVO_MEDIA": GestoreDati.salvaObiettivoMedia(Integer.parseInt(valore)); break;
+                                case "TEMA_SCURO": GestoreDati.salvaTemaScuro(Boolean.parseBoolean(valore)); break;
+                                case "ORDINE_SCADENZE": GestoreDati.salvaOrdineScadenze(Boolean.parseBoolean(valore)); break;
+                                case "LODE": GestoreDati.salvaImpostazione("LODE", valore); break;
+                                case "BONUS_LODE": GestoreDati.salvaImpostazione("BONUS_LODE", valore); break;
+                            }
+                        }
+                    }
+                    else if (sezioneAttuale.equals("SCADENZE")) {
+                        String[] parti = linea.split(";");
+                        if (parti.length >= 2) {
+                            String nomeEsameScadenza = parti[0];
+                            String dataScadenza = parti[1];
+                            GestoreDati.salvaScadenza(nomeEsameScadenza, dataScadenza);
+                        }
+                    }
+                }
+                if (GestoreDati.isTemaScuro()) {
+                    javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatDarkLaf());
+                } else {
+                    javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatLightLaf());
+                }
+                SwingUtilities.updateComponentTreeUI(SwingUtilities.getWindowAncestor(this));
+                JOptionPane.showMessageDialog(parentComponent, "Backup ripristinato!\nSono stati importati " + esamiImportati + " esami e le tue impostazioni.");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(parentComponent, "Errore durante l'importazione del file.", "Errore", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     public void refresh() {

@@ -47,8 +47,7 @@ public class PannelloAggiungi extends JPanel {
         aggiornaTutto();
     }
 
-    // Metodo unico per aggiornare sia la lista che il menu a tendina
-    private void aggiornaTutto() {
+    public void aggiornaTutto() {
         // 1. Aggiorna la lista grafica (il centro)
         esamiPanel.removeAll();
         String[] esami = GestoreDati.getEsamiSalvatiRaw();
