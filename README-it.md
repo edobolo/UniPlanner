@@ -20,7 +20,7 @@ Gestisci i tuoi esami, monitora i CFU, tieni d'occhio le scadenze e calcola la t
 
 L'applicazione è stata pacchettizzata per essere utilizzata facilmente su Windows senza dover installare Java.
 
-1. Vai nella sezione **Releases** e scarica il file `Setup_UniPlanner.exe`.
+1. Vai nella sezione **Releases** e scarica il file `Setup_UniPlanner.zip`.
 2. Fai doppio clic sul file scaricato.
 3. Segui la breve procedura guidata per installare l'app e creare un comodo collegamento sul Desktop.
 4. Avvia UniPlanner e inizia a organizzare il tuo studio!
