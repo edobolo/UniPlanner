@@ -20,10 +20,10 @@ Manage your exams, track your university credits (CFU), monitor deadlines, and c
 
 The application has been packaged for easy use on Windows without needing to install Java.
 
-1. Go to the **Releases** section of this repository and download the `Setup_UniPlanner.exe` file.
-2. Double-click the downloaded file.
-3. Follow the short setup wizard to install the app and create a handy Desktop shortcut.
-4. Launch UniPlanner and start organizing your studies!
+1. Go to the **Releases** section of this repository and download the `Setup_UniPlanner.zip` file.
+3. Double-click the downloaded file.
+4. Follow the short setup wizard to install the app and create a handy Desktop shortcut.
+5. Launch UniPlanner and start organizing your studies!
 
 ## 🛠️ Technologies Used
 
