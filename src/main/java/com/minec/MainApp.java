@@ -35,7 +35,7 @@ public class MainApp {
         JFrame finestra = new JFrame("UniPlanner");
         finestra.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         finestra.setSize(800, 600);
-        finestra.setResizable(false);
+        finestra.setResizable(true);
         finestra.setLocationRelativeTo(null);
         finestra.setIconImages(FlatSVGUtils.createWindowIconImages("/icone/u.svg"));
 

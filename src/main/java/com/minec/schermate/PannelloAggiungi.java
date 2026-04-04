@@ -7,7 +7,9 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.font.TextAttribute;
 import java.util.Map;
+import java.util.concurrent.Flow;
 
+import javax.sound.midi.MidiChannel;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -19,6 +21,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.border.Border;
 
 import com.minec.dati.GestoreDati;
 
@@ -227,41 +230,38 @@ public class PannelloAggiungi extends JPanel {
     }
 
     public void setAddExamLayout(JPanel aggiungiEsame, JPanel esamiAggiunti) {
-        aggiungiEsame.setLayout(null);
+        aggiungiEsame.setLayout(new BorderLayout());
 
+        // --- Pannello titolo ---
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         JLabel title = new JLabel("Aggiungi gli esami del tuo corso");
         title.setFont(new Font("Arial", Font.BOLD, 26));
-        title.setBounds(200, 20, 700, 40);
-        aggiungiEsame.add(title);
+        topPanel.add(title);
+        aggiungiEsame.add(topPanel, BorderLayout.NORTH);
 
+        // ---Pannello aggiunta esami---
+        JPanel midPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         JLabel text1 = new JLabel("Nome Esame:");
         text1.setFont(new Font("Arial", Font.BOLD, 20));
-        text1.setBounds(60, 80, 150, 40);
-        aggiungiEsame.add(text1);
-
         JTextField campoNome = new JTextField();
-        campoNome.setBounds(250, 80, 300, 40);
         campoNome.setFont(new Font("Arial", Font.PLAIN, 15));
         campoNome.setHorizontalAlignment(JTextField.CENTER);
-        aggiungiEsame.add(campoNome);
-
         JButton btnSalva = new JButton("Salva Esame");
-        btnSalva.setBounds(600, 80, 150, 40);
-        aggiungiEsame.add(btnSalva);
+        midPanel.add(text1);
+        midPanel.add(campoNome);
+        midPanel.add(btnSalva);
+        aggiungiEsame.add(midPanel, BorderLayout.CENTER);
 
-        // Sezione RIMOZIONE (creata una volta sola)
+        // ---Pannello rimozione
+        JPanel bottomPanel = new JPanel();
         JLabel textRem = new JLabel("Rimuovi esame:");
         textRem.setFont(new Font("Arial", Font.BOLD, 20));
-        textRem.setBounds(60, 170, 200, 40);
-        aggiungiEsame.add(textRem);
-
-        tendina = new JComboBox<>(); // Inizializzato vuoto
-        tendina.setBounds(290, 170, 200, 40);
-        aggiungiEsame.add(tendina);
-
+        tendina = new JComboBox<>();
         JButton btnRemove = new JButton("Rimuovi");
-        btnRemove.setBounds(550, 170, 150, 40);
-        aggiungiEsame.add(btnRemove);
+        bottomPanel.add(textRem);
+        bottomPanel.add(tendina);
+        bottomPanel.add(btnRemove);
+        aggiungiEsame.add(bottomPanel, BorderLayout.SOUTH);
 
         // LOGICA PULSANTI
         btnSalva.addActionListener(e -> {
