@@ -38,10 +38,10 @@ public class GestoreDati {
 
     // --- FILE ESAMI ---
 
-    public static void salvaEsame(String nomeEsame) {
+    public static void salvaEsame(String nomeEsame, boolean idoneita) {
         String rigaFinal = nomeEsame;
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileEsami, true))) {
-            bw.write(rigaFinal + ";false");
+            bw.write(rigaFinal + ";false;" + idoneita);
             bw.newLine();
             salvato = true;
         } catch (IOException e) {
@@ -77,16 +77,46 @@ public class GestoreDati {
                     continue;
 
                 String[] parti = riga.split(";");
-                if (parti[0].equals(nomeEsame)) {
-                    bw.write(parti[0] + ";" + completato);
+                if (parti.length == 0)
+                    continue;
+
+                String nomeRiga = parti[0];
+                boolean idoneita = estraiIdoneita(parti);
+                if (nomeRiga.equals(nomeEsame)) {
+                    bw.write(nomeRiga + ";" + completato + ";" + idoneita);
                 } else {
-                    bw.write(riga);
+                    bw.write(nomeRiga + ";" + estraiCompletato(parti) + ";" + idoneita);
                 }
                 bw.newLine();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static boolean estraiCompletato(String[] parti) {
+        if (parti.length > 1) {
+            if ("true".equalsIgnoreCase(parti[1]) || "false".equalsIgnoreCase(parti[1])) {
+                return Boolean.parseBoolean(parti[1]);
+            }
+            if (parti[1].startsWith("true")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean estraiIdoneita(String[] parti) {
+        if (parti.length > 2) {
+            return Boolean.parseBoolean(parti[2]);
+        }
+        if (parti.length > 1) {
+            // Compatibilita con vecchio formato errato: "falsetrue" o "truefalse"
+            if (parti[1].endsWith("true")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static String[] getEsamiSalvatiRaw() {
@@ -142,6 +172,7 @@ public class GestoreDati {
 
     public static void addCfuEsame(String nome, int CFU) {
         String[] line = getVotiEsamiRaw();
+        boolean trovato = false;
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileVoti))) {
             for (String riga : line) {
                 if (riga == null)
@@ -149,9 +180,15 @@ public class GestoreDati {
                 String[] parti = riga.split(";");
                 if (parti.length > 1 && parti[1].equals(nome)) {
                     bw.write(parti[0] + ";" + parti[1] + ";" + CFU);
+                    trovato = true;
                 } else {
                     bw.write(riga);
                 }
+                bw.newLine();
+            }
+            // Se non esiste ancora un voto per l'esame (caso idoneita), creiamo una riga tecnica.
+            if (!trovato) {
+                bw.write("IDO;" + nome + ";" + CFU);
                 bw.newLine();
             }
         } catch (IOException e) {

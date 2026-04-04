@@ -2,33 +2,49 @@ package com.minec.schermate;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.font.TextAttribute;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Flow;
 
-import javax.sound.midi.MidiChannel;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
-import javax.swing.border.Border;
+import javax.swing.SwingUtilities;
 
 import com.minec.dati.GestoreDati;
 
 public class PannelloAggiungi extends JPanel {
 
+    private static final int BASE_WIDTH = 1280;
+    private static final int BASE_HEIGHT = 720;
+    private static final int BASE_EXAM_CARD_WIDTH = 750;
+    private static final int BASE_EXAM_CARD_HEIGHT = 50;
+    private static final int BASE_EXAM_GAP = 5;
+    private static final int BASE_EXAM_SIDE_MARGIN = 16;
+    private static final int BASE_EXAM_HORIZONTAL_PADDING = 10;
+    private static final int BASE_EXAM_VERTICAL_PADDING = 10;
+    private static final float MIN_SCALE = 1.0f;
+    private static final float MAX_SCALE = 1.8f;
+
     private int index = 0;
-    private PannelloVoti pv;
+    private float currentScale = 1.0f;
+    private final PannelloVoti pv;
     private JPanel esamiPanel;
     private JComboBox<String> tendina;
 
@@ -37,20 +53,27 @@ public class PannelloAggiungi extends JPanel {
 
         JPanel esamiAggiuntiPanel = new JPanel();
         JPanel aggiungiEsamePanel = new JPanel();
-
-        aggiungiEsamePanel.setPreferredSize(new Dimension(800, 240));
         this.setLayout(new BorderLayout());
         // Inizializziamo prima la struttura
-        setAddedExamsLayout(esamiAggiuntiPanel);
-        setAddExamLayout(aggiungiEsamePanel, esamiAggiuntiPanel);
+        initAddedExamsLayout(esamiAggiuntiPanel);
+        initAddExamLayout(aggiungiEsamePanel);
 
         this.add(aggiungiEsamePanel, BorderLayout.NORTH);
         this.add(esamiAggiuntiPanel, BorderLayout.CENTER);
+
+        setupResponsiveScaling();
         // Carichiamo i dati iniziali
-        aggiornaTutto();
+        refreshDataUI();
+
+        // Prima scalatura appena il pannello viene mostrato.
+        SwingUtilities.invokeLater(this::applyResponsiveScaling);
     }
 
     public void aggiornaTutto() {
+        refreshDataUI();
+    }
+
+    private void refreshDataUI() {
         // 1. Aggiorna la lista grafica (il centro)
         esamiPanel.removeAll();
         String[] esami = GestoreDati.getEsamiSalvatiRaw();
@@ -61,6 +84,7 @@ public class PannelloAggiungi extends JPanel {
                 index++;
             }
         }
+        applyExamRowScaling();
         // 2. Aggiorna il JComboBox
         tendina.removeAllItems();
         for (String s : esami) {
@@ -81,32 +105,32 @@ public class PannelloAggiungi extends JPanel {
         // la stringa 'raw' viene da esami.txt (es. "Analisi 1;true")
         String[] parti = raw.split(";");
         String nome = parti[0];
-        boolean isCompletato = Boolean.parseBoolean(parti[1]);
+        boolean isCompletato = estraiCompletato(parti);
+        boolean isIdoneita = estraiIdoneita(parti);
 
         // --- NOVITÀ: Cerca i CFU nel file voti.txt ---
         int cfuSalvati = 0;
-        if (isCompletato) {
-            String[] votiRaw = GestoreDati.getVotiEsamiRaw();
-            for (String rigaVoto : votiRaw) {
-                String[] pVoto = rigaVoto.split(";");
-                // Se la riga corrisponde al nostro esame e ha 3 elementi (Voto;Nome;CFU)
-                if (pVoto.length >= 2 && pVoto[1].equals(nome)) {
-                    if (pVoto.length > 2) {
-                        try {
-                            cfuSalvati = Integer.parseInt(pVoto[2]);
-                        } catch (NumberFormatException e) {
-                        }
+        String[] votiRaw = GestoreDati.getVotiEsamiRaw();
+        for (String rigaVoto : votiRaw) {
+            String[] pVoto = rigaVoto.split(";");
+            // Se la riga corrisponde al nostro esame e ha 3 elementi (Voto;Nome;CFU)
+            if (pVoto.length >= 2 && pVoto[1].equals(nome)) {
+                if (pVoto.length > 2) {
+                    try {
+                        cfuSalvati = Integer.parseInt(pVoto[2]);
+                    } catch (NumberFormatException e) {
                     }
-                    break;
                 }
+                break;
             }
         }
 
         JPanel panelSingoloEsame = new JPanel(new BorderLayout());
-        Dimension dimensioneFissa = new Dimension(750, 50);
-        panelSingoloEsame.setPreferredSize(dimensioneFissa);
-        panelSingoloEsame.setMaximumSize(dimensioneFissa);
-        panelSingoloEsame.setMinimumSize(dimensioneFissa);
+        Dimension dimensioneCard = getScaledExamCardDimension();
+        panelSingoloEsame.setPreferredSize(dimensioneCard);
+        panelSingoloEsame.setMaximumSize(dimensioneCard);
+        panelSingoloEsame.setMinimumSize(dimensioneCard);
+        panelSingoloEsame.setAlignmentX(Component.LEFT_ALIGNMENT);
         panelSingoloEsame.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
 
         JLabel nomeEsameLabel = new JLabel(nome);
@@ -128,7 +152,7 @@ public class PannelloAggiungi extends JPanel {
             pannelloCfuLocale.add(textCfu);
             buttonCFU.setVisible(false);
         } else {
-            // Se non ho i CFU, il bottone si vede SOLO se l'esame ha il voto (isCompletato)
+            // Il bottone CFU appare solo quando l'esame e' marcato come completato.
             buttonCFU.setVisible(isCompletato);
         }
 
@@ -148,6 +172,11 @@ public class PannelloAggiungi extends JPanel {
                 pannelloCfuLocale.add(textCfu);
                 buttonCFU.setVisible(false); // Nasconde il bottone
 
+                if (isIdoneita) {
+                    GestoreDati.aggiornaStatoEsame(nome, true);
+                    autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
+                }
+
                 pannelloCfuLocale.revalidate();
                 pannelloCfuLocale.repaint();
                 pv.refresh();
@@ -155,105 +184,263 @@ public class PannelloAggiungi extends JPanel {
         });
 
         // Azione Checkbox Voti
-        // Azione Checkbox Voti
-        markAsDone.addActionListener(e -> {
-            if (markAsDone.isSelected()) {
-                String input = JOptionPane.showInputDialog(this, "Inserire il voto per " + nome);
-                if (input != null && !input.trim().isEmpty()) {
-                    String votoPulito = input.trim().toUpperCase(); // Rimuove spazi e fa tutto maiuscolo (30L)
-                    boolean valido = false;
-                    String votoDaSalvare = "";
-                    // 1. Controlliamo se è un 30L
-                    if (votoPulito.equals("30L") || votoPulito.equals("30 E LODE")) {
-                        valido = true;
-                        votoDaSalvare = "30L"; // Standardizziamo il formato per il salvataggio
-                    } else {
-                        // 2. Altrimenti, controlliamo se è un numero valido
-                        try {
-                            int votoNumerico = Integer.parseInt(votoPulito);
-                            if (votoNumerico >= 18 && votoNumerico <= 30) {
-                                valido = true;
-                                votoDaSalvare = String.valueOf(votoNumerico);
+        if (!isIdoneita) {
+            markAsDone.addActionListener(e -> {
+                if (markAsDone.isSelected()) {
+                    String input = JOptionPane.showInputDialog(this, "Inserire il voto per " + nome);
+                    if (input != null && !input.trim().isEmpty()) {
+                        String votoPulito = input.trim().toUpperCase(); // Rimuove spazi e fa tutto maiuscolo (30L)
+                        boolean valido = false;
+                        String votoDaSalvare = "";
+                        // 1. Controlliamo se è un 30L
+                        if (votoPulito.equals("30L") || votoPulito.equals("30 E LODE")) {
+                            valido = true;
+                            votoDaSalvare = "30L"; // Standardizziamo il formato per il salvataggio
+                        } else {
+                            // 2. Altrimenti, controlliamo se è un numero valido
+                            try {
+                                int votoNumerico = Integer.parseInt(votoPulito);
+                                if (votoNumerico >= 18 && votoNumerico <= 30) {
+                                    valido = true;
+                                    votoDaSalvare = String.valueOf(votoNumerico);
+                                }
+                            } catch (NumberFormatException ex) {
+                                // Non è né "30L" né un numero
                             }
-                        } catch (NumberFormatException ex) {
-                            // Non è né "30L" né un numero
                         }
-                    }
-                    if (valido) {
-                        // Se ha superato i test, salviamo usando il GestoreDati!
-                        GestoreDati.setVotiEsami(votoDaSalvare, nome, 0);
-                        GestoreDati.aggiornaStatoEsame(nome, true);
-                        autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
-                        buttonCFU.setVisible(true); 
-                        pv.refresh();
+                        if (valido) {
+                            // Se ha superato i test, salviamo usando il GestoreDati!
+                            GestoreDati.setVotiEsami(votoDaSalvare, nome, 0);
+                            GestoreDati.aggiornaStatoEsame(nome, true);
+                            autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
+                            buttonCFU.setVisible(true);
+                            pv.refresh();
+                        } else {
+                            JOptionPane.showMessageDialog(this,
+                                    "Voto non valido! Inserisci un numero tra 18 e 30, oppure '30L'.");
+                            markAsDone.setSelected(false);
+                        }
                     } else {
-                        JOptionPane.showMessageDialog(this, "Voto non valido! Inserisci un numero tra 18 e 30, oppure '30L'.");
-                        markAsDone.setSelected(false);
+                        markAsDone.setSelected(false); // Utente ha annullato l'inserimento
                     }
                 } else {
-                    markAsDone.setSelected(false); // Utente ha annullato l'inserimento
+                    // SE TOLGO LA SPUNTA: Rimuovo tutto
+                    GestoreDati.aggiornaStatoEsame(nome, false);
+                    GestoreDati.removeVotiEsame(nome);
+                    autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
+                    pannelloCfuLocale.removeAll();
+                    buttonCFU.setVisible(false);
+                    pannelloCfuLocale.revalidate();
+                    pannelloCfuLocale.repaint();
+                    pv.refresh();
                 }
-            } else {
-                // SE TOLGO LA SPUNTA: Rimuovo tutto
-                GestoreDati.aggiornaStatoEsame(nome, false);
-                GestoreDati.removeVotiEsame(nome); 
-                autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
-                pannelloCfuLocale.removeAll();
-                buttonCFU.setVisible(false); 
-                pannelloCfuLocale.revalidate();
-                pannelloCfuLocale.repaint();
+            });
+        } else {
+            markAsDone.addActionListener(e -> {
+                if (markAsDone.isSelected()) {
+                    GestoreDati.aggiornaStatoEsame(nome, true);
+                    autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
+                    if (pannelloCfuLocale.getComponentCount() == 0) {
+                        buttonCFU.setVisible(true);
+                    }
+                } else {
+                    GestoreDati.aggiornaStatoEsame(nome, false);
+                    GestoreDati.removeVotiEsame(nome);
+                    autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
+                    pannelloCfuLocale.removeAll();
+                    buttonCFU.setVisible(false);
+                    pannelloCfuLocale.revalidate();
+                    pannelloCfuLocale.repaint();
+                }
                 pv.refresh();
-            }
-        });
+            });
+        }
         // Assemblaggio finale delle "scatole"
-        JPanel pannelloSinistra = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        int horizontalPadding = getScaledExamHorizontalPadding();
+        int verticalPadding = getScaledExamVerticalPadding();
+
+        JPanel pannelloSinistra = new JPanel(new FlowLayout(FlowLayout.LEFT, horizontalPadding, verticalPadding));
         pannelloSinistra.add(markAsDone);
         pannelloSinistra.add(nomeEsameLabel);
-        JPanel pannelloDestra = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
+        JPanel pannelloDestra = new JPanel(new FlowLayout(FlowLayout.RIGHT, horizontalPadding, verticalPadding));
         pannelloDestra.add(pannelloCfuLocale);
         pannelloDestra.add(buttonCFU);
         panelSingoloEsame.add(pannelloSinistra, BorderLayout.WEST);
         panelSingoloEsame.add(pannelloDestra, BorderLayout.EAST);
         esamiPanel.add(panelSingoloEsame);
-        esamiPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        esamiPanel.add(Box.createRigidArea(new Dimension(0, getScaledExamGap())));
     }
 
     // Metodo di supporto per applicare lo sbarramento
     private void autoAggiornaSbarramento(JLabel label, JCheckBox check, Font originale) {
-        Map attributes = originale.getAttributes();
+        Map<TextAttribute, Object> attributes = new HashMap<>(originale.getAttributes());
         if (check.isSelected()) {
             attributes.put(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON);
         } else {
             attributes.put(TextAttribute.STRIKETHROUGH, false);
         }
-        label.setFont(originale.deriveFont(attributes));
+        Font fontConSbarramento = originale.deriveFont(attributes)
+                .deriveFont(Math.max(11f, originale.getSize2D() * currentScale));
+        label.putClientProperty("baseFont", originale.deriveFont(attributes));
+        label.setFont(fontConSbarramento);
     }
 
-    public void setAddExamLayout(JPanel aggiungiEsame, JPanel esamiAggiunti) {
+    private void setupResponsiveScaling() {
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                applyResponsiveScaling();
+            }
+        });
+    }
+    //per scalare la dimensione dei componenti in base alla dimensione della finestra
+    private void applyResponsiveScaling() {
+        if (getWidth() <= 0 || getHeight() <= 0) {
+            return;
+        }
+        float scaleX = (float) getWidth() / BASE_WIDTH;
+        float scaleY = (float) getHeight() / BASE_HEIGHT;
+        currentScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, Math.min(scaleX, scaleY)));
+        scaleFontsRecursively(this, currentScale);
+        applyExamRowScaling();
+        revalidate();
+        repaint();
+    }
+
+    private Dimension getScaledExamCardDimension() {
+        int targetWidth = Math.round(BASE_EXAM_CARD_WIDTH * currentScale);
+        int targetHeight = Math.max(42, Math.round(BASE_EXAM_CARD_HEIGHT * currentScale));
+
+        if (esamiPanel != null && esamiPanel.getParent() != null) {
+            int sideMargin = getScaledExamSideMargin();
+            int availableWidth = esamiPanel.getParent().getWidth() - (sideMargin * 2) - 8;
+            if (availableWidth > 0) {
+                targetWidth = Math.max(300, availableWidth);
+            }
+        }
+
+        return new Dimension(targetWidth, targetHeight);
+    }
+
+    private int getScaledExamGap() {
+        return Math.max(4, Math.round(BASE_EXAM_GAP * currentScale));
+    }
+
+    private int getScaledExamSideMargin() {
+        return Math.max(10, Math.round(BASE_EXAM_SIDE_MARGIN * currentScale));
+    }
+
+    private int getScaledExamHorizontalPadding() {
+        return Math.max(6, Math.round(BASE_EXAM_HORIZONTAL_PADDING * currentScale));
+    }
+
+    private int getScaledExamVerticalPadding() {
+        return Math.max(6, Math.round(BASE_EXAM_VERTICAL_PADDING * currentScale));
+    }
+
+    private boolean estraiCompletato(String[] parti) {
+        if (parti.length > 1) {
+            if ("true".equalsIgnoreCase(parti[1]) || "false".equalsIgnoreCase(parti[1])) {
+                return Boolean.parseBoolean(parti[1]);
+            }
+            if (parti[1].startsWith("true")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean estraiIdoneita(String[] parti) {
+        if (parti.length > 2) {
+            return Boolean.parseBoolean(parti[2]);
+        }
+        if (parti.length > 1) {
+            // Compatibilita con vecchio formato errato: "falsetrue" o "truetrue"
+            return parti[1].endsWith("true");
+        }
+        return false;
+    }
+
+    private void applyExamRowScaling() {
+        if (esamiPanel == null) {
+            return;
+        }
+
+        Dimension rowSize = getScaledExamCardDimension();
+        Dimension gapSize = new Dimension(0, getScaledExamGap());
+        int sideMargin = getScaledExamSideMargin();
+
+        esamiPanel.setBorder(BorderFactory.createEmptyBorder(0, sideMargin, 0, sideMargin));
+
+        for (Component child : esamiPanel.getComponents()) {
+            if (JPanel.class.isInstance(child)) {
+                JPanel rowPanel = JPanel.class.cast(child);
+                rowPanel.setPreferredSize(rowSize);
+                rowPanel.setMaximumSize(rowSize);
+                rowPanel.setMinimumSize(rowSize);
+                rowPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            } else if (Box.Filler.class.isInstance(child)) {
+                Box.Filler spacer = Box.Filler.class.cast(child);
+                spacer.changeShape(gapSize, gapSize, gapSize);
+            }
+        }
+    }
+
+    private void scaleFontsRecursively(Component component, float scale) {
+        if (component instanceof JComponent jc) {
+            Font baseFont = (Font) jc.getClientProperty("baseFont");
+            if (baseFont == null && jc.getFont() != null) {
+                baseFont = jc.getFont();
+                jc.putClientProperty("baseFont", baseFont);
+            }
+
+            if (baseFont != null) {
+                float scaledSize = Math.max(11f, baseFont.getSize2D() * scale);
+                jc.setFont(baseFont.deriveFont(scaledSize));
+            }
+        }
+        if (component instanceof Container container) {
+            for (Component child : container.getComponents()) {
+                scaleFontsRecursively(child, scale);
+            }
+        }
+    }
+
+    private void initAddExamLayout(JPanel aggiungiEsame) {
         aggiungiEsame.setLayout(new BorderLayout());
 
         // --- Pannello titolo ---
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        topPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 10, 0));
         JLabel title = new JLabel("Aggiungi gli esami del tuo corso");
         title.setFont(new Font("Arial", Font.BOLD, 26));
         topPanel.add(title);
         aggiungiEsame.add(topPanel, BorderLayout.NORTH);
 
         // ---Pannello aggiunta esami---
-        JPanel midPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JPanel midPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 20));
+        midPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
         JLabel text1 = new JLabel("Nome Esame:");
         text1.setFont(new Font("Arial", Font.BOLD, 20));
         JTextField campoNome = new JTextField();
+        campoNome.setColumns(18);
         campoNome.setFont(new Font("Arial", Font.PLAIN, 15));
         campoNome.setHorizontalAlignment(JTextField.CENTER);
+        JLabel textIdoneita = new JLabel("Idoneità:");
+        textIdoneita.setFont(new Font("Arial", Font.BOLD, 13));
+        JCheckBox checkIdoneita = new JCheckBox();
+        checkIdoneita.setSelected(false);
         JButton btnSalva = new JButton("Salva Esame");
         midPanel.add(text1);
         midPanel.add(campoNome);
+        midPanel.add(textIdoneita);
+        midPanel.add(checkIdoneita);
         midPanel.add(btnSalva);
         aggiungiEsame.add(midPanel, BorderLayout.CENTER);
 
         // ---Pannello rimozione
-        JPanel bottomPanel = new JPanel();
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 20));
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         JLabel textRem = new JLabel("Rimuovi esame:");
         textRem.setFont(new Font("Arial", Font.BOLD, 20));
         tendina = new JComboBox<>();
@@ -271,7 +458,8 @@ public class PannelloAggiungi extends JPanel {
                 return;
             }
             if (index < 40) {
-                GestoreDati.salvaEsame(nome);
+                GestoreDati.salvaEsame(nome, checkIdoneita.isSelected());
+                checkIdoneita.setSelected(false);
                 campoNome.setText("");
                 aggiornaTutto(); // Ricarica tutto dal file
                 pv.refresh();
@@ -291,11 +479,12 @@ public class PannelloAggiungi extends JPanel {
         });
     }
 
-    public void setAddedExamsLayout(JPanel esamiAggiunti) {
+    private void initAddedExamsLayout(JPanel esamiAggiunti) {
         esamiAggiunti.setLayout(new BorderLayout());
-        esamiAggiunti.setBorder(BorderFactory.createEmptyBorder(10, 4, 10, 4));
+        esamiAggiunti.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         esamiPanel = new JPanel();
         esamiPanel.setLayout(new BoxLayout(esamiPanel, BoxLayout.Y_AXIS));
+        esamiPanel.setBorder(BorderFactory.createEmptyBorder(0, getScaledExamSideMargin(), 0, getScaledExamSideMargin()));
         JScrollPane scrollPane = new JScrollPane(esamiPanel);
         javax.swing.border.Border bordoSoloSopra = BorderFactory.createMatteBorder(2, 0, 0, 0, Color.GRAY);
         scrollPane.setBorder(BorderFactory.createTitledBorder(

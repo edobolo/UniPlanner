@@ -1,4 +1,4 @@
-Fondamenti di informatica;true
-Analisi 1;true
-Algebra lineare e geometria;false
-Architettura degli elaboratori;false
+Fondamenti di informatica;true;false
+Analisi 1;true;false
+Algebra lineare e geometria;false;false
+Architettura degli elaboratori;false;false

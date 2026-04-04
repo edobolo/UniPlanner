@@ -2,6 +2,8 @@ package com.minec.schermate;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -12,10 +14,10 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.RenderingHints;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.File;
-import java.io.FileWriter;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
@@ -23,6 +25,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -35,7 +38,6 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.minec.dati.GestoreDati;
@@ -43,12 +45,19 @@ import com.minec.dati.GestoreDati;
 // Questa riga significa: "SchermataVoti è un tipo personalizzato di JPanel"
 public class PannelloVoti extends JPanel {
 
+    private static final int BASE_WIDTH = 800;
+    private static final int BASE_HEIGHT = 600;
+    private static final float MIN_SCALE = 1.0f;
+    private static final float MAX_SCALE = 1.8f;
+
     private ArrayList<JPanel> examsList = new ArrayList<>();
     private JPanel mediaPanel = new JPanel();
     private JPanel examLeftPanel = new JPanel();
     private JPanel votiEsamiPanel = new JPanel();
     private JPanel panelInfo = new JPanel();
     private JPanel panelGraph = new JPanel();
+    private JPanel optionButtonPanel;
+    private float currentScale = 1.0f;
 
     public PannelloVoti() {
         this.setLayout(null);
@@ -64,6 +73,9 @@ public class PannelloVoti extends JPanel {
         this.add(votiEsamiPanel);
         this.add(panelGraph);
         this.add(panelInfo);
+
+        setupResponsiveLayout();
+        SwingUtilities.invokeLater(this::applyResponsiveLayout);
     }
 
     public void setPanelMedia(JPanel mediaPanel) {
@@ -356,6 +368,119 @@ public class PannelloVoti extends JPanel {
         }
     }
 
+    private void setupResponsiveLayout() {
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                applyResponsiveLayout();
+            }
+        });
+    }
+
+    private void applyResponsiveLayout() {
+        if (getWidth() <= 0 || getHeight() <= 0) {
+            return;
+        }
+
+        float scaleX = (float) getWidth() / BASE_WIDTH;
+        float scaleY = (float) getHeight() / BASE_HEIGHT;
+        currentScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, Math.min(scaleX, scaleY)));
+
+        int leftX = Math.round(50 * currentScale);
+        int leftW = Math.round(200 * currentScale);
+        int columnGap = Math.round(50 * currentScale);
+        int rightX = leftX + leftW + columnGap;
+        int rightMargin = Math.round(30 * currentScale);
+        int rightW = Math.max(260, getWidth() - rightX - rightMargin);
+
+        mediaPanel.setBounds(scaleRect(50, 40, 200, 200));
+        examLeftPanel.setBounds(scaleRect(50, 255, 200, 80));
+        panelInfo.setBounds(scaleRect(50, 350, 200, 200));
+        votiEsamiPanel.setBounds(rightX, Math.round(35 * currentScale), rightW, Math.round(270 * currentScale));
+        panelGraph.setBounds(rightX, Math.round(330 * currentScale), rightW, Math.round(150 * currentScale));
+        if (optionButtonPanel != null) {
+            int buttonSize = Math.round(40 * currentScale);
+            optionButtonPanel.setBounds(getWidth() - buttonSize - Math.round(10 * currentScale),
+                    Math.round(40 * currentScale),
+                    buttonSize,
+                    buttonSize);
+        }
+
+        applyVotiRowsScaling();
+        scaleFontsRecursively(this, currentScale);
+        revalidate();
+        repaint();
+    }
+
+    private void applyVotiRowsScaling() {
+        JScrollPane scrollPane = null;
+        for (Component child : votiEsamiPanel.getComponents()) {
+            if (JScrollPane.class.isInstance(child)) {
+                scrollPane = JScrollPane.class.cast(child);
+                break;
+            }
+        }
+        if (scrollPane == null) {
+            return;
+        }
+
+        Component view = scrollPane.getViewport().getView();
+        if (!JPanel.class.isInstance(view)) {
+            return;
+        }
+
+        JPanel votiOnly = JPanel.class.cast(view);
+        int rowWidth = Math.max(220, votiEsamiPanel.getWidth() - Math.round(70 * currentScale));
+        int rowHeight = Math.max(30, Math.round(34 * currentScale));
+        int rowGap = Math.max(4, Math.round(5 * currentScale));
+        votiOnly.setBorder(BorderFactory.createEmptyBorder(0, Math.max(8, Math.round(10 * currentScale)), 0,
+                Math.max(8, Math.round(10 * currentScale))));
+
+        for (Component row : votiOnly.getComponents()) {
+            if (JPanel.class.isInstance(row)) {
+                JPanel panel = JPanel.class.cast(row);
+                Dimension dim = new Dimension(rowWidth, rowHeight);
+                panel.setPreferredSize(dim);
+                panel.setMaximumSize(dim);
+                panel.setMinimumSize(dim);
+            } else if (Box.Filler.class.isInstance(row)) {
+                Box.Filler spacer = Box.Filler.class.cast(row);
+                Dimension gapDim = new Dimension(0, rowGap);
+                spacer.changeShape(gapDim, gapDim, gapDim);
+            }
+        }
+    }
+
+    private void scaleFontsRecursively(Component component, float scale) {
+        if (JComponent.class.isInstance(component)) {
+            JComponent jc = JComponent.class.cast(component);
+            Font baseFont = (Font) jc.getClientProperty("baseFont");
+            if (baseFont == null && jc.getFont() != null) {
+                baseFont = jc.getFont();
+                jc.putClientProperty("baseFont", baseFont);
+            }
+            if (baseFont != null) {
+                float scaledSize = Math.max(11f, baseFont.getSize2D() * scale);
+                jc.setFont(baseFont.deriveFont(scaledSize));
+            }
+        }
+
+        if (Container.class.isInstance(component)) {
+            Container container = Container.class.cast(component);
+            for (Component child : container.getComponents()) {
+                scaleFontsRecursively(child, scale);
+            }
+        }
+    }
+
+    private java.awt.Rectangle scaleRect(int x, int y, int w, int h) {
+        return new java.awt.Rectangle(
+                Math.round(x * currentScale),
+                Math.round(y * currentScale),
+                Math.round(w * currentScale),
+                Math.round(h * currentScale));
+    }
+
     public void setGraphPanel(JPanel panelGraph) {
         panelGraph.setBounds(300, 330 , 350, 150);
         panelGraph.setLayout(new BorderLayout());
@@ -477,7 +602,7 @@ public class PannelloVoti extends JPanel {
                 g2.fillOval(x - 3, y - 3, 6, 6);
                 if (i < etichette.length) {
                     g2.setColor(colorTesto);
-                    g2.drawString(etichette[i], x - 6, top + graphH + 15);
+                    g2.drawString(etichette[i], x - 8, top + graphH + 15);
                     g2.setColor(colorLinea);
                 }
                 prevX = x;
@@ -488,24 +613,24 @@ public class PannelloVoti extends JPanel {
     }
 
     public void setOptionButton() {
-        JButton refreshBut = new JButton("");
+        JButton optionBut = new JButton("");
         if (GestoreDati.isTemaScuro()) {
-            refreshBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24)); 
+            optionBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24)); 
         }else {
-            refreshBut.setIcon(new FlatSVGIcon("icone/opzioni.svg", 24, 24));
+            optionBut.setIcon(new FlatSVGIcon("icone/opzioni.svg", 24, 24));
         }
-        refreshBut.setBorderPainted(false);
-        refreshBut.setFocusPainted(false);
-        refreshBut.setContentAreaFilled(false);
-        refreshBut.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        optionBut.setBorderPainted(false);
+        optionBut.setFocusPainted(false);
+        optionBut.setContentAreaFilled(false);
+        optionBut.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        refreshBut.addMouseListener(new MouseAdapter() {
+        optionBut.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
                 if (GestoreDati.isTemaScuro()) {
-                    refreshBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24)); 
+                    optionBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24)); 
                 }else {
-                    refreshBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24));
+                    optionBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24));
                 }
                 refresh();
             }
@@ -513,14 +638,14 @@ public class PannelloVoti extends JPanel {
             @Override
             public void mouseExited(MouseEvent e) {
                 if (GestoreDati.isTemaScuro()) {
-                    refreshBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24)); 
+                    optionBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24)); 
                 }else {
-                    refreshBut.setIcon(new FlatSVGIcon("icone/opzioni.svg", 24, 24));
+                    optionBut.setIcon(new FlatSVGIcon("icone/opzioni.svg", 24, 24));
                 }
                 refresh();
             }
         });
-        refreshBut.addActionListener(e -> {
+        optionBut.addActionListener(e -> {
             JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
             JPanel shadowOverlay = new JPanel() {
                 @Override
@@ -690,11 +815,11 @@ public class PannelloVoti extends JPanel {
                     if (isScuro) {
                         javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatDarkLaf());
                         lblTema.setIcon(new FlatSVGIcon("icone/dark2.svg", 20, 20));
-                        refreshBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24));
+                        optionBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24));
                     } else {
                         javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatLightLaf());
                         lblTema.setIcon(new FlatSVGIcon("icone/dark1.svg", 20, 20));
-                        refreshBut.setIcon(new FlatSVGIcon("icone/opzioni.svg", 24, 24));
+                        optionBut.setIcon(new FlatSVGIcon("icone/opzioni.svg", 24, 24));
                     }
                     SwingUtilities.updateComponentTreeUI(frame);
                 } catch (Exception ex) {
@@ -761,25 +886,24 @@ public class PannelloVoti extends JPanel {
 
         Color coloreHover = new Color(48, 68, 88);
         Color coloreSfondo = mediaPanel.getBackground();
-        refreshBut.addMouseListener(new java.awt.event.MouseAdapter() {
+        optionBut.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                refreshBut.setContentAreaFilled(true);
-                refreshBut.setBackground(coloreHover);
+                optionBut.setContentAreaFilled(true);
+                optionBut.setBackground(coloreHover);
             }
 
             @Override
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                refreshBut.setContentAreaFilled(false);
-                refreshBut.setBackground(coloreSfondo);
+                optionBut.setContentAreaFilled(false);
+                optionBut.setBackground(coloreSfondo);
             }
         });
 
-        JPanel butPanel = new JPanel();
-        butPanel.setBounds(710, 30, 40, 40);
-        butPanel.setLayout(new BorderLayout());
-        butPanel.add(refreshBut, BorderLayout.CENTER);
-        this.add(butPanel);
+        optionButtonPanel = new JPanel();
+        optionButtonPanel.setLayout(new BorderLayout());
+        optionButtonPanel.add(optionBut, BorderLayout.CENTER);
+        this.add(optionButtonPanel);
     }
 
     private void esportaLibrettoInExcel(JPanel parentComponent) {
@@ -898,11 +1022,15 @@ public class PannelloVoti extends JPanel {
                             String voto = (parti.length > 1) ? parti[1].trim() : "";
                             String cfuStr = (parti.length > 2) ? parti[2].trim() : "0";
                             boolean completato = (parti.length > 3) ? Boolean.parseBoolean(parti[3].trim()) : (!voto.isEmpty());
-                            GestoreDati.salvaEsame(nomeEsame);
+                            boolean idoneita = (parti.length > 4) && Boolean.parseBoolean(parti[4].trim());
+                            GestoreDati.salvaEsame(nomeEsame, idoneita);
                             if (completato) {
                                 GestoreDati.aggiornaStatoEsame(nomeEsame, true);
                                 if (!voto.isEmpty()) GestoreDati.setVotiEsami(voto, nomeEsame, 0);
-                                try { GestoreDati.addCfuEsame(nomeEsame, Integer.parseInt(cfuStr)); } catch (Exception e){}
+                                try {
+                                    GestoreDati.addCfuEsame(nomeEsame, Integer.parseInt(cfuStr));
+                                } catch (NumberFormatException e) {
+                                }
                             }
                             esamiImportati++;
                         }
@@ -955,6 +1083,8 @@ public class PannelloVoti extends JPanel {
         setPanelInfo(panelInfo);
         panelGraph.removeAll();
         setGraphPanel(panelGraph);
+
+        applyResponsiveLayout();
 
         this.revalidate();
         this.repaint();
