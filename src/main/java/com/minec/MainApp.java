@@ -16,10 +16,12 @@ import javax.swing.SwingUtilities;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.extras.FlatSVGUtils;
 import com.minec.schermate.PannelloAggiungi;
+import com.minec.schermate.PannelloPomodoro;
 import com.minec.schermate.PannelloScadenze;
 import com.minec.schermate.PannelloVoti;
 
 public class MainApp {
+    private static final String ICONA_APP = "icone/u.svg";
 
     public static void main(String[] args) {
         // Leggiamo la memoria: l'utente aveva scelto il tema scuro?
@@ -28,6 +30,7 @@ public class MainApp {
         } else {
             com.formdev.flatlaf.FlatLightLaf.setup(); // Tema Chiaro
         }
+        GestoreNotifiche.avviaNotifiche(ICONA_APP);
         SwingUtilities.invokeLater(() -> creaEmostraGUI());
     }
 
@@ -45,13 +48,15 @@ public class MainApp {
         PannelloVoti schermataVoti = new PannelloVoti();
         PannelloAggiungi schermataAggiungi = new PannelloAggiungi(schermataVoti);
         PannelloScadenze schermataScadenze = new PannelloScadenze();
+        PannelloPomodoro schermataPomodoro = new PannelloPomodoro();
 
         pannelloSchermate.add(schermataVoti, "Voti");
         pannelloSchermate.add(schermataAggiungi, "Aggiungi");
         pannelloSchermate.add(schermataScadenze, "Scadenze");
+        pannelloSchermate.add(schermataPomodoro, "Pomodoro");
 
         // Usiamo un FlowLayout con margini più ampi (30px tra un bottone e l'altro)
-        JPanel pannelloMenu = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 10));
+        JPanel pannelloMenu = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         
         // Colore di sfondo moderno (un blu scuro/grigio ardesia)
         Color coloreSfondoMenu = new Color(44, 62, 80); 
@@ -59,7 +64,7 @@ public class MainApp {
         // Aggiungiamo un bordino colorato in alto alla barra per staccarla dal contenuto
         pannelloMenu.setBorder(BorderFactory.createMatteBorder(3, 0, 0, 0, new Color(41, 128, 185)));
 
-        // Creiamo i bottoni usando il nostro metodo personalizzato
+        // Creiamo i bottoni
         JButton btnVoti = creaBottoneMenu(" Voti e Media", coloreSfondoMenu);
         btnVoti.addActionListener(e -> {
             cardLayout.show(pannelloSchermate, "Voti");
@@ -81,9 +86,16 @@ public class MainApp {
         });
         btnScadenze.setIcon(new FlatSVGIcon("icone/hourglass.svg", 24, 24));
 
+        JButton btnPomodoro = creaBottoneMenu(" Timer Pomodoro", coloreSfondoMenu);
+        btnPomodoro.addActionListener(e -> {
+            cardLayout.show(pannelloSchermate, "Pomodoro");
+        });
+        btnPomodoro.setIcon(new FlatSVGIcon("icone/tomato.svg", 24, 24));
+
         pannelloMenu.add(btnVoti);
         pannelloMenu.add(btnAggiungi);
         pannelloMenu.add(btnScadenze);
+        pannelloMenu.add(btnPomodoro);
 
         // Assemblo la finestra
         finestra.add(pannelloMenu, BorderLayout.SOUTH);
