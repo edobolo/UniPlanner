@@ -36,3 +36,10 @@ L'applicazione è stata pacchettizzata per essere utilizzata facilmente su Windo
 Sviluppato da **[Edoardo Bolognini/edobolo]**
 * Contatto/Email: [bologniniedoardo@gmail.com]
 * Profilo GitHub: [https://github.com/edobolo]
+
+## 📝 Crediti e Librerie
+
+Questo progetto utilizza le seguenti risorse open-source:
+* **Icone:** Fornite da [SVG Repo](https://www.svgrepo.com/).
+* **Tema Grafico:** [FlatLaf](https://github.com/JFormDesigner/FlatLaf) (Licenza Apache 2.0).
+* **Gestione Date:** [LGoodDatePicker](https://github.com/LGoodDatePicker/LGoodDatePicker) (Licenza MIT).
