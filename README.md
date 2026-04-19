@@ -36,3 +36,10 @@ The application has been packaged for easy use on Windows without needing to ins
 Developed by **[Edoardo Bolognini/edobolo]**
 * Contact/Email: [bologniniedoardo@gmail.com]
 * GitHub Profile: [https://github.com/edobolo]
+
+## 📝 Credits and Libraries
+
+This project uses the following open-source resources:
+* **Icons:** Provided by [SVG Repo](https://www.svgrepo.com/).
+* **Graphics Theme:** [FlatLaf](https://github.com/JFormDesigner/FlatLaf) (Apache License 2.0).
+* **Date Manager:** [LGoodDatePicker](https://github.com/LGoodDatePicker/LGoodDatePicker) (MIT License).
