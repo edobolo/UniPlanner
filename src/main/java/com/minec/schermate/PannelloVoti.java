@@ -18,6 +18,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
@@ -351,9 +352,18 @@ public class PannelloVoti extends JPanel {
             String[] parti = rigaVoto.split(";");
             String voto = parti[0];
             String nomeEsame = parti[1];
+            int minutiTotali = GestoreDati.getMinutiStudioEsame(nomeEsame);
+            String tempoFormattato = "";
+            if(minutiTotali > 0) {
+                int ore = minutiTotali / 60;
+                int minRestanti = minutiTotali % 60;
+                if(ore > 0) 
+                    tempoFormattato = ore + "h " + minRestanti + "m";
+                else 
+                    tempoFormattato = minRestanti + "m";
+            }
             // Creiamo il pannellino per la riga
-            JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            // Fissiamo le dimensioni per non far schiacciare il layout (come in PannelloAggiungi)
+            JPanel panel = new JPanel(new BorderLayout());
             Dimension dim = new Dimension(280, 30);
             panel.setPreferredSize(dim);
             panel.setMaximumSize(dim);
@@ -361,7 +371,47 @@ public class PannelloVoti extends JPanel {
             panel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
             JLabel etichettaVoto = new JLabel(nomeEsame + ": " + voto);
             etichettaVoto.setFont(new Font("Arial", Font.PLAIN, 14));
-            panel.add(etichettaVoto);
+            etichettaVoto.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
+            //imposto il label che contiene il tempo di studio
+            String spazio = "";
+            if(tempoFormattato.isEmpty())
+                spazio = "            ";
+            JLabel etichettaTempo = new JLabel(tempoFormattato + spazio);
+            if(!tempoFormattato.isEmpty()) 
+                etichettaTempo.setIcon(new FlatSVGIcon("icone/clock.svg", 18, 18));
+            panel.add(etichettaVoto, BorderLayout.WEST);
+            etichettaTempo.setFont(new Font("Arial", Font.ITALIC, 12));
+            etichettaTempo.setForeground(Color.GRAY);
+            etichettaTempo.setBorder(BorderFactory.createEmptyBorder(0,0,0,5));
+            etichettaTempo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            //aggiungo un listener al pannello per modificare i minuti
+            etichettaTempo.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    String tempoRaw = JOptionPane.showInputDialog("Inserire il tempo di studio (formato HH:mm)", null);
+                    if(tempoRaw != null && tempoRaw.matches("\\d{2}:\\d{2}")) {
+                        
+                        String[] parti = tempoRaw.split(":");
+                        int ore = Integer.parseInt(parti[0]);
+                        int minuti = Integer.parseInt(parti[1]);
+                        if(minuti >= 60 && minuti < 0 && ore < 0) {
+                            JOptionPane.showMessageDialog(PannelloVoti.this, "Orario non valido! Minuti (0-59)", 
+                            "Errore", JOptionPane.ERROR_MESSAGE);
+                        }
+                        int minutiTotali = ore*60 + minuti; 
+                        GestoreDati.setNuovoTempoStudio(nomeEsame, minutiTotali);
+                        etichettaTempo.setText(ore + "h " + minuti + "m");
+                        refresh();
+                    } else {
+                        if(tempoRaw == null)
+                            return;
+                        JOptionPane.showMessageDialog(null,
+                                "Formato non valido! Usa HH:mm",
+                                "Errore", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            });
+            panel.add(etichettaTempo, BorderLayout.EAST);
             votiOnly.add(panel);
             // Aggiungiamo un piccolo spazio vuoto tra una riga e l'altra per l'estetica
             votiOnly.add(Box.createRigidArea(new Dimension(0, 5)));

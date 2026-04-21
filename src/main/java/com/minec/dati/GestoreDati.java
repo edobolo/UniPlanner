@@ -1,23 +1,31 @@
 package com.minec.dati;
 
+import java.awt.List;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class GestoreDati {
     private static final String PERCORSO_BASE = System.getProperty("user.home") + java.io.File.separator
             + "UniplannerDati";
-    private static final java.io.File cartellaApp = new java.io.File(PERCORSO_BASE);
+    private static final File cartellaApp = new java.io.File(PERCORSO_BASE);
 
     // 2. Creiamo i file all'interno di quella cartella specifica
-    private static final java.io.File fileEsami = new java.io.File(cartellaApp, "esami.txt");
-    private static final java.io.File fileVoti = new java.io.File(cartellaApp, "voti.txt");
-    private static final java.io.File fileScadenze = new java.io.File(cartellaApp, "scadenze.txt");
-    private static final java.io.File fileImpostazioni = new java.io.File(cartellaApp, "impostazioni.txt");
+    private static final File fileEsami = new File(cartellaApp, "esami.txt");
+    private static final File fileVoti = new File(cartellaApp, "voti.txt");
+    private static final File fileScadenze = new File(cartellaApp, "scadenze.txt");
+    private static final File fileImpostazioni = new File(cartellaApp, "impostazioni.txt");
+    private static final File fileStudio = new File(cartellaApp, "studio.txt");
+
     public static boolean salvato = false;
 
     // 3. Questo blocco "static" viene eseguito non appena l'app si avvia.
@@ -26,11 +34,11 @@ public class GestoreDati {
             cartellaApp.mkdirs(); // Crea la cartella "UniplannerDati"
         }
         try {
-
             fileEsami.createNewFile();
             fileVoti.createNewFile();
             fileScadenze.createNewFile();
             fileImpostazioni.createNewFile();
+            fileStudio.createNewFile();
         } catch (java.io.IOException e) {
             System.out.println("Errore critico: Impossibile creare i file di memoria.");
         }
@@ -72,7 +80,7 @@ public class GestoreDati {
         String[] esami = getEsamiSalvatiRaw();
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileEsami))) {
             for (String riga : esami) {
-                // Aggiungiamo un controllo di sicurezza per evitare blocchi
+                // facciamo un controllo di sicurezza per evitare blocchi
                 if (riga == null || riga.trim().isEmpty())
                     continue;
 
@@ -384,6 +392,72 @@ public class GestoreDati {
         salvaImpostazione("TEMA_SCURO", String.valueOf(scuro));
     }
 
+    public static int getPomodori() {
+        return Integer.parseInt(getImpostazione("POMODORI", "0"));
+    }
+
+    public static void salvaPomodori(int pomodori) {
+        salvaImpostazione("POMODORI", String.valueOf(pomodori));
+    }
+
+    public static String getDataPomodori() {
+        return getImpostazione("POMODORI_DATA", "");
+    }
+
+    public static void salvaDataPomodori(String data) {
+        salvaImpostazione("POMODORI_DATA", data);
+    }
+
+    public static void salvaMaxPomodoriGiornalieri(int max) {
+        salvaImpostazione("POMODORI_MAX", String.valueOf(max));
+    }
+
+    public static int getMaxPomodoriGiornalieri() {
+        String valoreMax = getImpostazione("POMODORI_MAX", "");
+        if (valoreMax.isEmpty()) {
+            // Compatibilita con versione precedente che usava la chiave POMODORI_SERIE
+            valoreMax = getImpostazione("POMODORI_SERIE", "0");
+            salvaImpostazione("POMODORI_MAX", valoreMax);
+        }
+        try {
+            return Integer.parseInt(valoreMax);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    // Metodi legacy mantenuti per compatibilita'
+    public static void salvaSerieMax(String max) {
+        try {
+            salvaMaxPomodoriGiornalieri(Integer.parseInt(max));
+        } catch (NumberFormatException e) {
+            salvaMaxPomodoriGiornalieri(0);
+        }
+    }
+
+    public static int getSeriePomoMax() {
+        return getMaxPomodoriGiornalieri();
+    }
+
+    public static int caricaPomodoriGiornalieri() {
+        String oggi = LocalDate.now().toString();
+        String dataSalvata = getDataPomodori();
+        if (!oggi.equals(dataSalvata)) {
+            salvaPomodori(0);
+            salvaDataPomodori(oggi);
+            return 0;
+        }
+        return getPomodori();
+    }
+
+    public static int getMinutiStudio() {
+        return Integer.parseInt(getImpostazione("MINUTI_STUDIO", "25"));
+    }
+
+    public static int getMinutiPausa() {
+        return Integer.parseInt(getImpostazione("MINUTI_PAUSA", "5"));
+    }
+
     public static void resetTutto() {
         try {
             new java.io.PrintWriter(fileEsami).close();
@@ -400,6 +474,79 @@ public class GestoreDati {
 
     public static void salvaObiettivoMedia(int obiettivo) {
         salvaImpostazione("OBIETTIVO_MEDIA", String.valueOf(obiettivo));
+    }
+
+    // --- FILE TIMER POMODORO ---
+
+    public static void aggiungiTempoStudio(String nomeEsame, int minuti) {
+        String[] datiEsistenti = getTuttoLoStudioRaw();
+        Map<String, Integer> mappaStudio = new HashMap<>();
+        // Leggiamo i dati attuali
+        for (String riga : datiEsistenti) {
+            if (riga == null || !riga.contains(";"))
+                continue;
+            String[] parti = riga.split(";");
+            mappaStudio.put(parti[0], Integer.parseInt(parti[1]));
+        }
+        // Aggiungiamo i nuovi minuti
+        int minutiPrecedenti = mappaStudio.getOrDefault(nomeEsame, 0);
+        mappaStudio.put(nomeEsame, minutiPrecedenti + minuti);
+
+        // Sovrascriviamo il file con i dati aggiornati
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileStudio))) {
+            for (Map.Entry<String, Integer> entry : mappaStudio.entrySet()) {
+                bw.write(entry.getKey() + ";" + entry.getValue());
+                bw.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void setNuovoTempoStudio(String nomeEsame, int minuti) {
+        String[] datiEsistenti = getTuttoLoStudioRaw();
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileStudio))) {
+            for (String riga : datiEsistenti) {
+                String[] parti = riga.split(";");
+                if(parti[0].equals(nomeEsame))
+                    bw.write(nomeEsame + ";" + minuti);
+                else
+                    bw.write(riga);
+                bw.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public static String[] getTuttoLoStudioRaw() {
+        ArrayList<String> righe = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(fileStudio))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (!line.trim().isEmpty())
+                    righe.add(line);
+            }
+        } catch (IOException e) {
+        }
+        return righe.toArray(new String[0]);
+    }
+
+    public static int getMinutiStudioEsame(String nomeEsame) {
+        String[] dati = getTuttoLoStudioRaw(); // Legge il file studio.txt
+        for (String riga : dati) {
+            if (riga == null || !riga.contains(";"))
+                continue;
+            String[] parti = riga.split(";");
+            if (parti[0].equals(nomeEsame)) {
+                try {
+                    return Integer.parseInt(parti[1]);
+                } catch (NumberFormatException e) {
+                    return 0;
+                }
+            }
+        }
+        return 0; // Se l'esame non è nel file, i minuti sono 0
     }
 
     public static boolean getSalvato() {
