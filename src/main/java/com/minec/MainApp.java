@@ -4,14 +4,20 @@ import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Rectangle;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.extras.FlatSVGUtils;
@@ -19,6 +25,7 @@ import com.minec.schermate.PannelloAggiungi;
 import com.minec.schermate.PannelloPomodoro;
 import com.minec.schermate.PannelloScadenze;
 import com.minec.schermate.PannelloVoti;
+
 
 public class MainApp {
     private static final String ICONA_APP = "icone/u.svg";
@@ -37,9 +44,7 @@ public class MainApp {
     private static void creaEmostraGUI() {
         JFrame finestra = new JFrame("UniPlanner");
         finestra.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        finestra.setSize(800, 600);
         finestra.setResizable(true);
-        finestra.setLocationRelativeTo(null);
         finestra.setIconImages(FlatSVGUtils.createWindowIconImages("/icone/u.svg"));
 
         CardLayout cardLayout = new CardLayout();
@@ -97,10 +102,12 @@ public class MainApp {
         pannelloMenu.add(btnScadenze);
         pannelloMenu.add(btnPomodoro);
 
-        // Assemblo la finestra
         finestra.add(pannelloMenu, BorderLayout.SOUTH);
         finestra.add(pannelloSchermate, BorderLayout.CENTER);
 
+        finestra.setMinimumSize(new Dimension(970, 730));
+        finestra.setSize(970, 730);
+        finestra.setLocationRelativeTo(null);
         finestra.setVisible(true);
     }
     private static JButton creaBottoneMenu(String testo, Color coloreSfondo) {

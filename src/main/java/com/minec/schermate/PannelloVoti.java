@@ -445,17 +445,35 @@ public class PannelloVoti extends JPanel {
 
         mediaPanel.setBounds(scaleRect(50, 40, 200, 200));
         examLeftPanel.setBounds(scaleRect(50, 255, 200, 80));
-        panelInfo.setBounds(scaleRect(50, 350, 200, 200));
-        votiEsamiPanel.setBounds(rightX, Math.round(35 * currentScale), rightW, Math.round(270 * currentScale));
-        panelGraph.setBounds(rightX, Math.round(330 * currentScale), rightW, Math.round(150 * currentScale));
+        ////panelInfo.setBounds(scaleRect(50, 350, 200, 200));
+        ////votiEsamiPanel.setBounds(rightX, Math.round(35 * currentScale), rightW, Math.round(270 * currentScale));
+        ////panelGraph.setBounds(rightX, Math.round(330 * currentScale), rightW, Math.round(150 * currentScale));
+        // --- CALCOLO DINAMICO DELLO SPAZIO VERTICALE ---
+        int margineFondo = Math.round(20 * currentScale);
+        int infoX = Math.round(50 * currentScale);
+        int infoY = Math.round(350 * currentScale);
+        int infoW = Math.round(200 * currentScale);
+        int infoH = getHeight() - infoY - margineFondo;
+        panelInfo.setBounds(infoX, infoY, infoW, Math.max(infoH, Math.round(200 * currentScale)));
+        int graphH = Math.round(150 * currentScale);
+        int graphY = getHeight() - graphH - margineFondo;
+        int graphY_minimo = Math.round(330 * currentScale);
+        graphY = Math.max(graphY, graphY_minimo);
+        panelGraph.setBounds(rightX, graphY, rightW, graphH);
+        int votiY = Math.round(35 * currentScale);
+        int gapTraListaEGrafico = Math.round(25 * currentScale);
+        int votiH = graphY - votiY - gapTraListaEGrafico;
+        votiEsamiPanel.setBounds(rightX, votiY, rightW, Math.max(votiH, Math.round(270 * currentScale)));
+
         if (optionButtonPanel != null) {
             int buttonSize = Math.round(40 * currentScale);
-            optionButtonPanel.setBounds(getWidth() - buttonSize - Math.round(10 * currentScale),
-                    Math.round(40 * currentScale),
-                    buttonSize,
-                    buttonSize);
+            optionButtonPanel.setBounds(
+                    getWidth() - buttonSize - Math.round(10 * currentScale), // X: a destra
+                    Math.round(5 * currentScale), // Y: spostato in alto (era 40)
+                    buttonSize, // Larghezza
+                    buttonSize // Altezza
+            );
         }
-
         applyVotiRowsScaling();
         scaleFontsRecursively(this, currentScale);
         revalidate();

@@ -1,8 +1,24 @@
-target/
-*.class
-*.jar
 *.war
 *.ear
+# File compilati
+*.class
+bin/
+out/
+target/
+
+# Impostazioni degli Editor (VS Code, IntelliJ, Eclipse)
+.vscode/
 .idea/
 *.iml
+.project
+.classpath
+.settings/
+
+# File di sistema OS
 .DS_Store
+Thumbs.db
+
+# Eseguibili (che vanno solo nelle Release)
+*.jar
+*.exe
+*.zip

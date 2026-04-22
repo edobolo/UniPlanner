@@ -18,8 +18,6 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDate;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -30,6 +28,7 @@ import javax.sound.sampled.LineEvent;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -37,8 +36,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 import static javax.swing.SwingConstants.CENTER;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
@@ -49,8 +51,8 @@ import com.minec.dati.GestoreDati;
 public class PannelloPomodoro extends JPanel{
     private static final int BASE_WIDTH = 800;
     private static final int BASE_HEIGHT = 600;
-    private static final float MIN_SCALE = 1.0f;
-    private static final float MAX_SCALE = 1.8f;
+    private static final float MIN_SCALE = 0.9f;
+    private static final float MAX_SCALE = 2.0f;
 
     private JLabel lblTimer;
     private JLabel lblStato;
@@ -58,16 +60,24 @@ public class PannelloPomodoro extends JPanel{
     private JButton btnReset;
     private JComboBox<String> comboEsami;
     private JButton optionBut;
+    private JRadioButton radioStudio;
+    private JRadioButton radioPausa;
+    private ButtonGroup gruppoSessione;
+    private JProgressBar barraProgressi;
     private JPanel optionButtonPanel;
     private JPanel optionLeftSpacerPanel;
     private int optionIconSize = 24;
     private JLabel lblContatore;
     private JLabel lblMaxPomodori;
+    private JLabel lblTitle;
+    private JLabel lblSelezione;
     private int conteggioPomodori = 0;
     private int maxPomodoriGiornalieri = 0;
 
     private Timer timer;
     private int secondiRimanenti;
+    private long millisecondiRimanenti;
+    private long timestampFineTimer;
     private boolean inEsecuzione = false;
     private boolean isSessioneStudio = true;
     
@@ -79,13 +89,13 @@ public class PannelloPomodoro extends JPanel{
         this.setBorder(new EmptyBorder(20, 20, 20, 20));
         
         // ---Titolo e Stato---
-        JPanel topPanel = new JPanel(new GridLayout(3, 1));
-        JLabel title = new JLabel("Timer Pomodoro", CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 28));
+        JPanel topPanel = new JPanel(new GridLayout(4, 1));
+        lblTitle = new JLabel("Timer Pomodoro", CENTER);
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 28));
         lblStato = new JLabel("Pronto per studiare?", SwingConstants.CENTER);
         lblStato.setFont(new Font("Arial", Font.ITALIC, 18));
         lblStato.setForeground(Color.GRAY);
-        topPanel.add(title);
+        topPanel.add(lblTitle);
         topPanel.add(lblStato);
 
         JPanel headerPanel = new JPanel(new BorderLayout());
@@ -98,12 +108,33 @@ public class PannelloPomodoro extends JPanel{
         this.add(headerPanel, BorderLayout.NORTH);
         // --- Menu Tendina ---
         JPanel pnlSelezione = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JLabel lblSelezione = new JLabel("Cosa stai studiando?");
+        lblSelezione = new JLabel("Cosa stai studiando?");
         comboEsami = new JComboBox<>();
         aggiornaListaEsami();
         pnlSelezione.add(lblSelezione);
         pnlSelezione.add(comboEsami);
         topPanel.add(pnlSelezione);
+        
+        // --- Selettore Timer ---
+        JPanel pnlTipoSezione = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        pnlTipoSezione.setBorder(BorderFactory.createEmptyBorder(20,0,0,0));
+        radioStudio = new JRadioButton(" Studio");
+        radioStudio.setIcon(new FlatSVGIcon("icone/books.svg", 20, 20));
+        radioStudio.setFont(new Font("Arial", Font.BOLD, 14));
+        radioStudio.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        radioStudio.setSelected(true);
+        radioPausa = new JRadioButton(" Pausa");
+        radioPausa.setIcon(new FlatSVGIcon("icone/coffee.svg", 20, 20));
+        radioPausa.setFont(new Font("Arial", Font.BOLD, 14));
+        radioPausa.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        gruppoSessione = new ButtonGroup();
+        gruppoSessione.add(radioStudio);
+        gruppoSessione.add(radioPausa);
+        pnlTipoSezione.add(radioStudio);
+        pnlTipoSezione.add(radioPausa);
+        topPanel.add(pnlTipoSezione);
+        radioStudio.addActionListener(e -> cambiaTipoSessione(true));
+        radioPausa.addActionListener(e -> cambiaTipoSessione(false));
 
         // --- Timer Display ---
         JPanel centerPanel = new JPanel();
@@ -112,30 +143,59 @@ public class PannelloPomodoro extends JPanel{
         lblTimer.setFont(new Font("Monospaced", Font.BOLD, 100));
         lblTimer.setAlignmentX(Component.CENTER_ALIGNMENT); // Centra orizzontalmente
         lblContatore = new JLabel(" Sessioni completate: 0");
-        lblContatore.setIcon(new FlatSVGIcon("icone/tomato.svg", 24 ,24));
-        lblContatore.setFont(new Font("Arial", Font.BOLD, 18));
+        lblContatore.setIcon(new FlatSVGIcon("icone/tomato.svg", 15 ,15));
+        lblContatore.setFont(new Font("Arial", Font.BOLD, 14));
         lblContatore.setForeground(new Color(231, 76, 60)); // Colore "rosso pomodoro"
+        lblContatore.setHorizontalAlignment(SwingConstants.CENTER);
         lblContatore.setAlignmentX(Component.CENTER_ALIGNMENT); // Centra orizzontalmente
         lblMaxPomodori = new JLabel(" Max Pomodori: 0");
-        lblMaxPomodori.setIcon(new FlatSVGIcon("icone/fire.svg", 24, 24));
-        lblMaxPomodori.setFont(new Font("Arial", Font.BOLD, 18));
+        lblMaxPomodori.setIcon(new FlatSVGIcon("icone/fire.svg", 15, 15));
+        lblMaxPomodori.setFont(new Font("Arial", Font.BOLD, 14));
         lblMaxPomodori.setForeground(new Color(231, 76, 60)); // Colore "rosso pomodoro"
+        lblMaxPomodori.setHorizontalAlignment(SwingConstants.CENTER);
         lblMaxPomodori.setAlignmentX(Component.CENTER_ALIGNMENT); // Centra orizzontalmente
+        barraProgressi = new JProgressBar(0, (isSessioneStudio ? MINUTI_STUDIO : MINUTI_PAUSA) * 60);
+        barraProgressi.setForeground((isSessioneStudio ? Color.RED : Color.BLUE));
+        barraProgressi.setBackground(Color.GRAY);
+        barraProgressi.setBorder(BorderFactory.createEmptyBorder(10,0,0,0));
+        barraProgressi.setValue((isSessioneStudio ? MINUTI_STUDIO : MINUTI_PAUSA) * 60);
+        barraProgressi.setPreferredSize(new Dimension(400, 14));
+        barraProgressi.setStringPainted(false);
 
-        // Aggiungiamo spazi flessibili per centrare perfettamente tutto nel mezzo
+        // Container dedicato per barra (non si espande)
+        JPanel panelBarra = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        panelBarra.setOpaque(false);
+        panelBarra.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        panelBarra.add(barraProgressi);
+
+        // Panel interno con barra, timer e contatori (layout fisso compatto)
+        JPanel timerBlock = new JPanel();
+        timerBlock.setLayout(new BoxLayout(timerBlock, BoxLayout.Y_AXIS));
+        timerBlock.setOpaque(false);
+        timerBlock.setAlignmentX(Component.CENTER_ALIGNMENT);
+        timerBlock.add(panelBarra);
+        timerBlock.add(Box.createRigidArea(new Dimension(0, 15)));
+        lblTimer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        timerBlock.add(lblTimer);
+        timerBlock.add(Box.createRigidArea(new Dimension(0, 10))); 
+        lblContatore.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        timerBlock.add(lblContatore);
+        lblMaxPomodori.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        timerBlock.add(lblMaxPomodori);
+
+        // Aggiungiamo spazi elastici solo sopra e sotto il blocco timer
         centerPanel.add(Box.createVerticalGlue());
-        centerPanel.add(lblTimer);
-        centerPanel.add(Box.createRigidArea(new Dimension(0, 15))); // Spazio tra timer e testo
-        centerPanel.add(lblContatore);
-        centerPanel.add(lblMaxPomodori);
+        centerPanel.add(timerBlock);
         centerPanel.add(Box.createVerticalGlue());
         this.add(centerPanel, BorderLayout.CENTER);
         setPomoCounter();
 
         // --- Controlli ---
-        JPanel botPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 20));
+        JPanel botPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 5));
         btnStartPause = new JButton("Avvia");
+        btnStartPause.setFont(new Font("SansSerif", Font.BOLD, 15));
         btnReset = new JButton("Reset");
+        btnReset.setFont(new Font("Sans-Serif", Font.BOLD, 15));
         btnStartPause.setPreferredSize(new Dimension(120, 40));
         btnReset.setPreferredSize(new Dimension(120, 40));
         btnStartPause.addActionListener(e -> toggleTimer());
@@ -150,9 +210,15 @@ public class PannelloPomodoro extends JPanel{
             @Override
             public void componentResized(ComponentEvent e) {
                 applyResponsiveOptionButtonLayout();
+                applyResponsiveProgressBarSize();
+                applyResponsiveFonts();
             }
         });
-        SwingUtilities.invokeLater(this::applyResponsiveOptionButtonLayout);
+        SwingUtilities.invokeLater(() -> {
+            applyResponsiveOptionButtonLayout();
+            applyResponsiveProgressBarSize();
+            applyResponsiveFonts();
+        });
     }
 
     private void toggleTimer() {
@@ -176,36 +242,37 @@ public class PannelloPomodoro extends JPanel{
         }
         lblStato.setForeground(isSessioneStudio ? new Color(231, 76, 60) : new Color(46, 204, 113));
 
-        timer = new Timer(true);
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                if (secondiRimanenti > 0) {
-                    secondiRimanenti--;
-                    aggiornaLabelTimer();
-                } else {
-                    timerFinito();
-                }
+        timestampFineTimer = System.currentTimeMillis() + millisecondiRimanenti;
+        timer = new Timer(100, e -> {
+            millisecondiRimanenti = Math.max(0, timestampFineTimer - System.currentTimeMillis());
+            secondiRimanenti = (int) Math.ceil(millisecondiRimanenti / 1000.0);
+            aggiornaTimerEProgressBar();
+            if (millisecondiRimanenti <= 0) {
+                timerFinito();
             }
-        }, 1000, 1000);
+        });
+        timer.start();
     }
 
     private void pausaTimer() {
         inEsecuzione = false;
         btnStartPause.setText("Riprendi");
-        if (timer != null) timer.cancel();
+        if (timer != null) {
+            timer.stop();
+            timer = null;
+        }
     }
 
     private void resetTimer() {
         sincronizzaContatorePomodoriGiornaliero();
         pausaTimer();
-        isSessioneStudio = true;
-        secondiRimanenti = MINUTI_STUDIO * 60;
+        isSessioneStudio = radioStudio != null ? radioStudio.isSelected() : isSessioneStudio;
+        impostaDurataSessioneCorrente();
         btnStartPause.setText("Avvia");
-        lblStato.setIcon(new FlatSVGIcon("icone/books.svg", 20, 20));
-        lblStato.setText("Pronto per studiare?");
+        lblStato.setIcon(new FlatSVGIcon(isSessioneStudio ? "icone/books.svg" : "icone/coffee.svg", 20, 20));
+        lblStato.setText(isSessioneStudio ? "Pronto per studiare?" : "Pronto per la pausa");
         lblStato.setForeground(Color.GRAY);
-        aggiornaLabelTimer();
+        aggiornaTimerEProgressBar();
     }
 
     private void aggiornaLabelTimer() {
@@ -213,6 +280,38 @@ public class PannelloPomodoro extends JPanel{
         int sec = secondiRimanenti % 60;
         // SwingUtilities.invokeLater assicura che il cambio grafico avvenga nel thread giusto
         SwingUtilities.invokeLater(() -> lblTimer.setText(String.format("%02d:%02d", min, sec)));
+    }
+
+    private int getDurataSessioneCorrenteSecondi() {
+        return (isSessioneStudio ? MINUTI_STUDIO : MINUTI_PAUSA) * 60;
+    }
+
+    private void impostaDurataSessioneCorrente() {
+        secondiRimanenti = getDurataSessioneCorrenteSecondi();
+        millisecondiRimanenti = secondiRimanenti * 1000L;
+    }
+
+    private void aggiornaTimerEProgressBar() {
+        aggiornaLabelTimer();
+        int max = Math.max(1, getDurataSessioneCorrenteSecondi());
+        int valoreCorrente = (int) Math.max(0, Math.min(millisecondiRimanenti / 1000.0, max));
+        barraProgressi.setMaximum(max);
+        barraProgressi.setValue(valoreCorrente);
+        barraProgressi.setForeground(isSessioneStudio ? new Color(231, 76, 60) : new Color(52, 152, 219));
+        barraProgressi.repaint();
+    }
+
+    public void cambiaTipoSessione(boolean isStudio) {
+        if(inEsecuzione) {
+            pausaTimer();
+        }
+        isSessioneStudio = isStudio;
+        impostaDurataSessioneCorrente();
+        lblStato.setText(isSessioneStudio ? "Pronto per studiare?" : "Pronto per la pausa");
+        lblStato.setForeground(Color.GRAY);
+        lblStato.setIcon(new FlatSVGIcon(isSessioneStudio ? "icone/books.svg" : "icone/coffee.svg", 20, 20));
+        btnStartPause.setText("Avvia");
+        aggiornaTimerEProgressBar();
     }
 
     public void aggiornaListaEsami() {
@@ -249,9 +348,14 @@ public class PannelloPomodoro extends JPanel{
         JOptionPane.showMessageDialog(this, msg, titolo, JOptionPane.INFORMATION_MESSAGE);
         // Cambia modalità (se era studio passa a pausa, e viceversa)
         isSessioneStudio = !isSessioneStudio;
-        secondiRimanenti = (isSessioneStudio ? MINUTI_STUDIO : MINUTI_PAUSA) * 60;
-        aggiornaLabelTimer();
-        btnStartPause.setText("Avvia " + (isSessioneStudio ? "Studio" : "Pausa"));
+        radioStudio.setSelected(isSessioneStudio);
+        radioPausa.setSelected(!isSessioneStudio);
+        impostaDurataSessioneCorrente();
+        lblStato.setIcon(new FlatSVGIcon(isSessioneStudio ? "icone/books.svg" : "icone/coffee.svg", 20, 20));
+        lblStato.setText(isSessioneStudio ? "Pronto per studiare?" : "Pronto per la pausa");
+        lblStato.setForeground(Color.GRAY);
+        aggiornaTimerEProgressBar();
+        btnStartPause.setText("Avvia");
     }
 
     private void riproduciSuono() {
@@ -394,9 +498,15 @@ public class PannelloPomodoro extends JPanel{
                     GestoreDati.salvaImpostazione("MINUTI_STUDIO", String.valueOf(nuoviMinutiStudio));
                     GestoreDati.salvaImpostazione("MINUTI_PAUSA", String.valueOf(nuoviMinutiPausa));
                     setNewMinutes();
-                    if (!inEsecuzione) {
-                        resetTimer();
+                    if (inEsecuzione) {
+                        pausaTimer();
                     }
+                    impostaDurataSessioneCorrente();
+                    btnStartPause.setText("Avvia");
+                    lblStato.setText(isSessioneStudio ? "Pronto per studiare?" : "Pronto per la pausa");
+                    lblStato.setForeground(Color.GRAY);
+                    lblStato.setIcon(new FlatSVGIcon(isSessioneStudio ? "icone/books.svg" : "icone/coffee.svg", 20, 20));
+                    aggiornaTimerEProgressBar();
                     JOptionPane.showMessageDialog(pannelloImpostazioni, "Parametri salvati!");
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(pannelloImpostazioni, "Inserisci minuti validi (numeri interi maggiori di 0).");
@@ -543,6 +653,60 @@ public class PannelloPomodoro extends JPanel{
         applyOptionButtonAppearance(optionBut.getModel().isRollover());
     }
 
+    private void applyResponsiveProgressBarSize() {
+        if (barraProgressi == null || getWidth() <= 0) {
+            return;
+        }
+
+        int targetWidth = (int) (getWidth() * 0.45f);
+        targetWidth = Math.max(220, Math.min(400, targetWidth));
+        barraProgressi.setPreferredSize(new Dimension(targetWidth, 14));
+        barraProgressi.revalidate();
+        barraProgressi.repaint();
+    }
+
+    private void applyResponsiveFonts() {
+        if (getWidth() <= 0 || getHeight() <= 0) {
+            return;
+        }
+
+        float scaleX = (float) getWidth() / BASE_WIDTH;
+        float scaleY = (float) getHeight() / BASE_HEIGHT;
+        float currentScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, Math.min(scaleX, scaleY)));
+
+        int titleSize = Math.round(28 * currentScale);
+        int statoSize = Math.round(18 * currentScale);
+        int radioSize = Math.round(14 * currentScale);
+        int selezioneSize = Math.round(14 * currentScale);
+        int timerSize = Math.round(100 * currentScale);
+        int contatorSize = Math.round(16 * currentScale);
+
+        if (lblTitle != null) {
+            lblTitle.setFont(new Font("Arial", Font.BOLD, titleSize));
+        }
+        if (lblStato != null) {
+            lblStato.setFont(new Font("Arial", Font.ITALIC, statoSize));
+        }
+        if (radioStudio != null) {
+            radioStudio.setFont(new Font("Arial", Font.BOLD, radioSize));
+        }
+        if (radioPausa != null) {
+            radioPausa.setFont(new Font("Arial", Font.BOLD, radioSize));
+        }
+        if (lblSelezione != null) {
+            lblSelezione.setFont(new Font("Arial", Font.PLAIN, selezioneSize));
+        }
+        if (lblTimer != null) {
+            lblTimer.setFont(new Font("Monospaced", Font.BOLD, timerSize));
+        }
+        if (lblContatore != null) {
+            lblContatore.setFont(new Font("Arial", Font.BOLD, contatorSize));
+        }
+        if (lblMaxPomodori != null) {
+            lblMaxPomodori.setFont(new Font("Arial", Font.BOLD, contatorSize));
+        }
+    }
+
     private void updateOptionIcon(boolean hover) {
         if (optionBut == null) {
             return;
@@ -605,6 +769,10 @@ public class PannelloPomodoro extends JPanel{
             MINUTI_PAUSA = 5;
             GestoreDati.salvaImpostazione("MINUTI_STUDIO", String.valueOf(MINUTI_STUDIO));
             GestoreDati.salvaImpostazione("MINUTI_PAUSA", String.valueOf(MINUTI_PAUSA));
+        }
+        if (!inEsecuzione) {
+            impostaDurataSessioneCorrente();
+            aggiornaTimerEProgressBar();
         }
         this.revalidate();
         this.repaint();
