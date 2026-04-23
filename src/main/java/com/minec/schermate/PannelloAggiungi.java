@@ -108,7 +108,7 @@ public class PannelloAggiungi extends JPanel {
         boolean isCompletato = estraiCompletato(parti);
         boolean isIdoneita = estraiIdoneita(parti);
 
-        // --- NOVITÀ: Cerca i CFU nel file voti.txt ---
+        // --- Cerca i CFU nel file voti.txt ---
         int cfuSalvati = 0;
         String[] votiRaw = GestoreDati.getVotiEsamiRaw();
         for (String rigaVoto : votiRaw) {
@@ -209,7 +209,7 @@ public class PannelloAggiungi extends JPanel {
                             }
                         }
                         if (valido) {
-                            // Se ha superato i test, salviamo usando il GestoreDati!
+                            // Se ha superato i test, salviamo usando il GestoreDati
                             GestoreDati.setVotiEsami(votoDaSalvare, nome, 0);
                             GestoreDati.aggiornaStatoEsame(nome, true);
                             autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);

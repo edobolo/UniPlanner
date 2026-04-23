@@ -207,11 +207,10 @@ public class PannelloVoti extends JPanel {
         panel1.add(title1, BorderLayout.NORTH);
 
         //pannello voto base di laurea
-        //pannello voto base di laurea
         String[] voti = GestoreDati.getVotiEsamiRaw();
         int sommaVoti = 0;
         int sommaCfu = 0;
-        int numeroLodi = 0; // Nuovo contatore per le lodi!
+        int numeroLodi = 0; // Nuovo contatore per le lodi
         int pesoLode = GestoreDati.getPesoLode();
         int bonusLode = GestoreDati.getBonusLode();
         for (int i = 0; i < voti.length; i++) {
@@ -223,7 +222,7 @@ public class PannelloVoti extends JPanel {
                     // Se l'utente ha scritto "30L" o "30l"
                     if (pair[0].equalsIgnoreCase("30L") || pair[0].equalsIgnoreCase("30 e lode")) {
                         votoSingolo = pesoLode; // Usiamo il valore scelto (es. 30 o 31)
-                        numeroLodi++; // Trovata una lode!
+                        numeroLodi++; // Trovata una lode
                     } else {
                         votoSingolo = Integer.parseInt(pair[0]); // Numero normale
                     }
@@ -238,7 +237,7 @@ public class PannelloVoti extends JPanel {
         if (sommaCfu != 0) {
             mediaVoti = (double) sommaVoti / sommaCfu;
             baseL = (mediaVoti * 110) / 30;
-            baseL += (numeroLodi * bonusLode); // MAGIA: Aggiungiamo i punti bonus!
+            baseL += (numeroLodi * bonusLode); // Aggiungiamo i punti bonus
         }
         JLabel title2 = new JLabel("Base Laurea");
         title2.setHorizontalAlignment(JLabel.CENTER);
@@ -254,7 +253,7 @@ public class PannelloVoti extends JPanel {
         JPanel votoOb = new JPanel();
         votoOb.setLayout(new GridLayout(2, 1));
         votoOb.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
-        // 1. LEGGE L'OBIETTIVO SALVATO!
+        // 1. LEGGE L'OBIETTIVO SALVATO
         int obiettivoSalvato = GestoreDati.getObiettivoMedia();
         panel3.addMouseListener(new MouseAdapter() {
             @Override
@@ -266,7 +265,7 @@ public class PannelloVoti extends JPanel {
                         if (nuovoObiettivo < 18 || nuovoObiettivo > 30) {
                             throw new NumberFormatException();
                         }
-                        // 2. SALVA IL NUOVO OBIETTIVO NEL FILE!
+                        // 2. SALVA IL NUOVO OBIETTIVO NEL FILE
                         GestoreDati.salvaObiettivoMedia(nuovoObiettivo);
                         refresh();
                     } catch (NumberFormatException e1) {
@@ -311,7 +310,6 @@ public class PannelloVoti extends JPanel {
         jp.setString(Math.round(((double) sommaCfu / maxCfu) * 100.0) + "%");
         jp.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         jp.setForeground(new Color(36, 166, 6));
-        //!jp.setBackground(Color.WHITE);
         JPanel progressPanel = new JPanel(new BorderLayout());
         progressPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         progressPanel.add(jp, BorderLayout.CENTER);
@@ -732,7 +730,6 @@ public class PannelloVoti extends JPanel {
 
             JPanel pannelloImpostazioni = new JPanel();
             pannelloImpostazioni.setPreferredSize(new Dimension(360, 480));
-            //!pannelloImpostazioni.setBackground(Color.WHITE);
             pannelloImpostazioni.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
             pannelloImpostazioni.setLayout(new BorderLayout());
 
@@ -744,12 +741,10 @@ public class PannelloVoti extends JPanel {
             // --- CONTENUTO CENTRALE ---
             JPanel centro = new JPanel();
             centro.setLayout(new BoxLayout(centro, BoxLayout.Y_AXIS));
-            //!centro.setBackground(Color.WHITE);
             centro.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
             // 1. Cambio CFU
             JPanel pnlCfu = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            //!pnlCfu.setBackground(Color.WHITE);
             JLabel lblCfu = new JLabel("Obiettivo CFU totali: ");
             lblCfu.setIcon(new FlatSVGIcon("icone/target.svg", 22, 22));
             pnlCfu.setBorder(BorderFactory.createEmptyBorder(20, 10, 0, 10));
@@ -770,7 +765,6 @@ public class PannelloVoti extends JPanel {
 
             // 2. Ordine scadenze
             JPanel pnlOrdine = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            //!pnlOrdine.setBackground(Color.WHITE);
             pnlOrdine.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
             JLabel lblOrdine = new JLabel("Ordine predefinito scadenze: ");
             lblOrdine.setIcon(new FlatSVGIcon("icone/calendar.svg", 22, 22));
@@ -794,13 +788,11 @@ public class PannelloVoti extends JPanel {
             // 3. MENU A SCOMPARSA: Parametri Laurea
             JPanel pnlGruppoParametri = new JPanel();
             pnlGruppoParametri.setLayout(new BoxLayout(pnlGruppoParametri, BoxLayout.Y_AXIS));
-            //!pnlGruppoParametri.setBackground(Color.WHITE);
             pnlGruppoParametri.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true));
             pnlGruppoParametri.setMaximumSize(new Dimension(340, 200));
 
             // A. L'Intestazione (Cliccabile)
             JPanel pnlHeader = new JPanel(new BorderLayout());
-            //!pnlHeader.setBackground(new Color(245, 245, 250));
             pnlHeader.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
             pnlHeader.setCursor(new Cursor(Cursor.HAND_CURSOR));
             JLabel lblTitoloParam = new JLabel("Parametri Laurea");
@@ -813,7 +805,6 @@ public class PannelloVoti extends JPanel {
 
             // B. Il Contenuto (Invisibile all'inizio)
             JPanel pnlContenuto = new JPanel(new GridLayout(3, 2, 10, 10));
-            //!pnlContenuto.setBackground(Color.WHITE);
             pnlContenuto.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
             pnlContenuto.setVisible(false);
             pnlContenuto.add(new JLabel(" Valore Lode (es. 30):"));
@@ -847,7 +838,6 @@ public class PannelloVoti extends JPanel {
 
             // 4. Bottone Reset
             JPanel pnlReset = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            //!pnlReset.setBackground(Color.WHITE);
             pnlReset.setBorder(BorderFactory.createEmptyBorder(20, 60, 0, 0));
             JButton btnReset = new JButton("Cancella tutti i dati");
             btnReset.setIcon(new FlatSVGIcon("icone/bin1.svg", 22, 22));
@@ -942,7 +932,6 @@ public class PannelloVoti extends JPanel {
             });
 
             JPanel panelBottone = new JPanel(new FlowLayout(FlowLayout.CENTER));
-            //!panelBottone.setBackground(Color.WHITE);
             panelBottone.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
             panelBottone.add(btnChiudi);
             pannelloImpostazioni.add(panelBottone, BorderLayout.SOUTH);

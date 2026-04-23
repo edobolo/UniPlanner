@@ -38,6 +38,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
@@ -60,11 +61,13 @@ public class PannelloPomodoro extends JPanel{
     private JButton btnReset;
     private JComboBox<String> comboEsami;
     private JButton optionBut;
+    private JButton trophyBut;
     private JRadioButton radioStudio;
     private JRadioButton radioPausa;
     private ButtonGroup gruppoSessione;
     private JProgressBar barraProgressi;
     private JPanel optionButtonPanel;
+    private JPanel trophyButtonPanel;
     private JPanel optionLeftSpacerPanel;
     private int optionIconSize = 24;
     private JLabel lblContatore;
@@ -95,14 +98,13 @@ public class PannelloPomodoro extends JPanel{
         lblStato = new JLabel("Pronto per studiare?", SwingConstants.CENTER);
         lblStato.setFont(new Font("Arial", Font.ITALIC, 18));
         lblStato.setForeground(Color.GRAY);
+        setTrophyButton();
         topPanel.add(lblTitle);
         topPanel.add(lblStato);
 
         JPanel headerPanel = new JPanel(new BorderLayout());
         setOptionButton();
-        optionLeftSpacerPanel = new JPanel();
-        optionLeftSpacerPanel.setOpaque(false);
-        headerPanel.add(optionLeftSpacerPanel, BorderLayout.WEST);
+        headerPanel.add(trophyButtonPanel, BorderLayout.WEST);
         headerPanel.add(topPanel, BorderLayout.CENTER);
         headerPanel.add(optionButtonPanel, BorderLayout.EAST);
         this.add(headerPanel, BorderLayout.NORTH);
@@ -327,7 +329,7 @@ public class PannelloPomodoro extends JPanel{
         sincronizzaContatorePomodoriGiornaliero();
         pausaTimer();
         riproduciSuono();
-        // Notifica di sistema usando il tuo GestoreNotifiche!
+        // Notifica di sistema usando il tuo GestoreNotifiche
         String titolo = isSessioneStudio ? "Studio Completato!" : "Pausa Finita!";
         String msg = isSessioneStudio ? "Ottimo lavoro! Ora prenditi 5 minuti di pausa." : "La pausa è finita, torna sui libri!";
         if (isSessioneStudio) {
@@ -400,6 +402,171 @@ public class PannelloPomodoro extends JPanel{
 
         audioThread.setDaemon(true);
         audioThread.start();
+    }
+
+    public void setTrophyButton() {
+        trophyBut = new JButton("");
+        trophyBut.setBorderPainted(false);
+        trophyBut.setFocusPainted(false);
+        trophyBut.setContentAreaFilled(false);
+        trophyBut.setOpaque(false);
+        trophyBut.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        trophyBut.setIcon(new FlatSVGIcon("icone/trophy.svg", 35, 35));
+        trophyBut.addActionListener(e -> {
+            JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
+            JPanel shadowOverlay = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    Graphics2D g2d = (Graphics2D) g.create();
+                    g2d.setColor(new Color(0, 0, 0, 150));
+                    g2d.fillRect(0, 0, getWidth(), getHeight());
+                    g2d.dispose();
+                }
+            };
+            shadowOverlay.setOpaque(false);
+            shadowOverlay.setLayout(new GridBagLayout());
+            shadowOverlay.addMouseListener(new java.awt.event.MouseAdapter() {
+            });
+
+            JPanel pannelloTrofei = new JPanel();
+            pannelloTrofei.setPreferredSize(new Dimension(550, 450));
+            pannelloTrofei.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
+            pannelloTrofei.setLayout(new BorderLayout());
+
+            JLabel titolo = new JLabel("I Tuoi Obiettivi", SwingConstants.CENTER);
+            titolo.setFont(new Font("Arial", Font.BOLD, 22));
+            titolo.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
+            pannelloTrofei.add(titolo, BorderLayout.NORTH);
+
+            // --- CONTENUTO CENTRALE ---
+            JPanel centro = new JPanel();
+            centro.setLayout(new BoxLayout(centro, BoxLayout.Y_AXIS));
+            centro.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+
+            // --- CALCOLO STATISTICHE REALI ---
+            int totaleMinuti = 0;
+            for (String riga : GestoreDati.getTuttoLoStudioRaw()) {
+                if (riga != null && riga.contains(";")) {
+                    try {
+                        totaleMinuti += Integer.parseInt(riga.split(";")[1]);
+                    } catch (Exception ex) {
+                    }
+                }
+            }
+            int oreTotali = totaleMinuti / 60;
+            int totaleLodi = 0;
+            for (String riga : GestoreDati.getVotiEsamiRaw()) {
+                if (riga != null && (riga.startsWith("30L") || riga.toLowerCase().startsWith("30 e lode"))) {
+                    totaleLodi++;
+                }
+            }
+            int numeroDiciotto = 0;
+            for(String riga : GestoreDati.getVotiEsamiRaw()) {
+                if(riga != null && (riga.startsWith("18"))) {
+                    numeroDiciotto++;
+                }
+            }
+            int cfuTotali = 0;
+            for (String riga : GestoreDati.getVotiEsamiRaw()) {
+                String[] parti = riga.split(";");
+                if(parti.length == 3) {
+                    cfuTotali += Integer.parseInt(parti[2]);
+                }
+            }
+            int cfuMaxImpostati = Integer.parseInt(GestoreDati.getImpostazione("CFU", "180"));
+
+            // --- LISTA DEGLI ACHIEVEMENT ---
+            JPanel listaObiettivi = new JPanel();
+            listaObiettivi.setLayout(new BoxLayout(listaObiettivi, BoxLayout.Y_AXIS));
+            listaObiettivi.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+
+            // Obiettivo 1: Studioso (10 ore totali)
+            listaObiettivi.add(creaPannelloObiettivo("Studioso", "Studia per 10 ore totali", oreTotali >= 10));
+            listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
+            // Obiettivo 2: Secchione (3 Lodi)
+            listaObiettivi.add(creaPannelloObiettivo("Secchione", "Ottieni 3 Lodi", totaleLodi >= 3));
+            listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
+            // Obiettivo 3: Maratoneta (5 Pomodori oggi)
+            listaObiettivi.add(creaPannelloObiettivo("Maratoneta", "Fai 5 Pomodori in un giorno", conteggioPomodori >= 5));
+            listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
+            // Obiettivo 4: Horto Muso (5 volte 18)
+            listaObiettivi.add(creaPannelloObiettivo("Intenditore di Hippica", "Prendi almeno tre 18", numeroDiciotto >= 3));
+            listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
+            // Obiettivo: The End?
+            listaObiettivi.add(creaPannelloObiettivo("The End?", "Raggiungi il numero di crediti massimi", cfuTotali >= cfuMaxImpostati));
+            
+            JScrollPane scrollPane = new JScrollPane(listaObiettivi);
+            scrollPane.setBorder(null); // Togliamo il bordo di default dello scrollpane
+            scrollPane.setOpaque(false);
+            scrollPane.getViewport().setOpaque(false); // Rende trasparente anche l'area interna
+            scrollPane.getVerticalScrollBar().setUnitIncrement(12);
+            scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            centro.add(scrollPane, BorderLayout.CENTER);
+
+            // ASSEMBLIAMO I PEZZI NELL'ORDINE GIUSTO NEL CENTRO
+            pannelloTrofei.add(centro, BorderLayout.CENTER);
+
+            // --- BOTTONE CHIUDI ---
+            JButton btnChiudi = new JButton("Chiudi");
+            btnChiudi.setFont(new Font("Arial", Font.BOLD, 14));
+            btnChiudi.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnChiudi.addActionListener(chiudiEvent -> {
+                shadowOverlay.setVisible(false);
+            });
+
+            JPanel panelBottone = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            panelBottone.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
+            panelBottone.add(btnChiudi);
+            pannelloTrofei.add(panelBottone, BorderLayout.SOUTH);
+
+            shadowOverlay.add(pannelloTrofei, new GridBagConstraints());
+            frame.setGlassPane(shadowOverlay);
+            shadowOverlay.setVisible(true);
+        });
+
+        trophyButtonPanel = new JPanel(new GridBagLayout());
+        trophyButtonPanel.setOpaque(false);
+        GridBagConstraints gbcOption = new GridBagConstraints();
+        gbcOption.gridx = 0;
+        gbcOption.gridy = 0;
+        gbcOption.anchor = GridBagConstraints.NORTHEAST;
+        gbcOption.fill = GridBagConstraints.NONE;
+        gbcOption.weightx = 1;
+        gbcOption.weighty = 1;
+        trophyButtonPanel.add(trophyBut, gbcOption);
+        applyOptionButtonAppearance(false);
+    }
+
+    private JPanel creaPannelloObiettivo(String nome, String descrizione, boolean sbloccato) {
+        JPanel pnl = new JPanel(new BorderLayout());
+        pnl.setBorder(BorderFactory.createLineBorder(sbloccato ? new Color(46, 204, 113) : Color.LIGHT_GRAY, 2, true));
+        pnl.setBackground(sbloccato ? new Color(230, 255, 230) : null); // Sfondo verdino se sbloccato
+        pnl.setMaximumSize(new Dimension(300, 60));
+        pnl.setPreferredSize(new Dimension(300, 60));
+        // Icona: Lucchetto o Medaglia
+        JLabel icona = new JLabel();
+        icona.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+        icona.setBorder(BorderFactory.createEmptyBorder(0,10,0,10));
+        if(sbloccato)
+            icona.setIcon(new FlatSVGIcon("icone/medal.svg", 25, 25));
+        else
+            icona.setIcon(new FlatSVGIcon("icone/locker.svg", 25, 25));
+        // Testi
+        JPanel pnlTesti = new JPanel(new GridLayout(2, 1));
+        pnlTesti.setOpaque(false);
+        JLabel lblNome = new JLabel(nome);
+        lblNome.setFont(new Font("Arial", Font.BOLD, 14));
+        lblNome.setForeground(sbloccato ? new Color(39, 174, 96) : Color.GRAY);
+        JLabel lblDesc = new JLabel(descrizione);
+        lblDesc.setFont(new Font("Arial", Font.ITALIC, 11));
+        lblDesc.setForeground(Color.DARK_GRAY);
+        pnlTesti.add(lblNome);
+        pnlTesti.add(lblDesc);
+
+        pnl.add(icona, BorderLayout.WEST);
+        pnl.add(pnlTesti, BorderLayout.CENTER);
+        return pnl;
     }
 
     public void setOptionButton() {
@@ -557,7 +724,7 @@ public class PannelloPomodoro extends JPanel{
             // ASSEMBLIAMO I PEZZI NELL'ORDINE GIUSTO NEL CENTRO
             centro.add(Box.createRigidArea(new Dimension(0, 10)));
             centro.add(Box.createRigidArea(new Dimension(0, 10)));
-            centro.add(pnlGruppoParametri); // <--- Inserito qui!
+            centro.add(pnlGruppoParametri);
             centro.add(pnlReset);
             pannelloImpostazioni.add(centro, BorderLayout.CENTER);
 
@@ -647,8 +814,13 @@ public class PannelloPomodoro extends JPanel{
         optionBut.setMinimumSize(buttonDim);
         optionBut.setMaximumSize(buttonDim);
         optionButtonPanel.setPreferredSize(new Dimension(buttonSize + marginRight, buttonSize + marginTop));
-        if (optionLeftSpacerPanel != null) {
-            optionLeftSpacerPanel.setPreferredSize(optionButtonPanel.getPreferredSize());
+        if (trophyButtonPanel != null && trophyBut != null) {
+            int marginLeft = Math.max(6, Math.round(10 * currentScale));
+            trophyButtonPanel.setBorder(new EmptyBorder(marginTop, marginLeft, 0, 0));
+            trophyBut.setPreferredSize(buttonDim);
+            trophyBut.setMinimumSize(buttonDim);
+            trophyBut.setMaximumSize(buttonDim);
+            trophyButtonPanel.setPreferredSize(new Dimension(buttonSize + marginLeft, buttonSize + marginTop));
         }
         applyOptionButtonAppearance(optionBut.getModel().isRollover());
     }

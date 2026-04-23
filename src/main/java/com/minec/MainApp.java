@@ -7,17 +7,12 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.Rectangle;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.extras.FlatSVGUtils;
@@ -31,7 +26,7 @@ public class MainApp {
     private static final String ICONA_APP = "icone/u.svg";
 
     public static void main(String[] args) {
-        // Leggiamo la memoria: l'utente aveva scelto il tema scuro?
+        // Leggiamo la memoria
         if (com.minec.dati.GestoreDati.isTemaScuro()) {
             com.formdev.flatlaf.FlatDarkLaf.setup(); // Tema Scuro
         } else {
@@ -63,10 +58,9 @@ public class MainApp {
         // Usiamo un FlowLayout con margini più ampi (30px tra un bottone e l'altro)
         JPanel pannelloMenu = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         
-        // Colore di sfondo moderno (un blu scuro/grigio ardesia)
         Color coloreSfondoMenu = new Color(44, 62, 80); 
         pannelloMenu.setBackground(coloreSfondoMenu);
-        // Aggiungiamo un bordino colorato in alto alla barra per staccarla dal contenuto
+        // Aggiungiamo un bordo colorato in alto alla barra per staccarla dal contenuto
         pannelloMenu.setBorder(BorderFactory.createMatteBorder(3, 0, 0, 0, new Color(41, 128, 185)));
 
         // Creiamo i bottoni

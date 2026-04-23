@@ -1,6 +1,5 @@
 package com.minec.dati;
 
-import java.awt.List;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -276,7 +275,6 @@ public class GestoreDati {
         int count = 0;
         try (Scanner scan = new Scanner(new FileReader(fileScadenze))) {
             while (scan.hasNextLine()) {
-                // Ottimo lavoro qui! Questo era già scritto in modo perfetto.
                 if (!scan.nextLine().trim().isEmpty())
                     count++;
             }
