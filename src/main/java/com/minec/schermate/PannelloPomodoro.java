@@ -18,6 +18,10 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -30,7 +34,6 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -41,9 +44,9 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.Timer;
 import static javax.swing.SwingConstants.CENTER;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
@@ -445,6 +448,8 @@ public class PannelloPomodoro extends JPanel{
             centro.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
             // --- CALCOLO STATISTICHE REALI ---
+
+            // Obiettivo 1 e 2
             int totaleMinuti = 0;
             for (String riga : GestoreDati.getTuttoLoStudioRaw()) {
                 if (riga != null && riga.contains(";")) {
@@ -456,25 +461,96 @@ public class PannelloPomodoro extends JPanel{
             }
             int oreTotali = totaleMinuti / 60;
             int totaleLodi = 0;
-            for (String riga : GestoreDati.getVotiEsamiRaw()) {
+            String[] esamiRaw = GestoreDati.getVotiEsamiRaw();
+            for (String riga : esamiRaw) {
                 if (riga != null && (riga.startsWith("30L") || riga.toLowerCase().startsWith("30 e lode"))) {
                     totaleLodi++;
                 }
             }
-            int numeroDiciotto = 0;
-            for(String riga : GestoreDati.getVotiEsamiRaw()) {
-                if(riga != null && (riga.startsWith("18"))) {
-                    numeroDiciotto++;
-                }
-            }
+            // Obiettivo 3 e 6
             int cfuTotali = 0;
-            for (String riga : GestoreDati.getVotiEsamiRaw()) {
+            int cfuMaxImpostati = Integer.parseInt(GestoreDati.getImpostazione("CFU", "180"));
+            for (String riga : esamiRaw) {
                 String[] parti = riga.split(";");
                 if(parti.length == 3) {
                     cfuTotali += Integer.parseInt(parti[2]);
                 }
             }
-            int cfuMaxImpostati = Integer.parseInt(GestoreDati.getImpostazione("CFU", "180"));
+            // Obiettivo 4
+            int numeroDiciotto = 0;
+            for(String riga : esamiRaw) {
+                if(riga != null && (riga.startsWith("18"))) {
+                    numeroDiciotto++;
+                }
+            }
+            // Obiettivo 5
+            boolean[] votiDal18Al30 = new boolean[13]; // indice 0 -> 18, indice 12 -> 30
+            boolean hasLode = false;
+            boolean has18 = false;
+            for (String riga : esamiRaw) {
+                if (riga == null || riga.isBlank()) {
+                    continue;
+                }
+                String[] parti = riga.split(";");
+                if (parti.length == 0) {
+                    continue;
+                }
+                String votoRaw = parti[0].trim();
+                if (votoRaw.equalsIgnoreCase("30L") || votoRaw.equalsIgnoreCase("30 e lode")) {
+                    hasLode = true;
+                    votiDal18Al30[12] = true;
+                    continue;
+                }
+                try {
+                    int voto = Integer.parseInt(votoRaw);
+                    if (voto >= 18 && voto <= 30) {
+                        if(voto == 18)
+                            has18 = true;
+                        votiDal18Al30[voto - 18] = true;
+                    }
+                } catch (NumberFormatException ex) {
+                    // Ignora righe non numeriche (es. idoneita)
+                }
+            }
+            boolean haTuttiIVotiDal18Al30 = true;
+            for (boolean votoPresente : votiDal18Al30) {
+                if (!votoPresente) {
+                    haTuttiIVotiDal18Al30 = false;
+                    break;
+                }
+            }
+            // Obiettivo 7
+            boolean speedrunnerSbloccato = false;
+            List<String> esamiSuperati = new ArrayList<>();
+            for (String riga : GestoreDati.getEsamiSalvatiRaw()) {
+                if (riga == null || !riga.contains(";")) continue;
+                String[] parti = riga.split(";");
+                if (parti.length > 1 && parti[1].equalsIgnoreCase("true")) {
+                    esamiSuperati.add(parti[0]);
+                }
+            }
+            List<LocalDate> dateEsamiPassati = new ArrayList<>();
+            for (String riga : GestoreDati.getScadenzeRaw()) {
+                if (riga == null || !riga.contains(";")) continue;
+                String[] parti = riga.split(";");
+                String nomeEsame = parti[0];
+                if (esamiSuperati.contains(nomeEsame) && parti.length > 1) {
+                    try {
+                        String dataStringa = parti[1].trim();
+                        LocalDate data = LocalDate.parse(dataStringa);
+                        dateEsamiPassati.add(data);
+                    } catch (Exception ex) {
+                    }
+                }
+            }
+            Collections.sort(dateEsamiPassati);
+            for (int i = 0; i < dateEsamiPassati.size() - 1; i++) {
+                long giorni = ChronoUnit.DAYS.between(dateEsamiPassati.get(i), dateEsamiPassati.get(i+1));
+                if (giorni >= 0 && giorni <= 3) {
+                    speedrunnerSbloccato = true;
+                    break;
+                }
+            }
 
             // --- LISTA DEGLI ACHIEVEMENT ---
             JPanel listaObiettivi = new JPanel();
@@ -493,8 +569,21 @@ public class PannelloPomodoro extends JPanel{
             // Obiettivo 4: Horto Muso (5 volte 18)
             listaObiettivi.add(creaPannelloObiettivo("Intenditore di Hippica", "Prendi almeno tre 18", numeroDiciotto >= 3));
             listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
-            // Obiettivo: The End?
+            // Obiettivo 5: How did we get here (Prendere tutti i voti da 18 a 30L)
+            listaObiettivi.add(creaPannelloObiettivo("How Did We Get Here", "Prendi tutti i voti da 18 a 30L", haTuttiIVotiDal18Al30));
+            listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
+            // Obiettivo 6: The End?
             listaObiettivi.add(creaPannelloObiettivo("The End?", "Raggiungi il numero di crediti massimi", cfuTotali >= cfuMaxImpostati));
+            listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
+            // Obiettivo 7: Tocca L'Erba
+            listaObiettivi.add(creaPannelloObiettivo("Tocca l'Erba", "Hai completato 10 Pomodori in un solo giorno. Esci fuori, il sole esiste ancora!", conteggioPomodori >= 10));
+            listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
+            // Obiettivo 8: SpeedRunner
+            listaObiettivi.add(creaPannelloObiettivo("SpeedRunner", "Hai superato due esami a meno di 3 giorni di distanza l'uno dall'altro. Pura follia", speedrunnerSbloccato));
+            listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
+            // Obiettivo 9: Parkour!
+            listaObiettivi.add(creaPannelloObiettivo("Parkour!", "Hai accettato il tuo primo 18. Basta che respiri, l'importante è portarlo a casa", has18 && hasLode));
+            listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
             
             JScrollPane scrollPane = new JScrollPane(listaObiettivi);
             scrollPane.setBorder(null); // Togliamo il bordo di default dello scrollpane
