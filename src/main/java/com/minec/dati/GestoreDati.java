@@ -503,13 +503,23 @@ public class GestoreDati {
 
     public static void setNuovoTempoStudio(String nomeEsame, int minuti) {
         String[] datiEsistenti = getTuttoLoStudioRaw();
+        boolean trovato = false;
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(fileStudio))) {
             for (String riga : datiEsistenti) {
+                if (riga == null || !riga.contains(";")) {
+                    continue;
+                }
                 String[] parti = riga.split(";");
-                if(parti[0].equals(nomeEsame))
+                if (parti[0].equals(nomeEsame)) {
                     bw.write(nomeEsame + ";" + minuti);
-                else
+                    trovato = true;
+                } else {
                     bw.write(riga);
+                }
+                bw.newLine();
+            }
+            if (!trovato) {
+                bw.write(nomeEsame + ";" + minuti);
                 bw.newLine();
             }
         } catch (IOException e) {

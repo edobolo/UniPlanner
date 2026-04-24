@@ -27,6 +27,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
+import com.minec.GestoreNotifiche;
 import com.minec.dati.GestoreDati;
 
 public class PannelloAggiungi extends JPanel {
@@ -99,6 +100,7 @@ public class PannelloAggiungi extends JPanel {
         // 3. Forza il ridisegno della UI
         esamiPanel.revalidate();
         esamiPanel.repaint();
+        GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
     }
 
     private void disegnaEsameSuSchermo(String raw) {
@@ -180,6 +182,7 @@ public class PannelloAggiungi extends JPanel {
                 pannelloCfuLocale.revalidate();
                 pannelloCfuLocale.repaint();
                 pv.refresh();
+                GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
             }
         });
 
@@ -215,6 +218,7 @@ public class PannelloAggiungi extends JPanel {
                             autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
                             buttonCFU.setVisible(true);
                             pv.refresh();
+                            GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
                         } else {
                             JOptionPane.showMessageDialog(this,
                                     "Voto non valido! Inserisci un numero tra 18 e 30, oppure '30L'.");
@@ -233,6 +237,7 @@ public class PannelloAggiungi extends JPanel {
                     pannelloCfuLocale.revalidate();
                     pannelloCfuLocale.repaint();
                     pv.refresh();
+                    GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
                 }
             });
         } else {
@@ -253,6 +258,7 @@ public class PannelloAggiungi extends JPanel {
                     pannelloCfuLocale.repaint();
                 }
                 pv.refresh();
+                GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
             });
         }
         // Assemblaggio finale delle "scatole"

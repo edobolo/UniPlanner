@@ -18,9 +18,11 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import javax.sound.sampled.AudioFormat;
@@ -33,6 +35,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -42,14 +45,17 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.JFrame;
 import static javax.swing.SwingConstants.CENTER;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.minec.GestoreNotifiche;
 import com.minec.dati.GestoreDati;
 
 public class PannelloPomodoro extends JPanel{
@@ -79,6 +85,9 @@ public class PannelloPomodoro extends JPanel{
     private JLabel lblSelezione;
     private int conteggioPomodori = 0;
     private int maxPomodoriGiornalieri = 0;
+    private LocalTime oraAttuale;
+    private LocalDate dataOdierna;
+    private LocalDate dataEsame;
 
     private Timer timer;
     private int secondiRimanenti;
@@ -86,14 +95,15 @@ public class PannelloPomodoro extends JPanel{
     private long timestampFineTimer;
     private boolean inEsecuzione = false;
     private boolean isSessioneStudio = true;
+    private JFrame main;
     
     private static int MINUTI_STUDIO = 25;
     private static int MINUTI_PAUSA = 5;
 
-    public PannelloPomodoro() {
+    public PannelloPomodoro(JFrame frame) {
         this.setLayout(new BorderLayout());
         this.setBorder(new EmptyBorder(20, 20, 20, 20));
-        
+        main = frame;
         // ---Titolo e Stato---
         JPanel topPanel = new JPanel(new GridLayout(4, 1));
         lblTitle = new JLabel("Timer Pomodoro", CENTER);
@@ -257,6 +267,9 @@ public class PannelloPomodoro extends JPanel{
             }
         });
         timer.start();
+        dataOdierna = LocalDate.now();
+        dataEsame = getDataEsameSelezionato();
+        verificaEAvvisaNuoviObiettivi();
     }
 
     private void pausaTimer() {
@@ -328,6 +341,177 @@ public class PannelloPomodoro extends JPanel{
         }
     }
 
+    private LocalDate getDataEsameSelezionato() {
+        String esameSelezionato = (String) comboEsami.getSelectedItem();
+        if (esameSelezionato == null || esameSelezionato.isBlank()) {
+            return null;
+        }
+
+        String[] scadenzeRaw = GestoreDati.getScadenzeRaw();
+        for (String riga : scadenzeRaw) {
+            if (riga == null || !riga.contains(";")) {
+                continue;
+            }
+
+            String[] parti = riga.split(";");
+            if (parti.length < 2) {
+                continue;
+            }
+
+            String nomeEsame = parti[0].trim();
+            if (!nomeEsame.equalsIgnoreCase(esameSelezionato.trim())) {
+                continue;
+            }
+
+            try {
+                return LocalDate.parse(parti[1].trim());
+            } catch (Exception ex) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean isProcastinazioneSerialeSbloccatoOra() {
+        LocalDate dataOdiernaCalcolata = LocalDate.now();
+        LocalDate dataEsameSelezionato = getDataEsameSelezionato();
+        return dataEsameSelezionato != null
+                && !dataEsameSelezionato.isBefore(dataOdiernaCalcolata)
+                && ChronoUnit.DAYS.between(dataOdiernaCalcolata, dataEsameSelezionato) < 2;
+    }
+
+    private boolean sbloccaObiettivoSeNuovo(String chiaveObiettivo, String nomeObiettivo, String descrizioneObiettivo,
+            boolean condizioneSblocco) {
+        boolean giaSbloccato = Boolean.parseBoolean(GestoreDati.getImpostazione(chiaveObiettivo, "false"));
+        if (giaSbloccato) {
+            return true;
+        }
+
+        if (!condizioneSblocco) {
+            return false;
+        }
+
+        GestoreDati.salvaImpostazione(chiaveObiettivo, "true");
+    JFrame frameCorrente = (JFrame) SwingUtilities.getWindowAncestor(this);
+    GestoreNotifiche.mostraNotifica("Trofeo sbloccato: " + nomeObiettivo, descrizioneObiettivo,
+        frameCorrente != null ? frameCorrente : this);
+        return true;
+    }
+
+    private void verificaEAvvisaNuoviObiettivi() {
+        int totaleMinuti = 0;
+        for (String riga : GestoreDati.getTuttoLoStudioRaw()) {
+            if (riga != null && riga.contains(";")) {
+                try {
+                    totaleMinuti += Integer.parseInt(riga.split(";")[1]);
+                } catch (Exception ex) {
+                }
+            }
+        }
+        int oreTotali = totaleMinuti / 60;
+
+        int totaleLodi = 0;
+        String[] esamiRaw = GestoreDati.getVotiEsamiRaw();
+        for (String riga : esamiRaw) {
+            if (riga != null && (riga.startsWith("30L") || riga.toLowerCase().startsWith("30 e lode"))) {
+                totaleLodi++;
+            }
+        }
+
+        int cfuTotali = 0;
+        int cfuMaxImpostati = Integer.parseInt(GestoreDati.getImpostazione("CFU", "180"));
+        for (String riga : esamiRaw) {
+            String[] parti = riga.split(";");
+            if (parti.length == 3) {
+                cfuTotali += Integer.parseInt(parti[2]);
+            }
+        }
+
+        int numeroDiciotto = 0;
+        for (String riga : esamiRaw) {
+            if (riga != null && (riga.startsWith("18"))) {
+                numeroDiciotto++;
+            }
+        }
+
+        boolean[] votiDal18Al30 = new boolean[13];
+        boolean hasLode = false;
+        boolean has18 = false;
+        for (String riga : esamiRaw) {
+            if (riga == null || riga.isBlank()) {
+                continue;
+            }
+            String[] parti = riga.split(";");
+            if (parti.length == 0) {
+                continue;
+            }
+            String votoRaw = parti[0].trim();
+            if (votoRaw.equalsIgnoreCase("30L") || votoRaw.equalsIgnoreCase("30 e lode")) {
+                hasLode = true;
+                votiDal18Al30[12] = true;
+                continue;
+            }
+            try {
+                int voto = Integer.parseInt(votoRaw);
+                if (voto >= 18 && voto <= 30) {
+                    if (voto == 18) {
+                        has18 = true;
+                    }
+                    votiDal18Al30[voto - 18] = true;
+                }
+            } catch (NumberFormatException ex) {
+            }
+        }
+        boolean haTuttiIVotiDal18Al30 = true;
+        for (boolean votoPresente : votiDal18Al30) {
+            if (!votoPresente) {
+                haTuttiIVotiDal18Al30 = false;
+                break;
+            }
+        }
+
+        boolean speedrunnerSbloccato = false;
+        List<String> esamiSuperati = new ArrayList<>();
+        for (String riga : GestoreDati.getEsamiSalvatiRaw()) {
+            if (riga == null || !riga.contains(";")) {
+                continue;
+            }
+            String[] parti = riga.split(";");
+            if (parti.length > 1 && parti[1].equalsIgnoreCase("true")) {
+                esamiSuperati.add(parti[0]);
+            }
+        }
+
+        List<LocalDate> dateEsamiPassati = new ArrayList<>();
+        for (String riga : GestoreDati.getScadenzeRaw()) {
+            if (riga == null || !riga.contains(";")) {
+                continue;
+            }
+            String[] parti = riga.split(";");
+            String nomeEsame = parti[0];
+            if (esamiSuperati.contains(nomeEsame) && parti.length > 1) {
+                try {
+                    LocalDate data = LocalDate.parse(parti[1].trim());
+                    dateEsamiPassati.add(data);
+                } catch (Exception ex) {
+                }
+            }
+        }
+        Collections.sort(dateEsamiPassati);
+        for (int i = 0; i < dateEsamiPassati.size() - 1; i++) {
+            long giorni = ChronoUnit.DAYS.between(dateEsamiPassati.get(i), dateEsamiPassati.get(i + 1));
+            if (giorni >= 0 && giorni <= 3) {
+                speedrunnerSbloccato = true;
+                break;
+            }
+        }
+
+        sbloccaObiettivoSeNuovo("ACH_SPEEDRUNNER", "SpeedRunner", "Hai superato due esami a meno di 3 giorni di distanza l'uno dall'altro. Pura follia", speedrunnerSbloccato);
+        sbloccaObiettivoSeNuovo("ACH_CREATURA_NOTTE", "Creatura della Notte", "Hai completato un Pomodoro tra le 2:00 e le 4:00 del mattino. Vai a dormire, per favore", oraAttuale != null && oraAttuale.getHour() >= 2 && oraAttuale.getHour() <= 4);
+        sbloccaObiettivoSeNuovo("ACH_PROCRASTINAZIONE_SERIALE", "Procastinazione Seriale", "Hai avviato la tua primissima sessione di Pomodoro per un esame... a meno di 48 ore dalla data dell'appello", isProcastinazioneSerialeSbloccatoOra());
+    }
+
     private void timerFinito() {
         sincronizzaContatorePomodoriGiornaliero();
         pausaTimer();
@@ -361,6 +545,8 @@ public class PannelloPomodoro extends JPanel{
         lblStato.setForeground(Color.GRAY);
         aggiornaTimerEProgressBar();
         btnStartPause.setText("Avvia");
+        oraAttuale = LocalTime.now();
+        verificaEAvvisaNuoviObiettivi();
     }
 
     private void riproduciSuono() {
@@ -557,33 +743,60 @@ public class PannelloPomodoro extends JPanel{
             listaObiettivi.setLayout(new BoxLayout(listaObiettivi, BoxLayout.Y_AXIS));
             listaObiettivi.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
+            boolean studiosoSbloccato = oreTotali >= 10;
+            boolean secchioneSbloccato = totaleLodi >= 3;
+            boolean maratonetaSbloccato = conteggioPomodori >= 5;
+            boolean ippicaSbloccato = numeroDiciotto >= 3;
+            boolean howDidSbloccato = haTuttiIVotiDal18Al30;
+            boolean theEndSbloccato = cfuTotali >= cfuMaxImpostati;
+            boolean toccaErbaSbloccato = conteggioPomodori >= 10;
+            boolean speedRunnerSbloccato = sbloccaObiettivoSeNuovo("ACH_SPEEDRUNNER", "SpeedRunner", "Hai superato due esami a meno di 3 giorni di distanza l'uno dall'altro. Pura follia", speedrunnerSbloccato);
+            boolean diciottoTrentaSbloccato = has18 && hasLode;
+            boolean parkourSbloccato = has18;
+            boolean ergonomicaSbloccato = oreTotali >= 100;
+            boolean creaturaSbloccato = sbloccaObiettivoSeNuovo("ACH_CREATURA_NOTTE", "Creatura della Notte", "Hai completato un Pomodoro tra le 2:00 e le 4:00 del mattino. Vai a dormire, per favore", oraAttuale != null && oraAttuale.getHour() >= 2 && oraAttuale.getHour() <= 4);
+            boolean procastinazioneSbloccato = sbloccaObiettivoSeNuovo("ACH_PROCRASTINAZIONE_SERIALE", "Procastinazione Seriale", "Hai avviato la tua primissima sessione di Pomodoro per un esame... a meno di 48 ore dalla data dell'appello", isProcastinazioneSerialeSbloccatoOra());
+
             // Obiettivo 1: Studioso (10 ore totali)
-            listaObiettivi.add(creaPannelloObiettivo("Studioso", "Studia per 10 ore totali", oreTotali >= 10));
+            listaObiettivi.add(creaPannelloObiettivo(new FlatSVGIcon("icone/books.svg", 18, 18),"Studioso", "Studia per 10 ore totali", studiosoSbloccato));
             listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
             // Obiettivo 2: Secchione (3 Lodi)
-            listaObiettivi.add(creaPannelloObiettivo("Secchione", "Ottieni 3 Lodi", totaleLodi >= 3));
+            listaObiettivi.add(creaPannelloObiettivo(new FlatSVGIcon("icone/hat.svg", 18, 18),"Secchione", "Ottieni 3 Lodi", secchioneSbloccato));
             listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
             // Obiettivo 3: Maratoneta (5 Pomodori oggi)
-            listaObiettivi.add(creaPannelloObiettivo("Maratoneta", "Fai 5 Pomodori in un giorno", conteggioPomodori >= 5));
+            listaObiettivi.add(creaPannelloObiettivo(new FlatSVGIcon("icone/runner.svg", 18,18),"Maratoneta", "Fai 5 Pomodori in un giorno", maratonetaSbloccato));
             listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
             // Obiettivo 4: Horto Muso (5 volte 18)
-            listaObiettivi.add(creaPannelloObiettivo("Intenditore di Hippica", "Prendi almeno tre 18", numeroDiciotto >= 3));
+            listaObiettivi.add(creaPannelloObiettivo(new FlatSVGIcon("icone/horse.svg", 17,17),"Intenditore di Ippiha", "Prendi almeno tre 18", ippicaSbloccato));
             listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
             // Obiettivo 5: How did we get here (Prendere tutti i voti da 18 a 30L)
-            listaObiettivi.add(creaPannelloObiettivo("How Did We Get Here", "Prendi tutti i voti da 18 a 30L", haTuttiIVotiDal18Al30));
+            listaObiettivi.add(creaPannelloObiettivo(new FlatSVGIcon("icone/ampoule.svg", 18,18),"How Did We Get Here", "Prendi tutti i voti da 18 a 30L", howDidSbloccato));
             listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
             // Obiettivo 6: The End?
-            listaObiettivi.add(creaPannelloObiettivo("The End?", "Raggiungi il numero di crediti massimi", cfuTotali >= cfuMaxImpostati));
+            listaObiettivi.add(creaPannelloObiettivo(new FlatSVGIcon("icone/hat.svg", 18,18),"The End?", "Raggiungi il numero di crediti massimi", theEndSbloccato));
             listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
             // Obiettivo 7: Tocca L'Erba
-            listaObiettivi.add(creaPannelloObiettivo("Tocca l'Erba", "Hai completato 10 Pomodori in un solo giorno. Esci fuori, il sole esiste ancora!", conteggioPomodori >= 10));
+            listaObiettivi.add(creaPannelloObiettivo(new FlatSVGIcon("icone/grass.svg", 18,18),"Tocca l'Erba", "Hai completato 10 Pomodori in un solo giorno. Esci fuori, il sole esiste ancora!", toccaErbaSbloccato));
             listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
             // Obiettivo 8: SpeedRunner
-            listaObiettivi.add(creaPannelloObiettivo("SpeedRunner", "Hai superato due esami a meno di 3 giorni di distanza l'uno dall'altro. Pura follia", speedrunnerSbloccato));
+            listaObiettivi.add(creaPannelloObiettivo(new FlatSVGIcon("icone/flash.svg", 18,18),"SpeedRunner", "Hai superato due esami a meno di 3 giorni di distanza l'uno dall'altro. Pura follia", speedRunnerSbloccato));
             listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
-            // Obiettivo 9: Parkour!
-            listaObiettivi.add(creaPannelloObiettivo("Parkour!", "Hai accettato il tuo primo 18. Basta che respiri, l'importante è portarlo a casa", has18 && hasLode));
+            // Obiettivo 9: Il Diciotto è il nuovo 30!
+            listaObiettivi.add(creaPannelloObiettivo(new FlatSVGIcon("icone/lifeSaver.svg", 18,18),"Il Diciotto è il nuovo Trenta", "Hai un 30 e Lode e un 18 nello stesso libretto. L'equilibrio perfetto dell'universo", diciottoTrentaSbloccato));
             listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
+            // Obiettivo 10: Parkour!
+            listaObiettivi.add(creaPannelloObiettivo(new FlatSVGIcon("icone/parkour.svg", 18,18),"Parkour!","Hai accettato il tuo primo 18. Basta che respiri, l'importante è portarlo a casa", parkourSbloccato));
+            listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
+            // Obiettivo 11: Forma Ergonomica
+            listaObiettivi.add(creaPannelloObiettivo(new FlatSVGIcon("icone/chair.svg", 18, 18),"Forma Ergonomica","Hai superato le 100 ore totali di studio. La tua sedia ha ormai preso la forma della tua schiena", ergonomicaSbloccato));
+            listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
+            // Obiettivo 12: Creatura della Notte
+            listaObiettivi.add(creaPannelloObiettivo(new FlatSVGIcon("icone/night.svg", 18,18),"Creatura della Notte","Hai completato un Pomodoro tra le 2:00 e le 4:00 del mattino. Vai a dormire, per favore", creaturaSbloccato));
+            listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
+            // Obiettivo 13: Procastinazione Seriale
+            listaObiettivi.add(creaPannelloObiettivo(new FlatSVGIcon("icone/sloth.svg", 18,18),"Procastinazione Seriale", "Hai avviato la tua primissima sessione di Pomodoro per un esame... a meno di 48 ore dalla data dell'appello", procastinazioneSbloccato));
+            listaObiettivi.add(Box.createRigidArea(new Dimension(0, 15)));
+            
             
             JScrollPane scrollPane = new JScrollPane(listaObiettivi);
             scrollPane.setBorder(null); // Togliamo il bordo di default dello scrollpane
@@ -627,30 +840,46 @@ public class PannelloPomodoro extends JPanel{
         applyOptionButtonAppearance(false);
     }
 
-    private JPanel creaPannelloObiettivo(String nome, String descrizione, boolean sbloccato) {
-        JPanel pnl = new JPanel(new BorderLayout());
+    private JPanel creaPannelloObiettivo(Icon ico, String nome, String descrizione, boolean sbloccato) {
+        JPanel pnl = new JPanel(new BorderLayout(10, 0));
         pnl.setBorder(BorderFactory.createLineBorder(sbloccato ? new Color(46, 204, 113) : Color.LIGHT_GRAY, 2, true));
         pnl.setBackground(sbloccato ? new Color(230, 255, 230) : null); // Sfondo verdino se sbloccato
-        pnl.setMaximumSize(new Dimension(300, 60));
-        pnl.setPreferredSize(new Dimension(300, 60));
+        pnl.setPreferredSize(new Dimension(350, 70));
+        pnl.setMaximumSize(new Dimension(350, 100));
+        pnl.setAlignmentX(Component.CENTER_ALIGNMENT);
         // Icona: Lucchetto o Medaglia
         JLabel icona = new JLabel();
         icona.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
-        icona.setBorder(BorderFactory.createEmptyBorder(0,10,0,10));
-        if(sbloccato)
-            icona.setIcon(new FlatSVGIcon("icone/medal.svg", 25, 25));
-        else
+        if(sbloccato) {
+            icona.setIcon(new FlatSVGIcon("icone/medal.svg", 35, 35));
+            icona.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+        } else {
             icona.setIcon(new FlatSVGIcon("icone/locker.svg", 25, 25));
+            icona.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        }
         // Testi
-        JPanel pnlTesti = new JPanel(new GridLayout(2, 1));
+        JPanel pnlTesti = new JPanel();
+        pnlTesti.setLayout(new BoxLayout(pnlTesti, BoxLayout.Y_AXIS));
         pnlTesti.setOpaque(false);
         JLabel lblNome = new JLabel(nome);
         lblNome.setFont(new Font("Arial", Font.BOLD, 14));
         lblNome.setForeground(sbloccato ? new Color(39, 174, 96) : Color.GRAY);
-        JLabel lblDesc = new JLabel(descrizione);
+        lblNome.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
+        lblNome.setIcon(ico);
+        if(ico != null)
+            lblNome.setIconTextGap(5);
+        JTextArea lblDesc = new JTextArea(descrizione);
+        lblDesc.setEditable(false);
+        lblDesc.setFocusable(false);
+        lblDesc.setLineWrap(true);
+        lblDesc.setWrapStyleWord(true);
+        lblDesc.setOpaque(false);
         lblDesc.setFont(new Font("Arial", Font.ITALIC, 11));
         lblDesc.setForeground(Color.DARK_GRAY);
+        lblDesc.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblDesc.setColumns(23);
         pnlTesti.add(lblNome);
+        pnlTesti.add(Box.createRigidArea(new Dimension(0, 2)));
         pnlTesti.add(lblDesc);
 
         pnl.add(icona, BorderLayout.WEST);
@@ -1001,6 +1230,7 @@ public class PannelloPomodoro extends JPanel{
     }
 
     public void refresh() {
+        verificaEAvvisaNuoviObiettivi();
         if (optionBut != null) {
             applyOptionButtonAppearance(optionBut.getModel().isRollover());
         }

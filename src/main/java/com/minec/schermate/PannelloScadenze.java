@@ -32,6 +32,7 @@ import javax.swing.border.TitledBorder;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.github.lgooddatepicker.components.DatePicker;
+import com.minec.GestoreNotifiche;
 import com.minec.dati.GestoreDati;
 
 public class PannelloScadenze extends JPanel {
@@ -123,6 +124,7 @@ public class PannelloScadenze extends JPanel {
             GestoreDati.salvaScadenza(esameSelezionato, dataSelezionata.toString());
             datePicker.clear();
             aggiornaListaScadenze();
+            GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
         });
 
         btnOrdina.addActionListener(e -> {
@@ -320,6 +322,7 @@ public class PannelloScadenze extends JPanel {
                     if (conferma == JOptionPane.YES_OPTION) {
                         GestoreDati.removeScadenza(nomeEsame);
                         aggiornaListaScadenze();
+                        GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
                     }
                 });
 

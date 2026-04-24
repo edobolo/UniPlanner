@@ -41,6 +41,7 @@ import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.minec.GestoreNotifiche;
 import com.minec.dati.GestoreDati;
 
 // Questa riga significa: "SchermataVoti è un tipo personalizzato di JPanel"
@@ -123,12 +124,13 @@ public class PannelloVoti extends JPanel {
 
         JLabel title = new JLabel("Media Ponderata");
         title.setFont(new Font("Arial", Font.BOLD, 15));
+        title.setBorder(BorderFactory.createEmptyBorder(10, 0 ,0 ,0));
         title.setHorizontalAlignment(JLabel.CENTER);
 
         JPanel mediaF = new JPanel();
         mediaF.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 60));
         JLabel mediaLabel = new JLabel(textP);
-        mediaLabel.setFont(new Font("Arial", Font.BOLD, 35));
+        mediaLabel.setFont(new Font("Arial", Font.BOLD, 40));
         mediaLabel.setHorizontalAlignment(JLabel.CENTER);
         JLabel outOfLabel = new JLabel("/30");
         outOfLabel.setFont(new Font("Arial", Font.BOLD, 27));
@@ -157,19 +159,37 @@ public class PannelloVoti extends JPanel {
 
     public void setExamLeft(JPanel examLeftPanel) {
         examLeftPanel.setBounds(50, 255, 200, 80);
-        examLeftPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 7, 5));
-        examLeftPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2, true));
+        examLeftPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 8, 10));
+        examLeftPanel.setBackground(GestoreDati.isTemaScuro() ? new Color(58, 63, 72) : new Color(245, 248, 252));
+        examLeftPanel.setOpaque(true);
+        examLeftPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(150, 150, 150), 2, true),
+                BorderFactory.createTitledBorder("Progresso Esami")));
+        examsList.clear();
         int examAdded = GestoreDati.numeroEsami();
         int numVoti = GestoreDati.numeroVoti();
         for (int i = 0; i < examAdded; i++) {
-            JPanel panel = new JPanel();
-            panel.setPreferredSize(new Dimension(10, 20));
-            if (i < numVoti) {
-                panel.setBackground(new Color(36, 166, 6));
-            } else {
-                panel.setBackground(Color.WHITE);
-            }
-            panel.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
+            boolean esameCompletato = i < numVoti;
+            JPanel panel = new JPanel() {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    Color fillColor = esameCompletato ? new Color(46, 204, 113) : new Color(230, 233, 238);
+                    Color borderColor = esameCompletato ? new Color(34, 139, 34) : new Color(150, 150, 150);
+                    g2.setColor(fillColor);
+                    g2.fillOval(1, 1, getWidth() - 3, getHeight() - 3);
+                    g2.setColor(borderColor);
+                    g2.drawOval(1, 1, getWidth() - 3, getHeight() - 3);
+                    g2.dispose();
+                }
+            };
+            panel.setPreferredSize(new Dimension(14, 14));
+            panel.setMinimumSize(new Dimension(14, 14));
+            panel.setMaximumSize(new Dimension(14, 14));
+            panel.setOpaque(false);
+            panel.setToolTipText(esameCompletato ? "Esame completato" : "Esame rimanente");
             examLeftPanel.add(panel);
             examsList.add(panel);
         }
@@ -1142,6 +1162,7 @@ public class PannelloVoti extends JPanel {
         setGraphPanel(panelGraph);
 
         applyResponsiveLayout();
+        GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
 
         this.revalidate();
         this.repaint();

@@ -111,7 +111,7 @@ public class MainApp {
                     SwingUtilities.invokeLater(() -> {
                         // STEP 4: Il temuto Pannello Pomodoro
                         progressBar.setValue(85);
-                        PannelloPomodoro schermataPomodoro = new PannelloPomodoro();
+                        PannelloPomodoro schermataPomodoro = new PannelloPomodoro(finestra);
 
                         SwingUtilities.invokeLater(() -> {
                             // STEP 5: Uniamo tutto e completiamo al 100%
