@@ -394,8 +394,22 @@ public class PannelloPomodoro extends JPanel{
 
         GestoreDati.salvaImpostazione(chiaveObiettivo, "true");
     JFrame frameCorrente = (JFrame) SwingUtilities.getWindowAncestor(this);
-    GestoreNotifiche.mostraNotifica("Trofeo sbloccato: " + nomeObiettivo, descrizioneObiettivo,
+    GestoreNotifiche.mostraNotificaTrofeoInterna("Trofeo sbloccato: " + nomeObiettivo, descrizioneObiettivo,
         frameCorrente != null ? frameCorrente : this);
+        return true;
+    }
+
+    private boolean statoObiettivoFisso(String chiaveObiettivo, boolean condizioneSblocco) {
+        boolean giaSbloccato = Boolean.parseBoolean(GestoreDati.getImpostazione(chiaveObiettivo, "false"));
+        if (giaSbloccato) {
+            return true;
+        }
+
+        if (!condizioneSblocco) {
+            return false;
+        }
+
+        GestoreDati.salvaImpostazione(chiaveObiettivo, "true");
         return true;
     }
 
@@ -749,7 +763,7 @@ public class PannelloPomodoro extends JPanel{
             boolean ippicaSbloccato = numeroDiciotto >= 3;
             boolean howDidSbloccato = haTuttiIVotiDal18Al30;
             boolean theEndSbloccato = cfuTotali >= cfuMaxImpostati;
-            boolean toccaErbaSbloccato = conteggioPomodori >= 10;
+            boolean toccaErbaSbloccato = statoObiettivoFisso("ACH_TOCCA_ERBA_SESSION", conteggioPomodori >= 10);
             boolean speedRunnerSbloccato = sbloccaObiettivoSeNuovo("ACH_SPEEDRUNNER", "SpeedRunner", "Hai superato due esami a meno di 3 giorni di distanza l'uno dall'altro. Pura follia", speedrunnerSbloccato);
             boolean diciottoTrentaSbloccato = has18 && hasLode;
             boolean parkourSbloccato = has18;

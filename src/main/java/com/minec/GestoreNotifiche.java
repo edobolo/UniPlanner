@@ -1,14 +1,20 @@
 package com.minec;
 
 import java.awt.AWTException;
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
+import java.awt.RenderingHints;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
+import java.awt.AlphaComposite;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,9 +22,17 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import javax.swing.BorderFactory;
+import javax.swing.JLayeredPane;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRootPane;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.JTextArea;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.minec.dati.GestoreDati;
@@ -26,6 +40,17 @@ import com.minec.dati.GestoreDati;
 public class GestoreNotifiche {
 
     private static final String PREFISSO_TROFEO_NOTIFICATO = "ACH_NOTIFIED_";
+        private static final Set<String> TROFEI_FISSI = Set.of(
+            "ACH_SPEEDRUNNER",
+            "ACH_TOCCA_ERBA_SESSION",
+            "ACH_CREATURA_NOTTE",
+            "ACH_PROCRASTINAZIONE_SERIALE");
+    private static final int LARGHEZZA_NOTIFICA_TROFEO = 350;
+    private static final int ALTEZZA_NOTIFICA_TROFEO = 150;
+    private static final int MARGINE_NOTIFICA_TROFEO = 16;
+    private static final int DURATA_VISIBILE_MS = 2200;
+    private static final int RITARDO_FADE_MS = 30;
+    private static final float STEP_OPACITA = 0.08f;
     private static TrayIcon trayIconGlobale;
     private static final Object lockTrofei = new Object();
     private static final Map<String, Boolean> statoTrofeiSessione = new HashMap<>();
@@ -121,6 +146,140 @@ public class GestoreNotifiche {
                 JOptionPane.INFORMATION_MESSAGE));
     }
 
+    public static void mostraNotificaTrofeoInterna(String titolo, String descrizione, Component frame) {
+        SwingUtilities.invokeLater(() -> {
+            JRootPane rootPane = frame != null ? SwingUtilities.getRootPane(frame) : null;
+            if (rootPane == null) {
+                JOptionPane.showMessageDialog(frame, descrizione, titolo, JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            JLayeredPane layeredPane = rootPane.getLayeredPane();
+            PannelloNotificaTrofeo notifica = creaPannelloNotificaTrofeo(titolo, descrizione);
+            notifica.setSize(LARGHEZZA_NOTIFICA_TROFEO, ALTEZZA_NOTIFICA_TROFEO);
+
+                int xCentrato = (layeredPane.getWidth() - LARGHEZZA_NOTIFICA_TROFEO) / 2;
+                int xMassimo = Math.max(MARGINE_NOTIFICA_TROFEO,
+                    layeredPane.getWidth() - LARGHEZZA_NOTIFICA_TROFEO - MARGINE_NOTIFICA_TROFEO);
+                int x = Math.max(MARGINE_NOTIFICA_TROFEO, Math.min(xCentrato, xMassimo));
+                int y = MARGINE_NOTIFICA_TROFEO;
+
+            notifica.setBounds(x, y, LARGHEZZA_NOTIFICA_TROFEO, ALTEZZA_NOTIFICA_TROFEO);
+            notifica.setAlpha(0f);
+
+            layeredPane.add(notifica, JLayeredPane.POPUP_LAYER);
+            layeredPane.revalidate();
+            layeredPane.repaint();
+
+            avviaAnimazioneDissolvenza(notifica, layeredPane);
+        });
+    }
+
+    private static PannelloNotificaTrofeo creaPannelloNotificaTrofeo(String titolo, String descrizione) {
+        PannelloNotificaTrofeo pannello = new PannelloNotificaTrofeo();
+        pannello.setLayout(new BorderLayout(0, 8));
+        pannello.setBorder(BorderFactory.createEmptyBorder(12, 14, 12, 14));
+        pannello.setBackground(new Color(244, 248, 255));
+        pannello.setOpaque(false);
+
+        JLabel lblTitolo = new JLabel(titolo);
+        lblTitolo.setFont(new Font("SansSerif", Font.BOLD, 17));
+        lblTitolo.setForeground(new Color(20, 45, 87));
+
+        JTextArea txtDescrizione = new JTextArea(descrizione == null ? "" : descrizione);
+        txtDescrizione.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        txtDescrizione.setForeground(new Color(34, 47, 62));
+        txtDescrizione.setLineWrap(true);
+        txtDescrizione.setWrapStyleWord(true);
+        txtDescrizione.setEditable(false);
+        txtDescrizione.setFocusable(false);
+        txtDescrizione.setOpaque(false);
+        txtDescrizione.setBorder(null);
+
+        pannello.add(lblTitolo, BorderLayout.NORTH);
+        pannello.add(txtDescrizione, BorderLayout.CENTER);
+        return pannello;
+    }
+
+    private static void avviaAnimazioneDissolvenza(PannelloNotificaTrofeo notifica, JLayeredPane layeredPane) {
+        final float[] opacita = { 0f };
+        final int[] fase = { 0 };
+        final long[] inizioPausa = { 0L };
+
+        Timer timer = new Timer(RITARDO_FADE_MS, null);
+        timer.addActionListener(e -> {
+            if (notifica.getParent() == null) {
+                ((Timer) e.getSource()).stop();
+                return;
+            }
+
+            if (fase[0] == 0) {
+                opacita[0] = Math.min(1f, opacita[0] + STEP_OPACITA);
+                notifica.setAlpha(opacita[0]);
+                if (opacita[0] >= 1f) {
+                    fase[0] = 1;
+                    inizioPausa[0] = System.currentTimeMillis();
+                }
+                return;
+            }
+
+            if (fase[0] == 1) {
+                if (System.currentTimeMillis() - inizioPausa[0] >= DURATA_VISIBILE_MS) {
+                    fase[0] = 2;
+                }
+                return;
+            }
+
+            opacita[0] = Math.max(0f, opacita[0] - STEP_OPACITA);
+            notifica.setAlpha(opacita[0]);
+            if (opacita[0] <= 0f) {
+                ((Timer) e.getSource()).stop();
+                layeredPane.remove(notifica);
+                layeredPane.revalidate();
+                layeredPane.repaint();
+            }
+        });
+        timer.start();
+    }
+
+    private static class PannelloNotificaTrofeo extends JPanel {
+        private static final int ARCO_BORDO = 24;
+        private static final Color COLORE_BORDO = new Color(39, 93, 173);
+        private float alpha = 1f;
+
+        private void setAlpha(float alpha) {
+            this.alpha = Math.max(0f, Math.min(1f, alpha));
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, ARCO_BORDO, ARCO_BORDO);
+            g2.dispose();
+            super.paintComponent(g);
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(COLORE_BORDO);
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, ARCO_BORDO, ARCO_BORDO);
+            g2.dispose();
+        }
+
+        @Override
+        public void paint(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            super.paint(g2);
+            g2.dispose();
+        }
+    }
+
     public static void aggiornaTrofeiEAvvisa(Component frame) {
         List<TrofeoObiettivo> trofei = calcolaTrofei();
         List<TrofeoObiettivo> daNotificare = new ArrayList<>();
@@ -129,7 +288,7 @@ public class GestoreNotifiche {
             if (!trofeiInizializzati) {
                 for (TrofeoObiettivo trofeo : trofei) {
                     statoTrofeiSessione.put(trofeo.id(), trofeo.sbloccato());
-                    if (trofeo.sbloccato()) {
+                    if (trofeo.sbloccato() && isTrofeoFisso(trofeo.id())) {
                         GestoreDati.salvaImpostazione(PREFISSO_TROFEO_NOTIFICATO + trofeo.id(), "true");
                     }
                 }
@@ -144,8 +303,19 @@ public class GestoreNotifiche {
                     continue;
                 }
 
-                String chiaveNotifica = PREFISSO_TROFEO_NOTIFICATO + trofeo.id();
-                if (Boolean.parseBoolean(GestoreDati.getImpostazione(chiaveNotifica, "false"))) {
+                if (isTrofeoFisso(trofeo.id())) {
+                    String chiaveNotifica = PREFISSO_TROFEO_NOTIFICATO + trofeo.id();
+                    if (Boolean.parseBoolean(GestoreDati.getImpostazione(chiaveNotifica, "false"))) {
+                        continue;
+                    }
+
+                    boolean eraGiaSbloccato = statoPrecedente != null && statoPrecedente;
+                    if (eraGiaSbloccato) {
+                        continue;
+                    }
+
+                    GestoreDati.salvaImpostazione(chiaveNotifica, "true");
+                    daNotificare.add(trofeo);
                     continue;
                 }
 
@@ -153,15 +323,17 @@ public class GestoreNotifiche {
                 if (eraGiaSbloccato) {
                     continue;
                 }
-
-                GestoreDati.salvaImpostazione(chiaveNotifica, "true");
                 daNotificare.add(trofeo);
             }
         }
 
         for (TrofeoObiettivo trofeo : daNotificare) {
-            mostraNotifica("Trofeo sbloccato: " + trofeo.nome(), trofeo.descrizione(), frame);
+            mostraNotificaTrofeoInterna("Trofeo sbloccato: " + trofeo.nome(), trofeo.descrizione(), frame);
         }
+    }
+
+    private static boolean isTrofeoFisso(String idTrofeo) {
+        return TROFEI_FISSI.contains(idTrofeo);
     }
 
     private static List<TrofeoObiettivo> calcolaTrofei() {
