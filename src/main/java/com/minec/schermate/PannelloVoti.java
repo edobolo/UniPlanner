@@ -18,7 +18,6 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
@@ -41,6 +40,7 @@ import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.minec.EsportatorePDF;
 import com.minec.GestoreNotifiche;
 import com.minec.dati.GestoreDati;
 
@@ -749,7 +749,7 @@ public class PannelloVoti extends JPanel {
             });
 
             JPanel pannelloImpostazioni = new JPanel();
-            pannelloImpostazioni.setPreferredSize(new Dimension(360, 480));
+            pannelloImpostazioni.setPreferredSize(new Dimension(360, 530));
             pannelloImpostazioni.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
             pannelloImpostazioni.setLayout(new BorderLayout());
 
@@ -923,6 +923,7 @@ public class PannelloVoti extends JPanel {
             JButton btnImport = new JButton("Importa CSV");
             btnImport.setFont(new Font("Arial", Font.BOLD, 14));
             btnImport.setForeground(new Color(0, 102, 204)); // Blu classico
+            btnImport.setIcon(new FlatSVGIcon("icone/import.svg", 22, 22));
             btnImport.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnImport.addActionListener(ev -> {
                 importaLibrettoDaExcel(pannelloImpostazioni);
@@ -932,12 +933,41 @@ public class PannelloVoti extends JPanel {
             pnlImportExport.add(btnExport);
             pnlImportExport.add(btnImport);
 
+            // --- 7.Bottone esporta come PDF
+            JPanel pnlExportPDF = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
+            pnlExportPDF.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+            JButton btnEsportaPDF = new JButton("Esporta PDF");
+            btnEsportaPDF.setFont(new Font("Arial", Font.BOLD, 15));
+            btnEsportaPDF.setForeground(new Color(140, 24, 26));
+            btnEsportaPDF.setIcon(new FlatSVGIcon("icone/pdf.svg", 22, 22));
+            btnEsportaPDF.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnEsportaPDF.addActionListener(ev -> {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setDialogTitle("Salva il tuo libretto");
+                fileChooser.setSelectedFile(new java.io.File("Libretto_UniPlanner.pdf"));
+                if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+                    try {
+                        String path = fileChooser.getSelectedFile().getAbsolutePath();
+                        if (!path.toLowerCase().endsWith(".pdf")) {
+                            path += ".pdf";
+                        }
+                        EsportatorePDF.generaLibretto(path);
+
+                        JOptionPane.showMessageDialog(null, "PDF creato con successo!", "Completato", JOptionPane.INFORMATION_MESSAGE);
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null, "Errore nella creazione del PDF: " + ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            });
+            pnlExportPDF.add(btnEsportaPDF);
+
             // ASSEMBLIAMO I PEZZI NELL'ORDINE GIUSTO NEL CENTRO
             centro.add(Box.createRigidArea(new Dimension(0, 10)));
             centro.add(pnlCfu);
             centro.add(pnlOrdine);
             centro.add(pnlTema);
             centro.add(pnlImportExport);
+            centro.add(pnlExportPDF);
             centro.add(Box.createRigidArea(new Dimension(0, 10)));
             centro.add(pnlGruppoParametri); // <--- Inserito qui!
             centro.add(pnlReset);
@@ -997,13 +1027,12 @@ public class PannelloVoti extends JPanel {
                 // --- SEZIONE 1: TUTTI GLI ESAMI ---
                 fw.write("### ESAMI ###\n");
                 fw.write("NOME ESAME;VOTO;CFU;COMPLETATO\n");
-                String[] tuttiEsami = GestoreDati.getEsamiSalvatiRaw(); // Prende tutti i nomi
-                String[] tuttiVoti = GestoreDati.getVotiEsamiRaw(); // Prende solo quelli coi voti
+                String[] tuttiEsami = GestoreDati.getEsamiSalvatiRaw();
+                String[] tuttiVoti = GestoreDati.getVotiEsamiRaw();
                 int sommaVoti = 0;
                 int sommaCfu = 0;
                 for (String esameRaw : tuttiEsami) {
-                    if (esameRaw == null)
-                        continue;
+                    if (esameRaw == null) continue;
                     String[] parti = esameRaw.split(";");
                     String nome = parti[0];
                     boolean completato = Boolean.parseBoolean(parti[1]);
@@ -1011,24 +1040,18 @@ public class PannelloVoti extends JPanel {
                     String cfuDaScrivere = "0";
                     if (completato) {
                         for (String v : tuttiVoti) {
-                            if (v == null)
-                                continue;
+                            if (v == null) continue;
                             String[] pVoto = v.split(";");
                             if (pVoto.length >= 2 && pVoto[1].equals(nome)) {
                                 votoDaScrivere = pVoto[0];
-                                if (pVoto.length > 2)
-                                    cfuDaScrivere = pVoto[2];
-
-                                try { // Calcoliamo i totali per il foglio Excel
+                                if (pVoto.length > 2) cfuDaScrivere = pVoto[2];
+                                try { 
                                     int cfuNum = Integer.parseInt(cfuDaScrivere);
-                                    int votoNum = (votoDaScrivere.equalsIgnoreCase("30L")
-                                            || votoDaScrivere.equalsIgnoreCase("30 E LODE"))
-                                                    ? GestoreDati.getPesoLode()
-                                                    : Integer.parseInt(votoDaScrivere);
+                                    int votoNum = (votoDaScrivere.equalsIgnoreCase("30L") || votoDaScrivere.equalsIgnoreCase("30 E LODE"))
+                                                    ? GestoreDati.getPesoLode() : Integer.parseInt(votoDaScrivere);
                                     sommaVoti += votoNum * cfuNum;
                                     sommaCfu += cfuNum;
-                                } catch (Exception e) {
-                                }
+                                } catch (Exception e) {}
                                 break;
                             }
                         }
@@ -1049,28 +1072,41 @@ public class PannelloVoti extends JPanel {
                 fw.write("ORDINE_SCADENZE;" + GestoreDati.getOrdineScadenza() + "\n");
                 fw.write("LODE;" + GestoreDati.getImpostazione("LODE", "30") + "\n");
                 fw.write("BONUS_LODE;" + GestoreDati.getImpostazione("BONUS_LODE", "0") + "\n");
+                // NUOVE IMPOSTAZIONI POMODORO Aggiunte qui:
+                fw.write("POMODORI;" + GestoreDati.getPomodori() + "\n");
+                fw.write("POMODORI_DATA;" + GestoreDati.getDataPomodori() + "\n");
+                fw.write("POMODORI_MAX;" + GestoreDati.getMaxPomodoriGiornalieri() + "\n");
+                fw.write("MINUTI_STUDIO;" + GestoreDati.getMinutiStudio() + "\n");
+                fw.write("MINUTI_PAUSA;" + GestoreDati.getMinutiPausa() + "\n");
 
                 // --- SEZIONE 3: SCADENZE ---
                 fw.write("\n### SCADENZE ###\n");
                 String[] scadenze = GestoreDati.getScadenzeRaw();
                 if (scadenze != null) {
                     for (String sc : scadenze) {
-                        if (sc != null && !sc.trim().isEmpty()) {
-                            fw.write(sc + "\n");
-                        }
+                        if (sc != null && !sc.trim().isEmpty()) { fw.write(sc + "\n"); }
                     }
                 }
+
+                // --- SEZIONE 4: TEMPO DI STUDIO (NUOVA) ---
+                fw.write("\n### STUDIO ###\n");
+                String[] studio = GestoreDati.getTuttoLoStudioRaw();
+                if (studio != null) {
+                    for (String st : studio) {
+                        if (st != null && !st.trim().isEmpty()) { fw.write(st + "\n"); }
+                    }
+                }
+
                 JOptionPane.showMessageDialog(parentComponent, "Backup esportato con successo in:\n" + percorso);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(parentComponent, "Errore durante l'esportazione.", "Errore",
-                        JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(parentComponent, "Errore durante l'esportazione.", "Errore", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
     private void importaLibrettoDaExcel(JPanel parentComponent) {
         if (GestoreDati.getEsamiSalvatiRaw().length != 0 || GestoreDati.getScadenzeRaw().length != 0 || 
             GestoreDati.getVotiEsamiRaw().length != 0) {
-            JOptionPane.showMessageDialog(this, "Assicurati di aver cancellato tutti i dati");
+            JOptionPane.showMessageDialog(this, "Assicurati di aver cancellato tutti i dati (Fai reset da impostazioni prima di importare)");
             return;
         }
         JFileChooser fileChooser = new JFileChooser();
@@ -1086,10 +1122,13 @@ public class PannelloVoti extends JPanel {
                 while ((linea = br.readLine()) != null) {
                     linea = linea.trim();
                     if (linea.isEmpty()) continue;
-                    // Gestione delle Sezioni
+                    
+                    // Gestione delle Sezioni (Aggiunto il blocco STUDIO)
                     if (linea.startsWith("### ESAMI ###")) { sezioneAttuale = "ESAMI"; continue; }
                     if (linea.startsWith("### IMPOSTAZIONI ###")) { sezioneAttuale = "IMPOSTAZIONI"; continue; }
                     if (linea.startsWith("### SCADENZE ###")) { sezioneAttuale = "SCADENZE"; continue; }
+                    if (linea.startsWith("### STUDIO ###")) { sezioneAttuale = "STUDIO"; continue; }
+
                     if (sezioneAttuale.equals("ESAMI")) {
                         if (linea.startsWith("NOME ESAME") || linea.startsWith("TOTALE") || linea.startsWith("MEDIA")) continue;
                         
@@ -1106,8 +1145,7 @@ public class PannelloVoti extends JPanel {
                                 if (!voto.isEmpty()) GestoreDati.setVotiEsami(voto, nomeEsame, 0);
                                 try {
                                     GestoreDati.addCfuEsame(nomeEsame, Integer.parseInt(cfuStr));
-                                } catch (NumberFormatException e) {
-                                }
+                                } catch (NumberFormatException e) {}
                             }
                             esamiImportati++;
                         }
@@ -1124,6 +1162,12 @@ public class PannelloVoti extends JPanel {
                                 case "ORDINE_SCADENZE": GestoreDati.salvaOrdineScadenze(Boolean.parseBoolean(valore)); break;
                                 case "LODE": GestoreDati.salvaImpostazione("LODE", valore); break;
                                 case "BONUS_LODE": GestoreDati.salvaImpostazione("BONUS_LODE", valore); break;
+                                // NUOVE IMPOSTAZIONI POMODORO
+                                case "POMODORI": GestoreDati.salvaPomodori(Integer.parseInt(valore)); break;
+                                case "POMODORI_DATA": GestoreDati.salvaDataPomodori(valore); break;
+                                case "POMODORI_MAX": GestoreDati.salvaMaxPomodoriGiornalieri(Integer.parseInt(valore)); break;
+                                case "MINUTI_STUDIO": GestoreDati.salvaImpostazione("MINUTI_STUDIO", valore); break;
+                                case "MINUTI_PAUSA": GestoreDati.salvaImpostazione("MINUTI_PAUSA", valore); break;
                             }
                         }
                     }
@@ -1135,14 +1179,27 @@ public class PannelloVoti extends JPanel {
                             GestoreDati.salvaScadenza(nomeEsameScadenza, dataScadenza);
                         }
                     }
+                    // NUOVA SEZIONE STUDIO Aggiunta qui:
+                    else if (sezioneAttuale.equals("STUDIO")) {
+                        String[] parti = linea.split(";");
+                        if (parti.length >= 2) {
+                            try {
+                                String nomeEsame = parti[0];
+                                int minutiStrudiati = Integer.parseInt(parti[1].trim());
+                                // Salviamo le ore di studio per la materia
+                                GestoreDati.setNuovoTempoStudio(nomeEsame, minutiStrudiati);
+                            } catch (NumberFormatException e) {}
+                        }
+                    }
                 }
+                
                 if (GestoreDati.isTemaScuro()) {
                     javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatDarkLaf());
                 } else {
                     javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatLightLaf());
                 }
                 SwingUtilities.updateComponentTreeUI(SwingUtilities.getWindowAncestor(this));
-                JOptionPane.showMessageDialog(parentComponent, "Backup ripristinato!\nSono stati importati " + esamiImportati + " esami e le tue impostazioni.");
+                JOptionPane.showMessageDialog(parentComponent, "Backup ripristinato!\nSono stati importati " + esamiImportati + " esami, le ore di studio e le tue impostazioni.");
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(parentComponent, "Errore durante l'importazione del file.", "Errore", JOptionPane.ERROR_MESSAGE);
             }
