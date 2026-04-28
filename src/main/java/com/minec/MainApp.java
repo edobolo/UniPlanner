@@ -17,6 +17,7 @@ import javax.swing.SwingUtilities;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.extras.FlatSVGUtils;
+import com.minec.dati.GestoreDatabase;
 import com.minec.schermate.PannelloAggiungi;
 import com.minec.schermate.PannelloPomodoro;
 import com.minec.schermate.PannelloScadenze;
@@ -34,6 +35,7 @@ public class MainApp {
             com.formdev.flatlaf.FlatLightLaf.setup(); // Tema Chiaro
         }
         GestoreNotifiche.avviaNotifiche(ICONA_APP);
+        com.minec.dati.GestoreDatabase.inizializzaDatabase();
         SwingUtilities.invokeLater(() -> creaEmostraGUI());
     }
 

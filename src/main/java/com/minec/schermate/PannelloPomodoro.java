@@ -56,7 +56,7 @@ import javax.swing.border.EmptyBorder;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.minec.GestoreNotifiche;
-import com.minec.dati.GestoreDati;
+import com.minec.dati.GestoreDatabase;
 
 public class PannelloPomodoro extends JPanel{
     private static final int BASE_WIDTH = 800;
@@ -334,7 +334,7 @@ public class PannelloPomodoro extends JPanel{
 
     public void aggiornaListaEsami() {
         comboEsami.removeAllItems();
-        String[] esamiRaw = com.minec.dati.GestoreDati.getEsamiSalvatiRaw();
+        String[] esamiRaw = com.minec.dati.GestoreDatabase.getEsamiSalvatiRaw();
         for (String riga : esamiRaw) {
             String nome = riga.split(";")[0];
             comboEsami.addItem(nome);
@@ -347,7 +347,7 @@ public class PannelloPomodoro extends JPanel{
             return null;
         }
 
-        String[] scadenzeRaw = GestoreDati.getScadenzeRaw();
+        String[] scadenzeRaw = GestoreDatabase.getScadenzeRaw();
         for (String riga : scadenzeRaw) {
             if (riga == null || !riga.contains(";")) {
                 continue;
@@ -383,7 +383,7 @@ public class PannelloPomodoro extends JPanel{
 
     private boolean sbloccaObiettivoSeNuovo(String chiaveObiettivo, String nomeObiettivo, String descrizioneObiettivo,
             boolean condizioneSblocco) {
-        boolean giaSbloccato = Boolean.parseBoolean(GestoreDati.getImpostazione(chiaveObiettivo, "false"));
+        boolean giaSbloccato = Boolean.parseBoolean(GestoreDatabase.getImpostazione(chiaveObiettivo, "false"));
         if (giaSbloccato) {
             return true;
         }
@@ -392,7 +392,7 @@ public class PannelloPomodoro extends JPanel{
             return false;
         }
 
-        GestoreDati.salvaImpostazione(chiaveObiettivo, "true");
+        GestoreDatabase.salvaImpostazione(chiaveObiettivo, "true");
     JFrame frameCorrente = (JFrame) SwingUtilities.getWindowAncestor(this);
     GestoreNotifiche.mostraNotificaTrofeoInterna("Trofeo sbloccato: " + nomeObiettivo, descrizioneObiettivo,
         frameCorrente != null ? frameCorrente : this);
@@ -400,7 +400,7 @@ public class PannelloPomodoro extends JPanel{
     }
 
     private boolean statoObiettivoFisso(String chiaveObiettivo, boolean condizioneSblocco) {
-        boolean giaSbloccato = Boolean.parseBoolean(GestoreDati.getImpostazione(chiaveObiettivo, "false"));
+        boolean giaSbloccato = Boolean.parseBoolean(GestoreDatabase.getImpostazione(chiaveObiettivo, "false"));
         if (giaSbloccato) {
             return true;
         }
@@ -409,13 +409,13 @@ public class PannelloPomodoro extends JPanel{
             return false;
         }
 
-        GestoreDati.salvaImpostazione(chiaveObiettivo, "true");
+        GestoreDatabase.salvaImpostazione(chiaveObiettivo, "true");
         return true;
     }
 
     private void verificaEAvvisaNuoviObiettivi() {
         int totaleMinuti = 0;
-        for (String riga : GestoreDati.getTuttoLoStudioRaw()) {
+        for (String riga : GestoreDatabase.getTuttoLoStudioRaw()) {
             if (riga != null && riga.contains(";")) {
                 try {
                     totaleMinuti += Integer.parseInt(riga.split(";")[1]);
@@ -426,7 +426,7 @@ public class PannelloPomodoro extends JPanel{
         int oreTotali = totaleMinuti / 60;
 
         int totaleLodi = 0;
-        String[] esamiRaw = GestoreDati.getVotiEsamiRaw();
+        String[] esamiRaw = GestoreDatabase.getVotiEsamiRaw();
         for (String riga : esamiRaw) {
             if (riga != null && (riga.startsWith("30L") || riga.toLowerCase().startsWith("30 e lode"))) {
                 totaleLodi++;
@@ -434,7 +434,7 @@ public class PannelloPomodoro extends JPanel{
         }
 
         int cfuTotali = 0;
-        int cfuMaxImpostati = Integer.parseInt(GestoreDati.getImpostazione("CFU", "180"));
+        int cfuMaxImpostati = Integer.parseInt(GestoreDatabase.getImpostazione("CFU", "180"));
         for (String riga : esamiRaw) {
             String[] parti = riga.split(";");
             if (parti.length == 3) {
@@ -487,7 +487,7 @@ public class PannelloPomodoro extends JPanel{
 
         boolean speedrunnerSbloccato = false;
         List<String> esamiSuperati = new ArrayList<>();
-        for (String riga : GestoreDati.getEsamiSalvatiRaw()) {
+        for (String riga : GestoreDatabase.getEsamiSalvatiRaw()) {
             if (riga == null || !riga.contains(";")) {
                 continue;
             }
@@ -498,7 +498,7 @@ public class PannelloPomodoro extends JPanel{
         }
 
         List<LocalDate> dateEsamiPassati = new ArrayList<>();
-        for (String riga : GestoreDati.getScadenzeRaw()) {
+        for (String riga : GestoreDatabase.getScadenzeRaw()) {
             if (riga == null || !riga.contains(";")) {
                 continue;
             }
@@ -537,9 +537,9 @@ public class PannelloPomodoro extends JPanel{
             conteggioPomodori++;
             String esameSelezionato = (String) comboEsami.getSelectedItem();
             if(esameSelezionato != null) {
-                GestoreDati.aggiungiTempoStudio(esameSelezionato, MINUTI_STUDIO);
+                GestoreDatabase.aggiungiTempoStudio(esameSelezionato, MINUTI_STUDIO);
             }
-            GestoreDati.salvaPomodori(conteggioPomodori);
+            GestoreDatabase.salvaPomodori(conteggioPomodori);
             aggiornaSerieMaxSeNecessario();
             aggiornaLblContatore();
             titolo = "Studio Completato!";
@@ -651,7 +651,7 @@ public class PannelloPomodoro extends JPanel{
 
             // Obiettivo 1 e 2
             int totaleMinuti = 0;
-            for (String riga : GestoreDati.getTuttoLoStudioRaw()) {
+            for (String riga : GestoreDatabase.getTuttoLoStudioRaw()) {
                 if (riga != null && riga.contains(";")) {
                     try {
                         totaleMinuti += Integer.parseInt(riga.split(";")[1]);
@@ -661,7 +661,7 @@ public class PannelloPomodoro extends JPanel{
             }
             int oreTotali = totaleMinuti / 60;
             int totaleLodi = 0;
-            String[] esamiRaw = GestoreDati.getVotiEsamiRaw();
+            String[] esamiRaw = GestoreDatabase.getVotiEsamiRaw();
             for (String riga : esamiRaw) {
                 if (riga != null && (riga.startsWith("30L") || riga.toLowerCase().startsWith("30 e lode"))) {
                     totaleLodi++;
@@ -669,7 +669,7 @@ public class PannelloPomodoro extends JPanel{
             }
             // Obiettivo 3 e 6
             int cfuTotali = 0;
-            int cfuMaxImpostati = Integer.parseInt(GestoreDati.getImpostazione("CFU", "180"));
+            int cfuMaxImpostati = Integer.parseInt(GestoreDatabase.getImpostazione("CFU", "180"));
             for (String riga : esamiRaw) {
                 String[] parti = riga.split(";");
                 if(parti.length == 3) {
@@ -722,7 +722,7 @@ public class PannelloPomodoro extends JPanel{
             // Obiettivo 7
             boolean speedrunnerSbloccato = false;
             List<String> esamiSuperati = new ArrayList<>();
-            for (String riga : GestoreDati.getEsamiSalvatiRaw()) {
+            for (String riga : GestoreDatabase.getEsamiSalvatiRaw()) {
                 if (riga == null || !riga.contains(";")) continue;
                 String[] parti = riga.split(";");
                 if (parti.length > 1 && parti[1].equalsIgnoreCase("true")) {
@@ -730,7 +730,7 @@ public class PannelloPomodoro extends JPanel{
                 }
             }
             List<LocalDate> dateEsamiPassati = new ArrayList<>();
-            for (String riga : GestoreDati.getScadenzeRaw()) {
+            for (String riga : GestoreDatabase.getScadenzeRaw()) {
                 if (riga == null || !riga.contains(";")) continue;
                 String[] parti = riga.split(";");
                 String nomeEsame = parti[0];
@@ -994,8 +994,8 @@ public class PannelloPomodoro extends JPanel{
                         throw new NumberFormatException();
                     }
 
-                    GestoreDati.salvaImpostazione("MINUTI_STUDIO", String.valueOf(nuoviMinutiStudio));
-                    GestoreDati.salvaImpostazione("MINUTI_PAUSA", String.valueOf(nuoviMinutiPausa));
+                    GestoreDatabase.salvaImpostazione("MINUTI_STUDIO", String.valueOf(nuoviMinutiStudio));
+                    GestoreDatabase.salvaImpostazione("MINUTI_PAUSA", String.valueOf(nuoviMinutiPausa));
                     setNewMinutes();
                     if (inEsecuzione) {
                         pausaTimer();
@@ -1045,7 +1045,7 @@ public class PannelloPomodoro extends JPanel{
                 int conf1 = JOptionPane.showConfirmDialog(pannelloImpostazioni,
                         "Vuoi davvero azzerare il max pomodori?", "Conferma Reset", JOptionPane.YES_NO_OPTION);
                 if (conf1 == JOptionPane.YES_OPTION) {
-                    GestoreDati.salvaMaxPomodoriGiornalieri(0);
+                    GestoreDatabase.salvaMaxPomodoriGiornalieri(0);
                     maxPomodoriGiornalieri = 0;
                     aggiornaLblContatore();
                     JOptionPane.showMessageDialog(pannelloImpostazioni, "Max pomodori azzerato.");
@@ -1093,8 +1093,8 @@ public class PannelloPomodoro extends JPanel{
 
     public void setPomoCounter() {
         sincronizzaContatorePomodoriGiornaliero();
-        conteggioPomodori = GestoreDati.getPomodori();
-        maxPomodoriGiornalieri = GestoreDati.getMaxPomodoriGiornalieri();
+        conteggioPomodori = GestoreDatabase.getPomodori();
+        maxPomodoriGiornalieri = GestoreDatabase.getMaxPomodoriGiornalieri();
         aggiornaSerieMaxSeNecessario();
         aggiornaLblContatore();
     }
@@ -1102,7 +1102,7 @@ public class PannelloPomodoro extends JPanel{
     private void aggiornaSerieMaxSeNecessario() {
         if (conteggioPomodori > maxPomodoriGiornalieri) {
             maxPomodoriGiornalieri = conteggioPomodori;
-            GestoreDati.salvaMaxPomodoriGiornalieri(maxPomodoriGiornalieri);
+            GestoreDatabase.salvaMaxPomodoriGiornalieri(maxPomodoriGiornalieri);
         }
     }
 
@@ -1114,17 +1114,17 @@ public class PannelloPomodoro extends JPanel{
     }
 
     private void sincronizzaContatorePomodoriGiornaliero() {
-        maxPomodoriGiornalieri = GestoreDati.getMaxPomodoriGiornalieri();
+        maxPomodoriGiornalieri = GestoreDatabase.getMaxPomodoriGiornalieri();
         String oggi = LocalDate.now().toString();
-        String dataSalvata = GestoreDati.getDataPomodori();
+        String dataSalvata = GestoreDatabase.getDataPomodori();
         if (!oggi.equals(dataSalvata)) {
             conteggioPomodori = 0;
-            GestoreDati.salvaPomodori(0);
-            GestoreDati.salvaDataPomodori(oggi);
+            GestoreDatabase.salvaPomodori(0);
+            GestoreDatabase.salvaDataPomodori(oggi);
             aggiornaLblContatore();
             return;
         }
-        conteggioPomodori = GestoreDati.getPomodori();
+        conteggioPomodori = GestoreDatabase.getPomodori();
     }
 
     private void applyResponsiveOptionButtonLayout() {
@@ -1217,7 +1217,7 @@ public class PannelloPomodoro extends JPanel{
         }
 
         String iconPath;
-        if (GestoreDati.isTemaScuro()) {
+        if (GestoreDatabase.isTemaScuro()) {
             iconPath = "icone/opzioniH.svg";
         } else {
             iconPath = hover ? "icone/opzioniH.svg" : "icone/opzioni.svg";
@@ -1262,8 +1262,8 @@ public class PannelloPomodoro extends JPanel{
 
     public void setNewMinutes() {
         try {
-            int minutiStudio = GestoreDati.getMinutiStudio();
-            int minutiPausa = GestoreDati.getMinutiPausa();
+            int minutiStudio = GestoreDatabase.getMinutiStudio();
+            int minutiPausa = GestoreDatabase.getMinutiPausa();
             if (minutiStudio <= 0 || minutiPausa <= 0) {
                 throw new NumberFormatException();
             }
@@ -1272,8 +1272,8 @@ public class PannelloPomodoro extends JPanel{
         } catch (Exception e) {
             MINUTI_STUDIO = 25;
             MINUTI_PAUSA = 5;
-            GestoreDati.salvaImpostazione("MINUTI_STUDIO", String.valueOf(MINUTI_STUDIO));
-            GestoreDati.salvaImpostazione("MINUTI_PAUSA", String.valueOf(MINUTI_PAUSA));
+            GestoreDatabase.salvaImpostazione("MINUTI_STUDIO", String.valueOf(MINUTI_STUDIO));
+            GestoreDatabase.salvaImpostazione("MINUTI_PAUSA", String.valueOf(MINUTI_PAUSA));
         }
         if (!inEsecuzione) {
             impostaDurataSessioneCorrente();

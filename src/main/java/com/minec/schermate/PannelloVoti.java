@@ -42,7 +42,7 @@ import javax.swing.border.TitledBorder;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.minec.EsportatorePDF;
 import com.minec.GestoreNotifiche;
-import com.minec.dati.GestoreDati;
+import com.minec.dati.GestoreDatabase;
 
 // Questa riga significa: "SchermataVoti è un tipo personalizzato di JPanel"
 public class PannelloVoti extends JPanel {
@@ -84,12 +84,12 @@ public class PannelloVoti extends JPanel {
         mediaPanel.setBounds(50, 40, 200, 200);
         mediaPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2, true));
         mediaPanel.setLayout(new BorderLayout());
-        String[] voti = GestoreDati.getVotiEsamiRaw();
+        String[] voti = GestoreDatabase.getVotiEsamiRaw();
         int sommaVoti = 0; // Per la ponderata (voto * cfu)
         int sommaVotiSemplice = 0; // Per l'aritmetica (solo voto)
         int sommaCfu = 0;
         int esamiValidi = 0;
-        int pesoLode = GestoreDati.getPesoLode();
+        int pesoLode = GestoreDatabase.getPesoLode();
         for (int i = 0; i < voti.length; i++) {
             String[] pair = voti[i].split(";");
             if (pair.length >= 3) {
@@ -160,14 +160,14 @@ public class PannelloVoti extends JPanel {
     public void setExamLeft(JPanel examLeftPanel) {
         examLeftPanel.setBounds(50, 255, 200, 80);
         examLeftPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 8, 10));
-        examLeftPanel.setBackground(GestoreDati.isTemaScuro() ? new Color(58, 63, 72) : new Color(245, 248, 252));
+        examLeftPanel.setBackground(GestoreDatabase.isTemaScuro() ? new Color(58, 63, 72) : new Color(245, 248, 252));
         examLeftPanel.setOpaque(true);
         examLeftPanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(150, 150, 150), 2, true),
                 BorderFactory.createTitledBorder("Progresso Esami")));
         examsList.clear();
-        int examAdded = GestoreDati.numeroEsami();
-        int numVoti = GestoreDati.numeroVoti();
+        int examAdded = GestoreDatabase.numeroEsami();
+        int numVoti = GestoreDatabase.numeroVoti();
         for (int i = 0; i < examAdded; i++) {
             boolean esameCompletato = i < numVoti;
             JPanel panel = new JPanel() {
@@ -216,8 +216,8 @@ public class PannelloVoti extends JPanel {
 
         //pannello esami fatti
         Font f = new Font("Arial", Font.BOLD, 15);
-        int esamiDone = GestoreDati.numeroVoti();
-        int numeroEsami = GestoreDati.numeroEsami();
+        int esamiDone = GestoreDatabase.numeroVoti();
+        int numeroEsami = GestoreDatabase.numeroEsami();
         JLabel esamiRimasti = new JLabel(esamiDone + "/" + numeroEsami);
         JLabel title1 = new JLabel("Esami Passati");
         title1.setHorizontalAlignment(JLabel.CENTER);
@@ -227,12 +227,12 @@ public class PannelloVoti extends JPanel {
         panel1.add(title1, BorderLayout.NORTH);
 
         //pannello voto base di laurea
-        String[] voti = GestoreDati.getVotiEsamiRaw();
+        String[] voti = GestoreDatabase.getVotiEsamiRaw();
         int sommaVoti = 0;
         int sommaCfu = 0;
         int numeroLodi = 0; // Nuovo contatore per le lodi
-        int pesoLode = GestoreDati.getPesoLode();
-        int bonusLode = GestoreDati.getBonusLode();
+        int pesoLode = GestoreDatabase.getPesoLode();
+        int bonusLode = GestoreDatabase.getBonusLode();
         for (int i = 0; i < voti.length; i++) {
             String[] pair = voti[i].split(";");
             if (pair.length >= 3) {
@@ -274,7 +274,7 @@ public class PannelloVoti extends JPanel {
         votoOb.setLayout(new GridLayout(2, 1));
         votoOb.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
         // 1. LEGGE L'OBIETTIVO SALVATO
-        int obiettivoSalvato = GestoreDati.getObiettivoMedia();
+        int obiettivoSalvato = GestoreDatabase.getObiettivoMedia();
         panel3.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -286,7 +286,7 @@ public class PannelloVoti extends JPanel {
                             throw new NumberFormatException();
                         }
                         // 2. SALVA IL NUOVO OBIETTIVO NEL FILE
-                        GestoreDati.salvaObiettivoMedia(nuovoObiettivo);
+                        GestoreDatabase.salvaObiettivoMedia(nuovoObiettivo);
                         refresh();
                     } catch (NumberFormatException e1) {
                         JOptionPane.showMessageDialog(PannelloVoti.this, "Inserire un voto valido tra 18 e 30");
@@ -317,7 +317,7 @@ public class PannelloVoti extends JPanel {
         //pannello crediti rimanenti
         JLabel title4 = new JLabel("Crediti");
         title4.setHorizontalAlignment(JLabel.CENTER);
-        int maxCfu = GestoreDati.getObiettivoCFU();
+        int maxCfu = GestoreDatabase.getObiettivoCFU();
         if (maxCfu <= 0) {
             maxCfu = 1;
         }
@@ -348,8 +348,8 @@ public class PannelloVoti extends JPanel {
         votiEsamePanel.setLayout(new BorderLayout());
         Border b = BorderFactory.createMatteBorder(2, 0, 0, 0, Color.GRAY);
 
-        String[] votiRaw = GestoreDati.getVotiEsamiRaw();
-        int numVoti = GestoreDati.numeroVoti();
+        String[] votiRaw = GestoreDatabase.getVotiEsamiRaw();
+        int numVoti = GestoreDatabase.numeroVoti();
 
         JPanel votiOnly = new JPanel();
         votiOnly.setLayout(new BoxLayout(votiOnly, BoxLayout.Y_AXIS));
@@ -370,7 +370,7 @@ public class PannelloVoti extends JPanel {
             String[] parti = rigaVoto.split(";");
             String voto = parti[0];
             String nomeEsame = parti[1];
-            int minutiTotali = GestoreDati.getMinutiStudioEsame(nomeEsame);
+            int minutiTotali = GestoreDatabase.getMinutiStudioEsame(nomeEsame);
             String tempoFormattato = "";
             if(minutiTotali > 0) {
                 int ore = minutiTotali / 60;
@@ -417,7 +417,7 @@ public class PannelloVoti extends JPanel {
                             "Errore", JOptionPane.ERROR_MESSAGE);
                         }
                         int minutiTotali = ore*60 + minuti; 
-                        GestoreDati.setNuovoTempoStudio(nomeEsame, minutiTotali);
+                        GestoreDatabase.setNuovoTempoStudio(nomeEsame, minutiTotali);
                         etichettaTempo.setText(ore + "h " + minuti + "m");
                         refresh();
                     } else {
@@ -589,8 +589,8 @@ public class PannelloVoti extends JPanel {
             caricaVoti();
         }
         private void caricaVoti() {
-            String[] votiRaw = GestoreDati.getVotiEsamiRaw();
-            int numVoti = GestoreDati.numeroVoti();
+            String[] votiRaw = GestoreDatabase.getVotiEsamiRaw();
+            int numVoti = GestoreDatabase.numeroVoti();
             ArrayList<Integer> valori = new ArrayList<>();
             ArrayList<String> labels = new ArrayList<>();
             for (int i = 0; i < numVoti && i < votiRaw.length; i++) {
@@ -613,7 +613,7 @@ public class PannelloVoti extends JPanel {
         }
         private int parseVoto(String votoRaw) {
             if (votoRaw.equalsIgnoreCase("30L") || votoRaw.equalsIgnoreCase("30 e lode")) {
-                return GestoreDati.getPesoLode();
+                return GestoreDatabase.getPesoLode();
             }
             return Integer.parseInt(votoRaw.trim());
         }
@@ -636,7 +636,7 @@ public class PannelloVoti extends JPanel {
             g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             
             // Definisci i colori in base al tema
-            boolean isDarkMode = GestoreDati.isTemaScuro();
+            boolean isDarkMode = GestoreDatabase.isTemaScuro();
             Color colorAssi = isDarkMode ? new Color(150, 150, 150) : Color.GRAY;
             Color colorGridLine = isDarkMode ? new Color(80, 80, 80) : new Color(210, 210, 210);
             Color colorTesto = isDarkMode ? new Color(200, 200, 200) : Color.DARK_GRAY;
@@ -663,7 +663,7 @@ public class PannelloVoti extends JPanel {
                 g2.dispose();
                 return;
             }
-            int maxVoto = Math.max(30, GestoreDati.getPesoLode());
+            int maxVoto = Math.max(30, GestoreDatabase.getPesoLode());
             int rangeVoti = Math.max(1, maxVoto - MIN_VOTO);
             
             // Disegna griglia di livelli
@@ -700,7 +700,7 @@ public class PannelloVoti extends JPanel {
 
     public void setOptionButton() {
         JButton optionBut = new JButton("");
-        if (GestoreDati.isTemaScuro()) {
+        if (GestoreDatabase.isTemaScuro()) {
             optionBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24)); 
         }else {
             optionBut.setIcon(new FlatSVGIcon("icone/opzioni.svg", 24, 24));
@@ -713,7 +713,7 @@ public class PannelloVoti extends JPanel {
         optionBut.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                if (GestoreDati.isTemaScuro()) {
+                if (GestoreDatabase.isTemaScuro()) {
                     optionBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24)); 
                 }else {
                     optionBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24));
@@ -723,7 +723,7 @@ public class PannelloVoti extends JPanel {
 
             @Override
             public void mouseExited(MouseEvent e) {
-                if (GestoreDati.isTemaScuro()) {
+                if (GestoreDatabase.isTemaScuro()) {
                     optionBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24)); 
                 }else {
                     optionBut.setIcon(new FlatSVGIcon("icone/opzioni.svg", 24, 24));
@@ -749,7 +749,7 @@ public class PannelloVoti extends JPanel {
             });
 
             JPanel pannelloImpostazioni = new JPanel();
-            pannelloImpostazioni.setPreferredSize(new Dimension(360, 530));
+            pannelloImpostazioni.setPreferredSize(new Dimension(390, 530));
             pannelloImpostazioni.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
             pannelloImpostazioni.setLayout(new BorderLayout());
 
@@ -768,12 +768,12 @@ public class PannelloVoti extends JPanel {
             JLabel lblCfu = new JLabel("Obiettivo CFU totali: ");
             lblCfu.setIcon(new FlatSVGIcon("icone/target.svg", 22, 22));
             pnlCfu.setBorder(BorderFactory.createEmptyBorder(20, 10, 0, 10));
-            JTextField txtCfu = new JTextField(String.valueOf(GestoreDati.getObiettivoCFU()), 4);
+            JTextField txtCfu = new JTextField(String.valueOf(GestoreDatabase.getObiettivoCFU()), 4);
             JButton btnSalvaCfu = new JButton("Salva");
             btnSalvaCfu.addActionListener(ev -> {
                 try {
                     int nuovoObiettivo = Integer.parseInt(txtCfu.getText());
-                    GestoreDati.salvaObiettivoCfu(nuovoObiettivo);
+                    GestoreDatabase.salvaObiettivoCfu(nuovoObiettivo);
                     JOptionPane.showMessageDialog(pannelloImpostazioni, "Obiettivo salvato!");
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(pannelloImpostazioni, "Inserisci un numero valido!");
@@ -789,17 +789,17 @@ public class PannelloVoti extends JPanel {
             JLabel lblOrdine = new JLabel("Ordine predefinito scadenze: ");
             lblOrdine.setIcon(new FlatSVGIcon("icone/calendar.svg", 22, 22));
             lblOrdine.setIconTextGap(5);
-            boolean ordinePreferito = GestoreDati.getOrdineScadenza();
+            boolean ordinePreferito = GestoreDatabase.getOrdineScadenza();
             JButton btnOrdine = new JButton(ordinePreferito ? "Aggiunta" : "Cronologico");
             btnOrdine.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnOrdine.addActionListener(ez -> {
                 String text1 = btnOrdine.getText();
                 if (text1.equals("Cronologico")) {
                     btnOrdine.setText("Aggiunta");
-                    GestoreDati.salvaOrdineScadenze(true);
+                    GestoreDatabase.salvaOrdineScadenze(true);
                 } else {
                     btnOrdine.setText("Cronologico");
-                    GestoreDati.salvaOrdineScadenze(false);
+                    GestoreDatabase.salvaOrdineScadenze(false);
                 }
             });
             pnlOrdine.add(lblOrdine);
@@ -828,15 +828,15 @@ public class PannelloVoti extends JPanel {
             pnlContenuto.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
             pnlContenuto.setVisible(false);
             pnlContenuto.add(new JLabel(" Valore Lode (es. 30):"));
-            JTextField txtLode = new JTextField(GestoreDati.getImpostazione("LODE", "30"));
+            JTextField txtLode = new JTextField(GestoreDatabase.getImpostazione("LODE", "30"));
             pnlContenuto.add(txtLode);
             pnlContenuto.add(new JLabel(" Punti Bonus extra:"));
-            JTextField txtBonus = new JTextField(GestoreDati.getImpostazione("BONUS_LODE", "0"));
+            JTextField txtBonus = new JTextField(GestoreDatabase.getImpostazione("BONUS_LODE", "0"));
             pnlContenuto.add(txtBonus);
             JButton btnSalvaParametri = new JButton("Salva");
             btnSalvaParametri.addActionListener(ev -> {
-                GestoreDati.salvaImpostazione("LODE", txtLode.getText());
-                GestoreDati.salvaImpostazione("BONUS_LODE", txtBonus.getText());
+                GestoreDatabase.salvaImpostazione("LODE", txtLode.getText());
+                GestoreDatabase.salvaImpostazione("BONUS_LODE", txtBonus.getText());
                 JOptionPane.showMessageDialog(pannelloImpostazioni, "Parametri salvati!");
             });
             pnlContenuto.add(new JLabel(""));
@@ -867,7 +867,7 @@ public class PannelloVoti extends JPanel {
                 int conf1 = JOptionPane.showConfirmDialog(pannelloImpostazioni,
                         "Vuoi davvero svuotare il libretto?", "Conferma Reset", JOptionPane.YES_NO_OPTION);
                 if (conf1 == JOptionPane.YES_OPTION) {
-                    GestoreDati.resetTutto();
+                    GestoreDatabase.resetTutto();
                     JOptionPane.showMessageDialog(pannelloImpostazioni, "Dati azzerati. L'applicazione si chiuderà.");
                     System.exit(0);
                 }
@@ -878,17 +878,17 @@ public class PannelloVoti extends JPanel {
             JPanel pnlTema = new JPanel(new FlowLayout(FlowLayout.LEFT));
             pnlTema.setBorder(BorderFactory.createEmptyBorder(0, 85, 0, 0));
             JLabel lblTema = new JLabel("Modalità Scura: ");
-            if (GestoreDati.isTemaScuro()) {
+            if (GestoreDatabase.isTemaScuro()) {
                 lblTema.setIcon(new FlatSVGIcon("icone/dark2.svg", 20, 20)); 
             }else {
                 lblTema.setIcon(new FlatSVGIcon("icone/dark1.svg", 20, 20));
             }
             JCheckBox chkTema = new JCheckBox();
-            chkTema.setSelected(GestoreDati.isTemaScuro()); // Mette la spunta se era già scuro
+            chkTema.setSelected(GestoreDatabase.isTemaScuro()); // Mette la spunta se era già scuro
             chkTema.setCursor(new Cursor(Cursor.HAND_CURSOR));
             chkTema.addActionListener(ev -> {
                 boolean isScuro = chkTema.isSelected();
-                GestoreDati.salvaTemaScuro(isScuro);
+                GestoreDatabase.salvaTemaScuro(isScuro);
                 try {
                     if (isScuro) {
                         javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatDarkLaf());
@@ -1027,8 +1027,8 @@ public class PannelloVoti extends JPanel {
                 // --- SEZIONE 1: TUTTI GLI ESAMI ---
                 fw.write("### ESAMI ###\n");
                 fw.write("NOME ESAME;VOTO;CFU;COMPLETATO\n");
-                String[] tuttiEsami = GestoreDati.getEsamiSalvatiRaw();
-                String[] tuttiVoti = GestoreDati.getVotiEsamiRaw();
+                String[] tuttiEsami = GestoreDatabase.getEsamiSalvatiRaw();
+                String[] tuttiVoti = GestoreDatabase.getVotiEsamiRaw();
                 int sommaVoti = 0;
                 int sommaCfu = 0;
                 for (String esameRaw : tuttiEsami) {
@@ -1048,7 +1048,7 @@ public class PannelloVoti extends JPanel {
                                 try { 
                                     int cfuNum = Integer.parseInt(cfuDaScrivere);
                                     int votoNum = (votoDaScrivere.equalsIgnoreCase("30L") || votoDaScrivere.equalsIgnoreCase("30 E LODE"))
-                                                    ? GestoreDati.getPesoLode() : Integer.parseInt(votoDaScrivere);
+                                                    ? GestoreDatabase.getPesoLode() : Integer.parseInt(votoDaScrivere);
                                     sommaVoti += votoNum * cfuNum;
                                     sommaCfu += cfuNum;
                                 } catch (Exception e) {}
@@ -1066,22 +1066,22 @@ public class PannelloVoti extends JPanel {
 
                 // --- SEZIONE 2: IMPOSTAZIONI GLOBALI ---
                 fw.write("\n### IMPOSTAZIONI ###\n");
-                fw.write("OBIETTIVO_CFU;" + GestoreDati.getObiettivoCFU() + "\n");
-                fw.write("OBIETTIVO_MEDIA;" + GestoreDati.getObiettivoMedia() + "\n");
-                fw.write("TEMA_SCURO;" + GestoreDati.isTemaScuro() + "\n");
-                fw.write("ORDINE_SCADENZE;" + GestoreDati.getOrdineScadenza() + "\n");
-                fw.write("LODE;" + GestoreDati.getImpostazione("LODE", "30") + "\n");
-                fw.write("BONUS_LODE;" + GestoreDati.getImpostazione("BONUS_LODE", "0") + "\n");
+                fw.write("OBIETTIVO_CFU;" + GestoreDatabase.getObiettivoCFU() + "\n");
+                fw.write("OBIETTIVO_MEDIA;" + GestoreDatabase.getObiettivoMedia() + "\n");
+                fw.write("TEMA_SCURO;" + GestoreDatabase.isTemaScuro() + "\n");
+                fw.write("ORDINE_SCADENZE;" + GestoreDatabase.getOrdineScadenza() + "\n");
+                fw.write("LODE;" + GestoreDatabase.getImpostazione("LODE", "30") + "\n");
+                fw.write("BONUS_LODE;" + GestoreDatabase.getImpostazione("BONUS_LODE", "0") + "\n");
                 // NUOVE IMPOSTAZIONI POMODORO Aggiunte qui:
-                fw.write("POMODORI;" + GestoreDati.getPomodori() + "\n");
-                fw.write("POMODORI_DATA;" + GestoreDati.getDataPomodori() + "\n");
-                fw.write("POMODORI_MAX;" + GestoreDati.getMaxPomodoriGiornalieri() + "\n");
-                fw.write("MINUTI_STUDIO;" + GestoreDati.getMinutiStudio() + "\n");
-                fw.write("MINUTI_PAUSA;" + GestoreDati.getMinutiPausa() + "\n");
+                fw.write("POMODORI;" + GestoreDatabase.getPomodori() + "\n");
+                fw.write("POMODORI_DATA;" + GestoreDatabase.getDataPomodori() + "\n");
+                fw.write("POMODORI_MAX;" + GestoreDatabase.getMaxPomodoriGiornalieri() + "\n");
+                fw.write("MINUTI_STUDIO;" + GestoreDatabase.getMinutiStudio() + "\n");
+                fw.write("MINUTI_PAUSA;" + GestoreDatabase.getMinutiPausa() + "\n");
 
                 // --- SEZIONE 3: SCADENZE ---
                 fw.write("\n### SCADENZE ###\n");
-                String[] scadenze = GestoreDati.getScadenzeRaw();
+                String[] scadenze = GestoreDatabase.getScadenzeRaw();
                 if (scadenze != null) {
                     for (String sc : scadenze) {
                         if (sc != null && !sc.trim().isEmpty()) { fw.write(sc + "\n"); }
@@ -1090,7 +1090,7 @@ public class PannelloVoti extends JPanel {
 
                 // --- SEZIONE 4: TEMPO DI STUDIO (NUOVA) ---
                 fw.write("\n### STUDIO ###\n");
-                String[] studio = GestoreDati.getTuttoLoStudioRaw();
+                String[] studio = GestoreDatabase.getTuttoLoStudioRaw();
                 if (studio != null) {
                     for (String st : studio) {
                         if (st != null && !st.trim().isEmpty()) { fw.write(st + "\n"); }
@@ -1104,8 +1104,8 @@ public class PannelloVoti extends JPanel {
         }
     }
     private void importaLibrettoDaExcel(JPanel parentComponent) {
-        if (GestoreDati.getEsamiSalvatiRaw().length != 0 || GestoreDati.getScadenzeRaw().length != 0 || 
-            GestoreDati.getVotiEsamiRaw().length != 0) {
+        if (GestoreDatabase.getEsamiSalvatiRaw().length != 0 || GestoreDatabase.getScadenzeRaw().length != 0 || 
+            GestoreDatabase.getVotiEsamiRaw().length != 0) {
             JOptionPane.showMessageDialog(this, "Assicurati di aver cancellato tutti i dati (Fai reset da impostazioni prima di importare)");
             return;
         }
@@ -1139,12 +1139,12 @@ public class PannelloVoti extends JPanel {
                             String cfuStr = (parti.length > 2) ? parti[2].trim() : "0";
                             boolean completato = (parti.length > 3) ? Boolean.parseBoolean(parti[3].trim()) : (!voto.isEmpty());
                             boolean idoneita = (parti.length > 4) && Boolean.parseBoolean(parti[4].trim());
-                            GestoreDati.salvaEsame(nomeEsame, idoneita);
+                            GestoreDatabase.salvaEsame(nomeEsame, idoneita);
                             if (completato) {
-                                GestoreDati.aggiornaStatoEsame(nomeEsame, true);
-                                if (!voto.isEmpty()) GestoreDati.setVotiEsami(voto, nomeEsame, 0);
+                                GestoreDatabase.aggiornaStatoEsame(nomeEsame, true);
+                                if (!voto.isEmpty()) GestoreDatabase.setVotiEsami(voto, nomeEsame, 0);
                                 try {
-                                    GestoreDati.addCfuEsame(nomeEsame, Integer.parseInt(cfuStr));
+                                    GestoreDatabase.addCfuEsame(nomeEsame, Integer.parseInt(cfuStr));
                                 } catch (NumberFormatException e) {}
                             }
                             esamiImportati++;
@@ -1156,18 +1156,18 @@ public class PannelloVoti extends JPanel {
                             String chiave = parti[0];
                             String valore = parti[1];
                             switch (chiave) {
-                                case "OBIETTIVO_CFU": GestoreDati.salvaObiettivoCfu(Integer.parseInt(valore)); break;
-                                case "OBIETTIVO_MEDIA": GestoreDati.salvaObiettivoMedia(Integer.parseInt(valore)); break;
-                                case "TEMA_SCURO": GestoreDati.salvaTemaScuro(Boolean.parseBoolean(valore)); break;
-                                case "ORDINE_SCADENZE": GestoreDati.salvaOrdineScadenze(Boolean.parseBoolean(valore)); break;
-                                case "LODE": GestoreDati.salvaImpostazione("LODE", valore); break;
-                                case "BONUS_LODE": GestoreDati.salvaImpostazione("BONUS_LODE", valore); break;
+                                case "OBIETTIVO_CFU": GestoreDatabase.salvaObiettivoCfu(Integer.parseInt(valore)); break;
+                                case "OBIETTIVO_MEDIA": GestoreDatabase.salvaObiettivoMedia(Integer.parseInt(valore)); break;
+                                case "TEMA_SCURO": GestoreDatabase.salvaTemaScuro(Boolean.parseBoolean(valore)); break;
+                                case "ORDINE_SCADENZE": GestoreDatabase.salvaOrdineScadenze(Boolean.parseBoolean(valore)); break;
+                                case "LODE": GestoreDatabase.salvaImpostazione("LODE", valore); break;
+                                case "BONUS_LODE": GestoreDatabase.salvaImpostazione("BONUS_LODE", valore); break;
                                 // NUOVE IMPOSTAZIONI POMODORO
-                                case "POMODORI": GestoreDati.salvaPomodori(Integer.parseInt(valore)); break;
-                                case "POMODORI_DATA": GestoreDati.salvaDataPomodori(valore); break;
-                                case "POMODORI_MAX": GestoreDati.salvaMaxPomodoriGiornalieri(Integer.parseInt(valore)); break;
-                                case "MINUTI_STUDIO": GestoreDati.salvaImpostazione("MINUTI_STUDIO", valore); break;
-                                case "MINUTI_PAUSA": GestoreDati.salvaImpostazione("MINUTI_PAUSA", valore); break;
+                                case "POMODORI": GestoreDatabase.salvaPomodori(Integer.parseInt(valore)); break;
+                                case "POMODORI_DATA": GestoreDatabase.salvaDataPomodori(valore); break;
+                                case "POMODORI_MAX": GestoreDatabase.salvaMaxPomodoriGiornalieri(Integer.parseInt(valore)); break;
+                                case "MINUTI_STUDIO": GestoreDatabase.salvaImpostazione("MINUTI_STUDIO", valore); break;
+                                case "MINUTI_PAUSA": GestoreDatabase.salvaImpostazione("MINUTI_PAUSA", valore); break;
                             }
                         }
                     }
@@ -1176,7 +1176,7 @@ public class PannelloVoti extends JPanel {
                         if (parti.length >= 2) {
                             String nomeEsameScadenza = parti[0];
                             String dataScadenza = parti[1];
-                            GestoreDati.salvaScadenza(nomeEsameScadenza, dataScadenza);
+                            GestoreDatabase.salvaScadenza(nomeEsameScadenza, dataScadenza);
                         }
                     }
                     // NUOVA SEZIONE STUDIO Aggiunta qui:
@@ -1187,13 +1187,13 @@ public class PannelloVoti extends JPanel {
                                 String nomeEsame = parti[0];
                                 int minutiStrudiati = Integer.parseInt(parti[1].trim());
                                 // Salviamo le ore di studio per la materia
-                                GestoreDati.setNuovoTempoStudio(nomeEsame, minutiStrudiati);
+                                GestoreDatabase.setNuovoTempoStudio(nomeEsame, minutiStrudiati);
                             } catch (NumberFormatException e) {}
                         }
                     }
                 }
                 
-                if (GestoreDati.isTemaScuro()) {
+                if (GestoreDatabase.isTemaScuro()) {
                     javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatDarkLaf());
                 } else {
                     javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatLightLaf());

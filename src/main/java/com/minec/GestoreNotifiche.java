@@ -35,7 +35,7 @@ import javax.swing.Timer;
 import javax.swing.JTextArea;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
-import com.minec.dati.GestoreDati;
+import com.minec.dati.GestoreDatabase;
 
 public class GestoreNotifiche {
 
@@ -100,7 +100,7 @@ public class GestoreNotifiche {
             return;
         }
 
-        String[] scadenzeRaw = GestoreDati.getScadenzeRaw();
+        String[] scadenzeRaw = GestoreDatabase.getScadenzeRaw();
         LocalDate oggi = LocalDate.now();
         boolean trovataNotifica = false;
         StringBuilder messaggio = new StringBuilder();
@@ -289,7 +289,7 @@ public class GestoreNotifiche {
                 for (TrofeoObiettivo trofeo : trofei) {
                     statoTrofeiSessione.put(trofeo.id(), trofeo.sbloccato());
                     if (trofeo.sbloccato() && isTrofeoFisso(trofeo.id())) {
-                        GestoreDati.salvaImpostazione(PREFISSO_TROFEO_NOTIFICATO + trofeo.id(), "true");
+                        GestoreDatabase.salvaImpostazione(PREFISSO_TROFEO_NOTIFICATO + trofeo.id(), "true");
                     }
                 }
                 trofeiInizializzati = true;
@@ -305,7 +305,7 @@ public class GestoreNotifiche {
 
                 if (isTrofeoFisso(trofeo.id())) {
                     String chiaveNotifica = PREFISSO_TROFEO_NOTIFICATO + trofeo.id();
-                    if (Boolean.parseBoolean(GestoreDati.getImpostazione(chiaveNotifica, "false"))) {
+                    if (Boolean.parseBoolean(GestoreDatabase.getImpostazione(chiaveNotifica, "false"))) {
                         continue;
                     }
 
@@ -314,7 +314,7 @@ public class GestoreNotifiche {
                         continue;
                     }
 
-                    GestoreDati.salvaImpostazione(chiaveNotifica, "true");
+                    GestoreDatabase.salvaImpostazione(chiaveNotifica, "true");
                     daNotificare.add(trofeo);
                     continue;
                 }
@@ -338,7 +338,7 @@ public class GestoreNotifiche {
 
     private static List<TrofeoObiettivo> calcolaTrofei() {
         int totaleMinuti = 0;
-        for (String riga : GestoreDati.getTuttoLoStudioRaw()) {
+        for (String riga : GestoreDatabase.getTuttoLoStudioRaw()) {
             if (riga == null || !riga.contains(";")) {
                 continue;
             }
@@ -349,7 +349,7 @@ public class GestoreNotifiche {
         }
         int oreTotali = totaleMinuti / 60;
 
-        String[] esamiRaw = GestoreDati.getVotiEsamiRaw();
+        String[] esamiRaw = GestoreDatabase.getVotiEsamiRaw();
         int totaleLodi = 0;
         int numeroDiciotto = 0;
         int cfuTotali = 0;
@@ -407,7 +407,7 @@ public class GestoreNotifiche {
 
         boolean speedrunnerSbloccato = false;
         List<String> esamiSuperati = new ArrayList<>();
-        for (String riga : GestoreDati.getEsamiSalvatiRaw()) {
+        for (String riga : GestoreDatabase.getEsamiSalvatiRaw()) {
             if (riga == null || !riga.contains(";")) {
                 continue;
             }
@@ -418,7 +418,7 @@ public class GestoreNotifiche {
         }
 
         List<LocalDate> dateEsamiPassati = new ArrayList<>();
-        for (String riga : GestoreDati.getScadenzeRaw()) {
+        for (String riga : GestoreDatabase.getScadenzeRaw()) {
             if (riga == null || !riga.contains(";")) {
                 continue;
             }
@@ -446,7 +446,7 @@ public class GestoreNotifiche {
             }
         }
 
-        int cfuMaxImpostati = Integer.parseInt(GestoreDati.getImpostazione("CFU", "180"));
+        int cfuMaxImpostati = Integer.parseInt(GestoreDatabase.getImpostazione("CFU", "180"));
 
         Map<String, TrofeoObiettivo> trofei = new LinkedHashMap<>();
         trofei.put("ACH_STUDIOSO_SESSION",
@@ -457,7 +457,7 @@ public class GestoreNotifiche {
                         totaleLodi >= 3));
         trofei.put("ACH_MARATONETA_SESSION",
                 new TrofeoObiettivo("ACH_MARATONETA_SESSION", "Maratoneta", "Fai 5 Pomodori in un giorno",
-                        GestoreDati.getPomodori() >= 5));
+                        GestoreDatabase.getPomodori() >= 5));
         trofei.put("ACH_INTENDITORE_IPPIHA_SESSION",
                 new TrofeoObiettivo("ACH_INTENDITORE_IPPIHA_SESSION", "Intenditore di Ippiha",
                         "Prendi almeno tre 18", numeroDiciotto >= 3));
@@ -470,7 +470,7 @@ public class GestoreNotifiche {
         trofei.put("ACH_TOCCA_ERBA_SESSION",
                 new TrofeoObiettivo("ACH_TOCCA_ERBA_SESSION", "Tocca l'Erba",
                         "Hai completato 10 Pomodori in un solo giorno. Esci fuori, il sole esiste ancora!",
-                        GestoreDati.getPomodori() >= 10));
+                        GestoreDatabase.getPomodori() >= 10));
         trofei.put("ACH_SPEEDRUNNER",
             new TrofeoObiettivo("ACH_SPEEDRUNNER", "SpeedRunner",
                         "Hai superato due esami a meno di 3 giorni di distanza l'uno dall'altro. Pura follia",

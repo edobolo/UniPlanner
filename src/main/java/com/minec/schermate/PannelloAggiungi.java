@@ -28,7 +28,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
 import com.minec.GestoreNotifiche;
-import com.minec.dati.GestoreDati;
+import com.minec.dati.GestoreDatabase;
 
 public class PannelloAggiungi extends JPanel {
 
@@ -77,7 +77,7 @@ public class PannelloAggiungi extends JPanel {
     private void refreshDataUI() {
         // 1. Aggiorna la lista grafica (il centro)
         esamiPanel.removeAll();
-        String[] esami = GestoreDati.getEsamiSalvatiRaw();
+        String[] esami = GestoreDatabase.getEsamiSalvatiRaw();
         index = 0;
         for (String s : esami) {
             if (s != null) {
@@ -112,7 +112,7 @@ public class PannelloAggiungi extends JPanel {
 
         // --- Cerca i CFU nel file voti.txt ---
         int cfuSalvati = 0;
-        String[] votiRaw = GestoreDati.getVotiEsamiRaw();
+        String[] votiRaw = GestoreDatabase.getVotiEsamiRaw();
         for (String rigaVoto : votiRaw) {
             String[] pVoto = rigaVoto.split(";");
             // Se la riga corrisponde al nostro esame e ha 3 elementi (Voto;Nome;CFU)
@@ -166,7 +166,7 @@ public class PannelloAggiungi extends JPanel {
                     "Selezione CFU", JOptionPane.QUESTION_MESSAGE, null, opzioni, opzioni[0]);
             if (scelta != null) {
                 int cfu = Integer.parseInt(scelta);
-                GestoreDati.addCfuEsame(nome, cfu); // Scrive nel file
+                GestoreDatabase.addCfuEsame(nome, cfu); // Scrive nel file
 
                 // Aggiorna l'interfaccia
                 JLabel textCfu = new JLabel(cfu + " CFU");
@@ -175,7 +175,7 @@ public class PannelloAggiungi extends JPanel {
                 buttonCFU.setVisible(false); // Nasconde il bottone
 
                 if (isIdoneita) {
-                    GestoreDati.aggiornaStatoEsame(nome, true);
+                    GestoreDatabase.aggiornaStatoEsame(nome, true);
                     autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
                 }
 
@@ -212,9 +212,9 @@ public class PannelloAggiungi extends JPanel {
                             }
                         }
                         if (valido) {
-                            // Se ha superato i test, salviamo usando il GestoreDati
-                            GestoreDati.setVotiEsami(votoDaSalvare, nome, 0);
-                            GestoreDati.aggiornaStatoEsame(nome, true);
+                            // Se ha superato i test, salviamo usando il GestoreDatabase
+                            GestoreDatabase.setVotiEsami(votoDaSalvare, nome, 0);
+                            GestoreDatabase.aggiornaStatoEsame(nome, true);
                             autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
                             buttonCFU.setVisible(true);
                             pv.refresh();
@@ -229,8 +229,8 @@ public class PannelloAggiungi extends JPanel {
                     }
                 } else {
                     // SE TOLGO LA SPUNTA: Rimuovo tutto
-                    GestoreDati.aggiornaStatoEsame(nome, false);
-                    GestoreDati.removeVotiEsame(nome);
+                    GestoreDatabase.aggiornaStatoEsame(nome, false);
+                    GestoreDatabase.removeVotiEsame(nome);
                     autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
                     pannelloCfuLocale.removeAll();
                     buttonCFU.setVisible(false);
@@ -243,14 +243,14 @@ public class PannelloAggiungi extends JPanel {
         } else {
             markAsDone.addActionListener(e -> {
                 if (markAsDone.isSelected()) {
-                    GestoreDati.aggiornaStatoEsame(nome, true);
+                    GestoreDatabase.aggiornaStatoEsame(nome, true);
                     autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
                     if (pannelloCfuLocale.getComponentCount() == 0) {
                         buttonCFU.setVisible(true);
                     }
                 } else {
-                    GestoreDati.aggiornaStatoEsame(nome, false);
-                    GestoreDati.removeVotiEsame(nome);
+                    GestoreDatabase.aggiornaStatoEsame(nome, false);
+                    GestoreDatabase.removeVotiEsame(nome);
                     autoAggiornaSbarramento(nomeEsameLabel, markAsDone, fontOriginale);
                     pannelloCfuLocale.removeAll();
                     buttonCFU.setVisible(false);
@@ -464,7 +464,7 @@ public class PannelloAggiungi extends JPanel {
                 return;
             }
             if (index < 40) {
-                GestoreDati.salvaEsame(nome, checkIdoneita.isSelected());
+                GestoreDatabase.salvaEsame(nome, checkIdoneita.isSelected());
                 checkIdoneita.setSelected(false);
                 campoNome.setText("");
                 aggiornaTutto(); // Ricarica tutto dal file
@@ -477,8 +477,8 @@ public class PannelloAggiungi extends JPanel {
         btnRemove.addActionListener(e -> {
             String selezionato = (String) tendina.getSelectedItem();
             if (selezionato != null) {
-                GestoreDati.removeNomeEsame(selezionato);
-                GestoreDati.removeVotiEsame(selezionato);
+                GestoreDatabase.removeNomeEsame(selezionato);
+                GestoreDatabase.removeVotiEsame(selezionato);
                 aggiornaTutto(); // Ricarica tutto dal file
                 pv.refresh();
             }

@@ -33,7 +33,7 @@ import javax.swing.border.TitledBorder;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.github.lgooddatepicker.components.DatePicker;
 import com.minec.GestoreNotifiche;
-import com.minec.dati.GestoreDati;
+import com.minec.dati.GestoreDatabase;
 
 public class PannelloScadenze extends JPanel {
 
@@ -52,7 +52,7 @@ public class PannelloScadenze extends JPanel {
     private DatePicker datePicker;
     private JButton btnSalva;
     private JButton btnCalendario;
-    private boolean ordinaPerData = GestoreDati.getOrdineScadenza();
+    private boolean ordinaPerData = GestoreDatabase.getOrdineScadenza();
     private float currentScale = 1.0f;
 
     public PannelloScadenze() {
@@ -121,7 +121,7 @@ public class PannelloScadenze extends JPanel {
                 JOptionPane.showMessageDialog(this, "Seleziona sia un esame che una data valida!");
                 return;
             }
-            GestoreDati.salvaScadenza(esameSelezionato, dataSelezionata.toString());
+            GestoreDatabase.salvaScadenza(esameSelezionato, dataSelezionata.toString());
             datePicker.clear();
             aggiornaListaScadenze();
             GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
@@ -129,7 +129,7 @@ public class PannelloScadenze extends JPanel {
 
         btnOrdina.addActionListener(e -> {
             ordinaPerData = !ordinaPerData; // Inverte il valore (da falso a vero e viceversa)
-            GestoreDati.salvaOrdineScadenze(ordinaPerData);
+            GestoreDatabase.salvaOrdineScadenze(ordinaPerData);
             btnOrdina.setText(ordinaPerData ? "Ordina: Aggiunta" : "Ordina: Cronologico");
             aggiornaListaScadenze();
         });
@@ -228,7 +228,7 @@ public class PannelloScadenze extends JPanel {
             return;
         }
         JTextField campoData = datePicker.getComponentDateTextField();
-        if (GestoreDati.isTemaScuro()) {
+        if (GestoreDatabase.isTemaScuro()) {
             campoData.setBackground(new Color(60, 63, 65));
             campoData.setForeground(new Color(230, 230, 230));
             campoData.setCaretColor(new Color(230, 230, 230));
@@ -241,7 +241,7 @@ public class PannelloScadenze extends JPanel {
 
     private void caricaEsamiNelMenu() {
         comboEsami.removeAllItems();
-        String[] esamiRaw = GestoreDati.getEsamiSalvatiRaw();
+        String[] esamiRaw = GestoreDatabase.getEsamiSalvatiRaw();
         for (String riga : esamiRaw) {
             String[] parti = riga.split(";");
             if (parti.length >= 2 && parti[1].equals("false")) {
@@ -253,7 +253,7 @@ public class PannelloScadenze extends JPanel {
 
     public void aggiornaListaScadenze() {
         scadenzeListPanel.removeAll();
-        String[] scadenzeRaw = GestoreDati.getScadenzeRaw();
+        String[] scadenzeRaw = GestoreDatabase.getScadenzeRaw();
         LocalDate oggi = LocalDate.now();
         List<String> listaScadenze = new ArrayList<>(Arrays.asList(scadenzeRaw));
         if (ordinaPerData) {
@@ -320,7 +320,7 @@ public class PannelloScadenze extends JPanel {
                             "Conferma rimozione", JOptionPane.YES_NO_OPTION);
 
                     if (conferma == JOptionPane.YES_OPTION) {
-                        GestoreDati.removeScadenza(nomeEsame);
+                        GestoreDatabase.removeScadenza(nomeEsame);
                         aggiornaListaScadenze();
                         GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
                     }
@@ -348,7 +348,7 @@ public class PannelloScadenze extends JPanel {
     }
 
     public void refreshOrdineScadenze() {
-        ordinaPerData = GestoreDati.getOrdineScadenza();
+        ordinaPerData = GestoreDatabase.getOrdineScadenza();
         if (btnOrdina != null) {
             btnOrdina.setText(ordinaPerData ? "Ordina: Aggiunta" : "Ordina: Cronologico");
         }

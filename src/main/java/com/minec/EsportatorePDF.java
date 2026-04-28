@@ -8,7 +8,7 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 
-import com.minec.dati.GestoreDati;
+import com.minec.dati.GestoreDatabase;
 
 public class EsportatorePDF {
 
@@ -38,7 +38,7 @@ public class EsportatorePDF {
                 
                 // --- CICLO ESAMI E CALCOLO MEDIA ---
                 contenuto.setFont(PDType1Font.HELVETICA, 11);
-                String[] votiRaw = GestoreDati.getVotiEsamiRaw();
+                String[] votiRaw = GestoreDatabase.getVotiEsamiRaw();
 
                 for (String riga : votiRaw) {
                     if (riga == null || !riga.contains(";")) continue;
@@ -52,7 +52,7 @@ public class EsportatorePDF {
                     if (!votoStr.equalsIgnoreCase("IDO")) {
                         int valoreVoto;
                         if (votoStr.equalsIgnoreCase("30L")) {
-                            valoreVoto = GestoreDati.getPesoLode(); // es. 30 o 31
+                            valoreVoto = GestoreDatabase.getPesoLode(); // es. 30 o 31
                         } else {
                             valoreVoto = Integer.parseInt(votoStr);
                         }
@@ -99,7 +99,7 @@ public class EsportatorePDF {
                 y -= 15;
                 contenuto.beginText();
                 contenuto.newLineAtOffset(50, y);
-                contenuto.showText("Obiettivo prefissato: " + GestoreDati.getObiettivoMedia());
+                contenuto.showText("Obiettivo prefissato: " + GestoreDatabase.getObiettivoMedia());
                 contenuto.endText();
             }
 
