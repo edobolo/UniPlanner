@@ -29,7 +29,7 @@ public class MainApp {
 
     public static void main(String[] args) {
         // Leggiamo la memoria
-        if (com.minec.dati.GestoreDati.isTemaScuro()) {
+        if (com.minec.dati.GestoreDatabase.isTemaScuro()) {
             com.formdev.flatlaf.FlatDarkLaf.setup(); // Tema Scuro
         } else {
             com.formdev.flatlaf.FlatLightLaf.setup(); // Tema Chiaro
