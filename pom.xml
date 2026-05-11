@@ -44,6 +44,11 @@
       <artifactId>sqlite-jdbc</artifactId>
       <version>3.45.1.0</version>
     </dependency>
+    <dependency>
+        <groupId>org.update4j</groupId>
+        <artifactId>update4j</artifactId>
+        <version>1.5.8</version>
+    </dependency>
   </dependencies>
 
   <build>
