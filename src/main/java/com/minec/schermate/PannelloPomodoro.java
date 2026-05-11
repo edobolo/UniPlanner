@@ -106,7 +106,7 @@ public class PannelloPomodoro extends JPanel{
         main = frame;
         // ---Titolo e Stato---
         JPanel topPanel = new JPanel(new GridLayout(4, 1));
-        lblTitle = new JLabel("Timer Pomodoro", CENTER);
+        lblTitle = new JLabel("Timer Pomo", CENTER);
         lblTitle.setFont(new Font("Arial", Font.BOLD, 28));
         lblStato = new JLabel("Pronto per studiare?", SwingConstants.CENTER);
         lblStato.setFont(new Font("Arial", Font.ITALIC, 18));
