@@ -19,7 +19,9 @@ import java.time.Year;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Flow;
 
 import javax.swing.BorderFactory;
@@ -389,6 +391,7 @@ public class PannelloScadenze extends JPanel {
             }
         }
         comboEsami.setSelectedIndex(-1);
+        comboEsami.setToolTipText("Nome esame...");
     }
 
     public void aggiornaListaScadenze() {
@@ -491,22 +494,13 @@ public class PannelloScadenze extends JPanel {
     private void aggiornaCalendario() {
         if (pnlGiorni == null || calendar == null) return;
 
-        // Pulisci e imposta il layout e il numero del giorno in ogni pannello
-        LocalDate oggi = LocalDate.now();
-        for (int i = 0; i < pnlGiorni.length; i++) {
-            JPanel p = pnlGiorni[i];
-            p.removeAll();
-            p.setLayout(new BorderLayout());
-            JLabel lblDay = new JLabel("" + (i + 1));
-            lblDay.setBorder(new EmptyBorder(4, 6, 0, 0));
-            if(i+1 == oggi.getDayOfMonth() && currentMonth == oggi.getMonthValue()) {
-                lblDay.setFont(new Font("Arial", Font.BOLD, 14));
-                lblDay.setForeground(Color.RED);
-            }
-            p.add(lblDay, BorderLayout.NORTH);
+        // Raccogli tutti gli esami per ogni giorno
+        Map<Integer, List<String>> esamiPerGiorno = new HashMap<>();
+        for (int i = 1; i <= pnlGiorni.length; i++) {
+            esamiPerGiorno.put(i, new ArrayList<>());
         }
 
-        // Aggiungi le scadenze corrispondenti al mese/anno visualizzati
+        // Leggi gli esami dal database
         String[] scadenzeRaw = GestoreDatabase.getScadenzeRaw();
         for (String riga : scadenzeRaw) {
             String[] parti = riga.split(";");
@@ -516,22 +510,62 @@ public class PannelloScadenze extends JPanel {
                     if (data.getYear() == currentYear && data.getMonthValue() == currentMonth) {
                         int giorno = data.getDayOfMonth();
                         if (giorno >= 1 && giorno <= pnlGiorni.length) {
-                            JPanel target = pnlGiorni[giorno - 1];
-                            String nomeEsame = parti[0];
-                            // Usa HTML per permettere al testo di andare a capo
-                            JLabel lblExam = new JLabel("<html><div style='width: 70px; text-align: center;'>" + nomeEsame + "</div></html>");
-                            lblExam.setBorder(new EmptyBorder(2, 2, 2, 2));
-                            lblExam.setOpaque(false);
-                            lblExam.setFont(new Font("Arial", Font.PLAIN, 12));
-                            lblExam.setVerticalAlignment(JLabel.CENTER);
-                            lblExam.setPreferredSize(new Dimension(80, 50));
-                            lblExam.setMaximumSize(new Dimension(80, 50));
-                            target.add(lblExam, BorderLayout.CENTER);
+                            esamiPerGiorno.get(giorno).add(parti[0]);
                         }
                     }
                 } catch (Exception ex) {
                     // ignoriamo righe non parseable
                 }
+            }
+        }
+
+        // Popola i pannelli dei giorni
+        LocalDate oggi = LocalDate.now();
+        for (int i = 0; i < pnlGiorni.length; i++) {
+            JPanel p = pnlGiorni[i];
+            p.removeAll();
+            p.setLayout(new BorderLayout());
+
+            // Aggiungi il numero del giorno in NORTH (a sinistra)
+            JLabel lblDay = new JLabel("" + (i + 1));
+            lblDay.setBorder(new EmptyBorder(4, 6, 0, 0));
+            lblDay.setHorizontalAlignment(JLabel.LEFT);
+            if(i+1 == oggi.getDayOfMonth() && currentMonth == oggi.getMonthValue()) {
+                lblDay.setFont(new Font("Arial", Font.BOLD, 14));
+                lblDay.setForeground(Color.RED);
+            }
+            p.add(lblDay, BorderLayout.NORTH);
+
+            // Aggiungi gli esami per questo giorno
+            List<String> esami = esamiPerGiorno.get(i + 1);
+            if (esami.size() == 1) {
+                // Un singolo esame: mostra direttamente senza scrollpane
+                String nomeEsame = esami.get(0);
+                JLabel lblExam = new JLabel("<html><div style='width: 70px; text-align: center;'>- " + nomeEsame + "</div></html>");
+                lblExam.setBorder(new EmptyBorder(2, 2, 2, 2));
+                lblExam.setOpaque(false);
+                lblExam.setFont(new Font("Arial", Font.PLAIN, 12));
+                lblExam.setVerticalAlignment(JLabel.CENTER);
+                lblExam.setHorizontalAlignment(JLabel.CENTER);
+                p.add(lblExam, BorderLayout.CENTER);
+            } else if (esami.size() >= 2) {
+                // Due o più esami: usa uno scrollpane
+                JPanel esamiPanel = new JPanel();
+                esamiPanel.setLayout(new BoxLayout(esamiPanel, BoxLayout.Y_AXIS));
+                for (String nomeEsame : esami) {
+                    JLabel lblExam = new JLabel("<html><div style='width: 70px; text-align: center;'>- " + nomeEsame + "</div></html>");
+                    lblExam.setBorder(new EmptyBorder(2, 2, 2, 2));
+                    lblExam.setOpaque(false);
+                    lblExam.setFont(new Font("Arial", Font.PLAIN, 12));
+                    lblExam.setVerticalAlignment(JLabel.CENTER);
+                    lblExam.setHorizontalAlignment(JLabel.CENTER);
+                    lblExam.setAlignmentX(Component.CENTER_ALIGNMENT);
+                    esamiPanel.add(lblExam);
+                }
+                JScrollPane scrollPane = new JScrollPane(esamiPanel);
+                scrollPane.setBorder(BorderFactory.createEmptyBorder());
+                scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+                p.add(scrollPane, BorderLayout.CENTER);
             }
         }
 

@@ -764,9 +764,10 @@ public class PannelloVoti extends JPanel {
             centro.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
             // 1. Cambio CFU
-            JPanel pnlCfu = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            JPanel pnlCfu = new JPanel(new FlowLayout(FlowLayout.CENTER));
             JLabel lblCfu = new JLabel("Obiettivo CFU totali: ");
             lblCfu.setIcon(new FlatSVGIcon("icone/target.svg", 22, 22));
+            lblCfu.setHorizontalAlignment(SwingConstants.CENTER);
             pnlCfu.setBorder(BorderFactory.createEmptyBorder(20, 10, 0, 10));
             JTextField txtCfu = new JTextField(String.valueOf(GestoreDatabase.getObiettivoCFU()), 4);
             JButton btnSalvaCfu = new JButton("Salva");
@@ -784,11 +785,12 @@ public class PannelloVoti extends JPanel {
             pnlCfu.add(btnSalvaCfu);
 
             // 2. Ordine scadenze
-            JPanel pnlOrdine = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            JPanel pnlOrdine = new JPanel(new FlowLayout(FlowLayout.CENTER));
             pnlOrdine.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
             JLabel lblOrdine = new JLabel("Ordine predefinito scadenze: ");
             lblOrdine.setIcon(new FlatSVGIcon("icone/calendar.svg", 22, 22));
             lblOrdine.setIconTextGap(5);
+            lblOrdine.setHorizontalAlignment(SwingConstants.CENTER);
             boolean ordinePreferito = GestoreDatabase.getOrdineScadenza();
             JButton btnOrdine = new JButton(ordinePreferito ? "Aggiunta" : "Cronologico");
             btnOrdine.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -820,17 +822,22 @@ public class PannelloVoti extends JPanel {
             lblTitoloParam.setIconTextGap(5);
             lblTitoloParam.setFont(new Font("Arial", Font.BOLD, 14));
             JLabel lblFreccia = new JLabel("▼");
-            pnlHeader.add(lblTitoloParam, BorderLayout.WEST);
+            lblTitoloParam.setHorizontalAlignment(SwingConstants.CENTER);
+            pnlHeader.add(lblTitoloParam, BorderLayout.CENTER);
             pnlHeader.add(lblFreccia, BorderLayout.EAST);
 
             // B. Il Contenuto (Invisibile all'inizio)
             JPanel pnlContenuto = new JPanel(new GridLayout(3, 2, 10, 10));
             pnlContenuto.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
             pnlContenuto.setVisible(false);
-            pnlContenuto.add(new JLabel(" Valore Lode (es. 30):"));
+            JLabel lblValoreLode = new JLabel(" Valore Lode (es. 30):");
+            lblValoreLode.setHorizontalAlignment(SwingConstants.CENTER);
+            pnlContenuto.add(lblValoreLode);
             JTextField txtLode = new JTextField(GestoreDatabase.getImpostazione("LODE", "30"));
             pnlContenuto.add(txtLode);
-            pnlContenuto.add(new JLabel(" Punti Bonus extra:"));
+            JLabel lblBonusExtra = new JLabel(" Punti Bonus extra:");
+            lblBonusExtra.setHorizontalAlignment(SwingConstants.CENTER);
+            pnlContenuto.add(lblBonusExtra);
             JTextField txtBonus = new JTextField(GestoreDatabase.getImpostazione("BONUS_LODE", "0"));
             pnlContenuto.add(txtBonus);
             JButton btnSalvaParametri = new JButton("Salva");
@@ -875,9 +882,9 @@ public class PannelloVoti extends JPanel {
             pnlReset.add(btnReset);
 
             // 5. cambia modalità colore
-            JPanel pnlTema = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            pnlTema.setBorder(BorderFactory.createEmptyBorder(0, 85, 0, 0));
+            JPanel pnlTema = new JPanel(new FlowLayout(FlowLayout.CENTER));
             JLabel lblTema = new JLabel("Modalità Scura: ");
+            lblTema.setHorizontalAlignment(JLabel.CENTER);
             if (GestoreDatabase.isTemaScuro()) {
                 lblTema.setIcon(new FlatSVGIcon("icone/dark2.svg", 20, 20)); 
             }else {
@@ -900,6 +907,7 @@ public class PannelloVoti extends JPanel {
                         optionBut.setIcon(new FlatSVGIcon("icone/opzioni.svg", 24, 24));
                     }
                     SwingUtilities.updateComponentTreeUI(frame);
+                    refresh();
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }

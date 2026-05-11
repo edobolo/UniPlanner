@@ -106,7 +106,7 @@ public class PannelloPomodoro extends JPanel{
         main = frame;
         // ---Titolo e Stato---
         JPanel topPanel = new JPanel(new GridLayout(4, 1));
-        lblTitle = new JLabel("Timer Pomo", CENTER);
+        lblTitle = new JLabel("Timer Pomodoro", CENTER);
         lblTitle.setFont(new Font("Arial", Font.BOLD, 28));
         lblStato = new JLabel("Pronto per studiare?", SwingConstants.CENTER);
         lblStato.setFont(new Font("Arial", Font.ITALIC, 18));
@@ -632,20 +632,32 @@ public class PannelloPomodoro extends JPanel{
             shadowOverlay.addMouseListener(new java.awt.event.MouseAdapter() {
             });
 
+            boolean temaScuro = GestoreDatabase.isTemaScuro();
+            Color coloreSfondoTrofei = temaScuro ? new Color(34, 37, 43) : Color.WHITE;
+            Color coloreBordoTrofei = temaScuro ? new Color(86, 94, 106) : Color.DARK_GRAY;
+            Color coloreTitoloTrofei = temaScuro ? new Color(235, 235, 235) : new Color(20, 45, 87);
+            Color coloreSfondoTesti = temaScuro ? new Color(43, 47, 54) : Color.WHITE;
+            Color coloreTestoDescrizione = temaScuro ? new Color(225, 225, 225) : new Color(34, 47, 62);
+
             JPanel pannelloTrofei = new JPanel();
             pannelloTrofei.setPreferredSize(new Dimension(550, 450));
-            pannelloTrofei.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
+            pannelloTrofei.setBorder(BorderFactory.createLineBorder(coloreBordoTrofei, 2));
+            pannelloTrofei.setBackground(coloreSfondoTrofei);
+            pannelloTrofei.setOpaque(true);
             pannelloTrofei.setLayout(new BorderLayout());
 
             JLabel titolo = new JLabel("I Tuoi Obiettivi", SwingConstants.CENTER);
             titolo.setFont(new Font("Arial", Font.BOLD, 22));
             titolo.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
+            titolo.setForeground(coloreTitoloTrofei);
             pannelloTrofei.add(titolo, BorderLayout.NORTH);
 
             // --- CONTENUTO CENTRALE ---
             JPanel centro = new JPanel();
             centro.setLayout(new BoxLayout(centro, BoxLayout.Y_AXIS));
             centro.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+            centro.setBackground(coloreSfondoTrofei);
+            centro.setOpaque(true);
 
             // --- CALCOLO STATISTICHE REALI ---
 
@@ -756,6 +768,8 @@ public class PannelloPomodoro extends JPanel{
             JPanel listaObiettivi = new JPanel();
             listaObiettivi.setLayout(new BoxLayout(listaObiettivi, BoxLayout.Y_AXIS));
             listaObiettivi.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+            listaObiettivi.setBackground(coloreSfondoTrofei);
+            listaObiettivi.setOpaque(true);
 
             boolean studiosoSbloccato = oreTotali >= 10;
             boolean secchioneSbloccato = totaleLodi >= 3;
@@ -856,8 +870,19 @@ public class PannelloPomodoro extends JPanel{
 
     private JPanel creaPannelloObiettivo(Icon ico, String nome, String descrizione, boolean sbloccato) {
         JPanel pnl = new JPanel(new BorderLayout(10, 0));
-        pnl.setBorder(BorderFactory.createLineBorder(sbloccato ? new Color(46, 204, 113) : Color.LIGHT_GRAY, 2, true));
-        pnl.setBackground(sbloccato ? new Color(230, 255, 230) : null); // Sfondo verdino se sbloccato
+        boolean temaScuro = GestoreDatabase.isTemaScuro();
+        Color coloreBordo = sbloccato
+            ? new Color(46, 204, 113)
+            : (temaScuro ? new Color(92, 96, 104) : Color.LIGHT_GRAY);
+        Color coloreSfondo = sbloccato
+            ? (temaScuro ? new Color(38, 63, 47) : new Color(230, 255, 230))
+            : (temaScuro ? new Color(43, 47, 54) : Color.WHITE);
+        Color coloreTitolo = sbloccato ? new Color(39, 174, 96) : (temaScuro ? new Color(210, 210, 210) : Color.GRAY);
+        Color coloreDescrizione = temaScuro ? new Color(225, 225, 225) : Color.DARK_GRAY;
+
+        pnl.setBorder(BorderFactory.createLineBorder(coloreBordo, 2, true));
+        pnl.setBackground(coloreSfondo);
+        pnl.setOpaque(true);
         pnl.setPreferredSize(new Dimension(350, 70));
         pnl.setMaximumSize(new Dimension(350, 100));
         pnl.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -877,7 +902,7 @@ public class PannelloPomodoro extends JPanel{
         pnlTesti.setOpaque(false);
         JLabel lblNome = new JLabel(nome);
         lblNome.setFont(new Font("Arial", Font.BOLD, 14));
-        lblNome.setForeground(sbloccato ? new Color(39, 174, 96) : Color.GRAY);
+        lblNome.setForeground(coloreTitolo);
         lblNome.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
         lblNome.setIcon(ico);
         if(ico != null)
@@ -889,7 +914,7 @@ public class PannelloPomodoro extends JPanel{
         lblDesc.setWrapStyleWord(true);
         lblDesc.setOpaque(false);
         lblDesc.setFont(new Font("Arial", Font.ITALIC, 11));
-        lblDesc.setForeground(Color.DARK_GRAY);
+        lblDesc.setForeground(coloreDescrizione);
         lblDesc.setAlignmentX(Component.LEFT_ALIGNMENT);
         lblDesc.setColumns(23);
         pnlTesti.add(lblNome);
