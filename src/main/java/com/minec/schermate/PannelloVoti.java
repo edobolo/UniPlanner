@@ -37,7 +37,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
-import javax.swing.border.TitledBorder;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.minec.EsportatorePDF;
@@ -81,15 +80,23 @@ public class PannelloVoti extends JPanel {
     }
 
     public void setPanelMedia(JPanel mediaPanel) {
-        mediaPanel.setBounds(50, 40, 200, 200);
-        mediaPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2, true));
         mediaPanel.setLayout(new BorderLayout());
+
+        // --- STILE CARD MODERNA ---
+        boolean temaScuro = GestoreDatabase.isTemaScuro();
+        Color cardBg = temaScuro ? new Color(48, 50, 54) : Color.WHITE;
+        mediaPanel.setBackground(cardBg);
+        mediaPanel.setBorder(
+                BorderFactory.createLineBorder(temaScuro ? new Color(80, 80, 80) : new Color(220, 220, 220), 1, true));
+
+        // --- LOGICA CALCOLO MEDIA (Ripristinata) ---
         String[] voti = GestoreDatabase.getVotiEsamiRaw();
-        int sommaVoti = 0; // Per la ponderata (voto * cfu)
-        int sommaVotiSemplice = 0; // Per l'aritmetica (solo voto)
+        int sommaVoti = 0;
+        int sommaVotiSemplice = 0;
         int sommaCfu = 0;
         int esamiValidi = 0;
         int pesoLode = GestoreDatabase.getPesoLode();
+
         for (int i = 0; i < voti.length; i++) {
             String[] pair = voti[i].split(";");
             if (pair.length >= 3) {
@@ -111,6 +118,7 @@ public class PannelloVoti extends JPanel {
                 }
             }
         }
+
         double mediaVotiP = 0;
         if (sommaCfu != 0) {
             mediaVotiP = Math.round(((double) sommaVoti / sommaCfu) * 10.0) / 10.0;
@@ -119,32 +127,37 @@ public class PannelloVoti extends JPanel {
         if (esamiValidi != 0) {
             mediaVotiA = Math.round(((double) sommaVotiSemplice / esamiValidi) * 10.0) / 10.0;
         }
+
         final String textP = "" + mediaVotiP;
         final String textA = "" + mediaVotiA;
 
+        // --- ASSEMBLAGGIO GRAFICO ---
         JLabel title = new JLabel("Media Ponderata");
-        title.setFont(new Font("Arial", Font.BOLD, 15));
-        title.setBorder(BorderFactory.createEmptyBorder(10, 0 ,0 ,0));
+        title.setFont(new Font("Arial", Font.BOLD, 16));
+        title.setForeground(temaScuro ? new Color(200, 200, 200) : Color.GRAY);
+        title.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
         title.setHorizontalAlignment(JLabel.CENTER);
 
-        JPanel mediaF = new JPanel();
-        mediaF.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 60));
+        JPanel mediaF = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 45));
+        mediaF.setOpaque(false);
+
         JLabel mediaLabel = new JLabel(textP);
-        mediaLabel.setFont(new Font("Arial", Font.BOLD, 40));
-        mediaLabel.setHorizontalAlignment(JLabel.CENTER);
+        mediaLabel.setFont(new Font("Arial", Font.BOLD, 52));
+        mediaLabel.setForeground(new Color(33, 150, 243));
+
         JLabel outOfLabel = new JLabel("/30");
-        outOfLabel.setFont(new Font("Arial", Font.BOLD, 27));
-        outOfLabel.setHorizontalAlignment(JLabel.CENTER);
+        outOfLabel.setFont(new Font("Arial", Font.PLAIN, 24));
+        outOfLabel.setForeground(Color.LIGHT_GRAY);
 
         mediaF.add(mediaLabel);
         mediaF.add(outOfLabel);
 
         mediaPanel.add(title, BorderLayout.NORTH);
         mediaPanel.add(mediaF, BorderLayout.CENTER);
+
         mediaPanel.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
-                // Ora le maiuscole combaciano e non c'è più il refresh()!
                 if (title.getText().equals("Media Ponderata")) {
                     title.setText("Media Aritmetica");
                     mediaLabel.setText(textA);
@@ -158,13 +171,23 @@ public class PannelloVoti extends JPanel {
     }
 
     public void setExamLeft(JPanel examLeftPanel) {
-        examLeftPanel.setBounds(50, 255, 200, 80);
-        examLeftPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 8, 10));
-        examLeftPanel.setBackground(GestoreDatabase.isTemaScuro() ? new Color(58, 63, 72) : new Color(245, 248, 252));
+        examLeftPanel.setLayout(new BorderLayout());
+
+        boolean temaScuro = GestoreDatabase.isTemaScuro();
+        examLeftPanel.setBackground(temaScuro ? new Color(48, 50, 54) : Color.WHITE);
         examLeftPanel.setOpaque(true);
-        examLeftPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(150, 150, 150), 2, true),
-                BorderFactory.createTitledBorder("Progresso Esami")));
+        examLeftPanel.setBorder(
+                BorderFactory.createLineBorder(temaScuro ? new Color(70, 70, 70) : new Color(230, 230, 230), 1, true));
+
+        JLabel title = new JLabel("Progresso", SwingConstants.CENTER);
+        title.setFont(new Font("Arial", Font.PLAIN, 12));
+        title.setForeground(Color.GRAY);
+        title.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
+        examLeftPanel.add(title, BorderLayout.NORTH);
+
+        JPanel palliniPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 5));
+        palliniPanel.setOpaque(false);
+
         examsList.clear();
         int examAdded = GestoreDatabase.numeroEsami();
         int numVoti = GestoreDatabase.numeroVoti();
@@ -190,47 +213,22 @@ public class PannelloVoti extends JPanel {
             panel.setMaximumSize(new Dimension(14, 14));
             panel.setOpaque(false);
             panel.setToolTipText(esameCompletato ? "Esame completato" : "Esame rimanente");
-            examLeftPanel.add(panel);
+            palliniPanel.add(panel);
             examsList.add(panel);
         }
+        examLeftPanel.add(palliniPanel, BorderLayout.CENTER);
     }
 
     public void setPanelInfo(JPanel panelInfo) {
-        panelInfo.setBounds(50, 350, 200, 200);
-        panelInfo.setLayout(new GridLayout(3, 1));
+        boolean temaScuro = GestoreDatabase.isTemaScuro();
+        panelInfo.setLayout(new GridLayout(2, 2, 10, 10));
+        panelInfo.setOpaque(false);
 
-        JPanel panel1 = new JPanel();
-        JPanel panel2 = new JPanel();
-        JPanel panel3 = new JPanel();
-        JPanel panel4 = new JPanel();
-
-        Border b = BorderFactory.createLineBorder(Color.GRAY, 2, true);
-        panel1.setBorder(b);
-        panel1.setLayout(new BorderLayout());
-        panel2.setBorder(b);
-        panel2.setLayout(new BorderLayout());
-        panel3.setBorder(b);
-        panel3.setLayout(new BorderLayout());
-        panel4.setBorder(b);
-        panel4.setLayout(new BorderLayout());
-
-        //pannello esami fatti
-        Font f = new Font("Arial", Font.BOLD, 15);
-        int esamiDone = GestoreDatabase.numeroVoti();
-        int numeroEsami = GestoreDatabase.numeroEsami();
-        JLabel esamiRimasti = new JLabel(esamiDone + "/" + numeroEsami);
-        JLabel title1 = new JLabel("Esami Passati");
-        title1.setHorizontalAlignment(JLabel.CENTER);
-        esamiRimasti.setFont(f);
-        esamiRimasti.setHorizontalAlignment(JLabel.CENTER);
-        panel1.add(esamiRimasti, BorderLayout.CENTER);
-        panel1.add(title1, BorderLayout.NORTH);
-
-        //pannello voto base di laurea
+        // --- LOGICA CALCOLI ---
         String[] voti = GestoreDatabase.getVotiEsamiRaw();
         int sommaVoti = 0;
         int sommaCfu = 0;
-        int numeroLodi = 0; // Nuovo contatore per le lodi
+        int numeroLodi = 0;
         int pesoLode = GestoreDatabase.getPesoLode();
         int bonusLode = GestoreDatabase.getBonusLode();
         for (int i = 0; i < voti.length; i++) {
@@ -239,12 +237,11 @@ public class PannelloVoti extends JPanel {
                 try {
                     int cfuSingolo = Integer.parseInt(pair[2]);
                     int votoSingolo;
-                    // Se l'utente ha scritto "30L" o "30l"
                     if (pair[0].equalsIgnoreCase("30L") || pair[0].equalsIgnoreCase("30 e lode")) {
-                        votoSingolo = pesoLode; // Usiamo il valore scelto (es. 30 o 31)
-                        numeroLodi++; // Trovata una lode
+                        votoSingolo = pesoLode;
+                        numeroLodi++;
                     } else {
-                        votoSingolo = Integer.parseInt(pair[0]); // Numero normale
+                        votoSingolo = Integer.parseInt(pair[0]);
                     }
                     sommaVoti += votoSingolo * cfuSingolo;
                     sommaCfu += cfuSingolo;
@@ -252,116 +249,141 @@ public class PannelloVoti extends JPanel {
                 }
             }
         }
+
         double mediaVoti = 0;
         double baseL = 0;
         if (sommaCfu != 0) {
             mediaVoti = (double) sommaVoti / sommaCfu;
             baseL = (mediaVoti * 110) / 30;
-            baseL += (numeroLodi * bonusLode); // Aggiungiamo i punti bonus
+            baseL += (numeroLodi * bonusLode);
         }
-        JLabel title2 = new JLabel("Base Laurea");
-        title2.setHorizontalAlignment(JLabel.CENTER);
-        JLabel baseLaurea = new JLabel(Math.round(baseL) + "/110");
-        baseLaurea.setHorizontalAlignment(JLabel.CENTER);
-        baseLaurea.setFont(f);
-        panel2.add(title2, BorderLayout.NORTH);
-        panel2.add(baseLaurea, BorderLayout.CENTER);
 
-        // pannello obiettivo
-        JLabel title3 = new JLabel("Obiettivo");
-        title3.setHorizontalAlignment(JLabel.CENTER);
-        JPanel votoOb = new JPanel();
-        votoOb.setLayout(new GridLayout(2, 1));
-        votoOb.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
-        // 1. LEGGE L'OBIETTIVO SALVATO
         int obiettivoSalvato = GestoreDatabase.getObiettivoMedia();
-        panel3.addMouseListener(new MouseAdapter() {
+        int maxCfu = GestoreDatabase.getObiettivoCFU();
+        if (maxCfu <= 0) {
+            maxCfu = 1;
+        }
+
+        // --- 1 & 2. CREAZIONE CARD NORMALI ---
+        autoCreazioneInfo(panelInfo, "Esami Passati",
+                GestoreDatabase.numeroVoti() + "/" + GestoreDatabase.numeroEsami(), temaScuro);
+        autoCreazioneInfo(panelInfo, "Base Laurea", Math.round(baseL) + "/110", temaScuro);
+
+        // --- 3. PANNELLO OBIETTIVO (con logica click e stacco dal fondo) ---
+        JPanel pnlObiettivo = autoCreazioneInfo(panelInfo, "Obiettivo", obiettivoSalvato + "/30", temaScuro);
+        double differenza = mediaVoti - obiettivoSalvato;
+        differenza = Math.round(differenza * 10.0) / 10.0;
+        JLabel diff = new JLabel((differenza > 0 ? "+" : "") + differenza, SwingConstants.CENTER);
+        diff.setFont(new Font("Arial", Font.BOLD, 13));
+        diff.setForeground(differenza >= 0 ? new Color(0, 150, 0) : Color.RED);
+        pnlObiettivo.add(diff, BorderLayout.SOUTH);
+
+        pnlObiettivo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        pnlObiettivo.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 String newOb = JOptionPane.showInputDialog(PannelloVoti.this, "Inserire obiettivo");
                 if (newOb != null && !newOb.trim().isEmpty()) {
                     try {
                         int nuovoObiettivo = Integer.parseInt(newOb);
-                        if (nuovoObiettivo < 18 || nuovoObiettivo > 30) {
+                        if (nuovoObiettivo < 18 || nuovoObiettivo > 30)
                             throw new NumberFormatException();
-                        }
-                        // 2. SALVA IL NUOVO OBIETTIVO NEL FILE
                         GestoreDatabase.salvaObiettivoMedia(nuovoObiettivo);
                         refresh();
                     } catch (NumberFormatException e1) {
-                        JOptionPane.showMessageDialog(PannelloVoti.this, "Inserire un voto valido tra 18 e 30");
+                        JOptionPane.showMessageDialog(PannelloVoti.this, "Inserisci un voto valido tra 18 e 30");
                     }
                 }
             }
         });
-        panel3.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        double differenza = mediaVoti - obiettivoSalvato;
-        differenza = Math.round(differenza * 10.0) / 10.0;
-        JLabel obb = new JLabel(obiettivoSalvato + "/30");
-        String testoDifferenza = (differenza > 0 ? "+" : "") + differenza;
-        JLabel diff = new JLabel(testoDifferenza);
-        if (differenza >= 0) {
-            diff.setForeground(new Color(0, 150, 0));
-        } else {
-            diff.setForeground(Color.RED);
-        }
-        obb.setFont(f);
-        obb.setHorizontalAlignment(JLabel.CENTER);
-        diff.setFont(f);
-        diff.setHorizontalAlignment(JLabel.CENTER);
-        votoOb.add(obb);
-        votoOb.add(diff);
-        panel3.add(votoOb, BorderLayout.CENTER);
-        panel3.add(title3, BorderLayout.NORTH);
 
-        //pannello crediti rimanenti
-        JLabel title4 = new JLabel("Crediti");
-        title4.setHorizontalAlignment(JLabel.CENTER);
-        int maxCfu = GestoreDatabase.getObiettivoCFU();
-        if (maxCfu <= 0) {
-            maxCfu = 1;
-        }
-        JLabel cfuRimasti = new JLabel(sommaCfu + "/" + maxCfu);
-        cfuRimasti.setFont(f);
-        cfuRimasti.setHorizontalAlignment(JLabel.CENTER);
+        // --- 4. PANNELLO CREDITI (con barra sistemata) ---
+        JPanel pnlCrediti = new JPanel(new BorderLayout());
+        pnlCrediti.setBackground(temaScuro ? new Color(48, 50, 54) : Color.WHITE);
+
+        // Aggiungiamo padding interno anche qui!
+        javax.swing.border.Border linea = BorderFactory
+                .createLineBorder(temaScuro ? new Color(70, 70, 70) : new Color(230, 230, 230), 1, true);
+        javax.swing.border.Border margine = BorderFactory.createEmptyBorder(6, 6, 6, 6);
+        pnlCrediti.setBorder(BorderFactory.createCompoundBorder(linea, margine));
+
+        JLabel t = new JLabel("Crediti", SwingConstants.CENTER);
+        t.setFont(new Font("Arial", Font.PLAIN, 12));
+        t.setForeground(Color.GRAY);
+
+        // Ora il font è 18, identico alle altre caselle
+        JLabel lblCfu = new JLabel(sommaCfu + "/" + maxCfu, SwingConstants.CENTER);
+        lblCfu.setFont(new Font("Arial", Font.BOLD, 18));
+
         JProgressBar jp = new JProgressBar(0, maxCfu);
         jp.setValue(Math.min(sommaCfu, maxCfu));
-        jp.setStringPainted(true);
-        jp.setString(Math.round(((double) sommaCfu / maxCfu) * 100.0) + "%");
-        jp.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        jp.setForeground(new Color(36, 166, 6));
-        JPanel progressPanel = new JPanel(new BorderLayout());
-        progressPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        progressPanel.add(jp, BorderLayout.CENTER);
-        panel4.add(progressPanel, BorderLayout.SOUTH);
-        panel4.add(cfuRimasti, BorderLayout.CENTER);
-        panel4.add(title4, BorderLayout.NORTH);
+        jp.setPreferredSize(new Dimension(100, 6)); // Leggermente più fine
+        jp.setForeground(new Color(76, 175, 80));
+        jp.setBorderPainted(false);
 
-        panelInfo.add(panel1);
-        panelInfo.add(panel2);
-        panelInfo.add(panel3);
-        panelInfo.add(panel4);
+        // Contenitore per la barra per staccarla dai lati e dal fondo
+        JPanel contenitoreBarra = new JPanel(new BorderLayout());
+        contenitoreBarra.setOpaque(false);
+        contenitoreBarra.setBorder(BorderFactory.createEmptyBorder(5, 5, 2, 5)); // top, left, bottom, right
+        contenitoreBarra.add(jp, BorderLayout.CENTER);
+
+        pnlCrediti.add(t, BorderLayout.NORTH);
+        pnlCrediti.add(lblCfu, BorderLayout.CENTER);
+        pnlCrediti.add(contenitoreBarra, BorderLayout.SOUTH);
+
+        panelInfo.add(pnlCrediti);
+    }
+
+    // Metodo helper
+    private JPanel autoCreazioneInfo(JPanel parent, String titolo, String valore, boolean dark) {
+        JPanel p = new JPanel(new BorderLayout());
+        p.setBackground(dark ? new Color(48, 50, 54) : Color.WHITE);
+
+        javax.swing.border.Border linea = BorderFactory
+                .createLineBorder(dark ? new Color(70, 70, 70) : new Color(230, 230, 230), 1, true);
+        javax.swing.border.Border margine = BorderFactory.createEmptyBorder(6, 5, 6, 5);
+        p.setBorder(BorderFactory.createCompoundBorder(linea, margine));
+
+        JLabel t = new JLabel(titolo, SwingConstants.CENTER);
+        t.setFont(new Font("Arial", Font.PLAIN, 12));
+        t.setForeground(Color.GRAY);
+
+        JLabel v = new JLabel(valore, SwingConstants.CENTER);
+        v.setFont(new Font("Arial", Font.BOLD, 18));
+
+        p.add(t, BorderLayout.NORTH);
+        p.add(v, BorderLayout.CENTER);
+        parent.add(p);
+
+        return p;
     }
 
     public void setVotiEsami(JPanel votiEsamePanel) {
-        votiEsamePanel.setBounds(300, 35, 350, 270);
         votiEsamePanel.setLayout(new BorderLayout());
-        Border b = BorderFactory.createMatteBorder(2, 0, 0, 0, Color.GRAY);
+        boolean temaScuro = GestoreDatabase.isTemaScuro();
+
+        // --- HEADER MODERNO ---
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+        header.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(0, 0, 8, 0)));
+        JLabel lblT = new JLabel("Voti Salvati");
+        lblT.setFont(new Font("Arial", Font.BOLD, 18));
+        header.add(lblT, BorderLayout.WEST);
+        votiEsamePanel.add(header, BorderLayout.NORTH);
 
         String[] votiRaw = GestoreDatabase.getVotiEsamiRaw();
         int numVoti = GestoreDatabase.numeroVoti();
 
         JPanel votiOnly = new JPanel();
         votiOnly.setLayout(new BoxLayout(votiOnly, BoxLayout.Y_AXIS));
+        votiOnly.setOpaque(false);
 
         JScrollPane scrollPane = new JScrollPane(votiOnly);
-        scrollPane.setBorder(BorderFactory.createTitledBorder(b, 
-                      "Voti salvati", 
-                            TitledBorder.CENTER, 
-                            TitledBorder.TOP, 
-                            new Font("Arial", Font.BOLD, 16)));
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
         scrollPane.getVerticalScrollBar().setUnitIncrement(10);
         votiEsamePanel.add(scrollPane, BorderLayout.CENTER);
 
@@ -370,69 +392,68 @@ public class PannelloVoti extends JPanel {
             String[] parti = rigaVoto.split(";");
             String voto = parti[0];
             String nomeEsame = parti[1];
+
+            // Logica tempo di studio
             int minutiTotali = GestoreDatabase.getMinutiStudioEsame(nomeEsame);
             String tempoFormattato = "";
-            if(minutiTotali > 0) {
+            if (minutiTotali > 0) {
                 int ore = minutiTotali / 60;
                 int minRestanti = minutiTotali % 60;
-                if(ore > 0) 
-                    tempoFormattato = ore + "h " + minRestanti + "m";
-                else 
-                    tempoFormattato = minRestanti + "m";
+                tempoFormattato = (ore > 0) ? ore + "h " + minRestanti + "m" : minRestanti + "m";
             }
-            // Creiamo il pannellino per la riga
+
+            // --- CREAZIONE CARD RIGA ---
             JPanel panel = new JPanel(new BorderLayout());
-            Dimension dim = new Dimension(280, 30);
-            panel.setPreferredSize(dim);
-            panel.setMaximumSize(dim);
-            panel.setMinimumSize(dim);
-            panel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+            // Altezza leggermente aumentata per dare più respiro
+            int rowHeight = Math.max(34, Math.round(34 * currentScale));
+            panel.setMaximumSize(new Dimension(2000, rowHeight));
+            panel.setPreferredSize(new Dimension(280, rowHeight));
+
+            // SFONDO BIANCO/DARK
+            panel.setBackground(temaScuro ? new Color(48, 50, 54) : Color.WHITE);
+
+            // BORDO FINO CON PADDING INTERNO
+            Border linea = BorderFactory.createLineBorder(temaScuro ? new Color(80, 80, 80) : Color.LIGHT_GRAY, 1);
+            Border padding = BorderFactory.createEmptyBorder(0, 12, 0, 12);
+            panel.setBorder(BorderFactory.createCompoundBorder(linea, padding));
+
             JLabel etichettaVoto = new JLabel(nomeEsame + ": " + voto);
-            etichettaVoto.setFont(new Font("Arial", Font.PLAIN, 14));
-            etichettaVoto.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
-            //imposto il label che contiene il tempo di studio
-            String spazio = "";
-            if(tempoFormattato.isEmpty())
-                spazio = "            ";
-            JLabel etichettaTempo = new JLabel(tempoFormattato + spazio);
-            if(!tempoFormattato.isEmpty()) 
-                etichettaTempo.setIcon(new FlatSVGIcon("icone/clock.svg", 18, 18));
-            panel.add(etichettaVoto, BorderLayout.WEST);
+            etichettaVoto.setFont(new Font("Arial", Font.PLAIN, 15));
+
+            boolean haTempo = !tempoFormattato.isEmpty();
+            String testoVisualizzato = haTempo ? tempoFormattato : "0h 0m";
+
+            JLabel etichettaTempo = new JLabel(testoVisualizzato);
+            etichettaTempo.setIcon(new FlatSVGIcon("icone/clock.svg", 16, 16));
+            etichettaTempo.setIconTextGap(8);
+        
+            if (!haTempo) {
+                etichettaTempo.setForeground(Color.LIGHT_GRAY);
+            } else {
+                etichettaTempo.setForeground(Color.GRAY);
+            }
             etichettaTempo.setFont(new Font("Arial", Font.ITALIC, 12));
-            etichettaTempo.setForeground(Color.GRAY);
-            etichettaTempo.setBorder(BorderFactory.createEmptyBorder(0,0,0,5));
             etichettaTempo.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            //aggiungo un listener al pannello per modificare i minuti
+
+            // Listener per il tempo (Invariato)
             etichettaTempo.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    String tempoRaw = JOptionPane.showInputDialog("Inserire il tempo di studio (formato HH:mm)", null);
-                    if(tempoRaw != null && tempoRaw.matches("\\d{2}:\\d{2}")) {
-                        
-                        String[] parti = tempoRaw.split(":");
-                        int ore = Integer.parseInt(parti[0]);
-                        int minuti = Integer.parseInt(parti[1]);
-                        if(minuti >= 60 && minuti < 0 && ore < 0) {
-                            JOptionPane.showMessageDialog(PannelloVoti.this, "Orario non valido! Minuti (0-59)", 
-                            "Errore", JOptionPane.ERROR_MESSAGE);
-                        }
-                        int minutiTotali = ore*60 + minuti; 
-                        GestoreDatabase.setNuovoTempoStudio(nomeEsame, minutiTotali);
-                        etichettaTempo.setText(ore + "h " + minuti + "m");
+                    String tempoRaw = JOptionPane.showInputDialog("Inserire il tempo di studio (HH:mm)");
+                    if (tempoRaw != null && tempoRaw.matches("\\d{2}:\\d{2}")) {
+                        String[] p = tempoRaw.split(":");
+                        int mTot = Integer.parseInt(p[0]) * 60 + Integer.parseInt(p[1]);
+                        GestoreDatabase.setNuovoTempoStudio(nomeEsame, mTot);
                         refresh();
-                    } else {
-                        if(tempoRaw == null)
-                            return;
-                        JOptionPane.showMessageDialog(null,
-                                "Formato non valido! Usa HH:mm",
-                                "Errore", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             });
+
+            panel.add(etichettaVoto, BorderLayout.WEST);
             panel.add(etichettaTempo, BorderLayout.EAST);
+
             votiOnly.add(panel);
-            // Aggiungiamo un piccolo spazio vuoto tra una riga e l'altra per l'estetica
-            votiOnly.add(Box.createRigidArea(new Dimension(0, 5)));
+            votiOnly.add(Box.createRigidArea(new Dimension(0, 6))); // Spazio tra le card
         }
     }
 
@@ -463,9 +484,7 @@ public class PannelloVoti extends JPanel {
 
         mediaPanel.setBounds(scaleRect(50, 40, 200, 200));
         examLeftPanel.setBounds(scaleRect(50, 255, 200, 80));
-        ////panelInfo.setBounds(scaleRect(50, 350, 200, 200));
-        ////votiEsamiPanel.setBounds(rightX, Math.round(35 * currentScale), rightW, Math.round(270 * currentScale));
-        ////panelGraph.setBounds(rightX, Math.round(330 * currentScale), rightW, Math.round(150 * currentScale));
+        
         // --- CALCOLO DINAMICO DELLO SPAZIO VERTICALE ---
         int margineFondo = Math.round(20 * currentScale);
         int infoX = Math.round(50 * currentScale);
@@ -484,10 +503,10 @@ public class PannelloVoti extends JPanel {
         votiEsamiPanel.setBounds(rightX, votiY, rightW, Math.max(votiH, Math.round(270 * currentScale)));
 
         if (optionButtonPanel != null) {
-            int buttonSize = Math.round(40 * currentScale);
+            int buttonSize = Math.round(30 * currentScale);
             optionButtonPanel.setBounds(
-                    getWidth() - buttonSize - Math.round(10 * currentScale), // X: a destra
-                    Math.round(5 * currentScale), // Y: spostato in alto (era 40)
+                    getWidth() - buttonSize - Math.round(15 * currentScale),
+                    Math.round(10 * currentScale),
                     buttonSize, // Larghezza
                     buttonSize // Altezza
             );
@@ -568,14 +587,21 @@ public class PannelloVoti extends JPanel {
     }
 
     public void setGraphPanel(JPanel panelGraph) {
-        panelGraph.setBounds(300, 330 , 350, 150);
         panelGraph.setLayout(new BorderLayout());
-        Border b = BorderFactory.createMatteBorder(2, 0, 0, 0, Color.GRAY);
-        panelGraph.setBorder(BorderFactory.createTitledBorder(b,
-                "Grafico voti",
-                TitledBorder.CENTER,
-                TitledBorder.TOP,
-                new Font("Arial", Font.BOLD, 16)));
+        panelGraph.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0)); // Resettiamo i bordi
+
+        // --- HEADER MODERNO PER IL GRAFICO ---
+        JPanel headerG = new JPanel(new BorderLayout());
+        headerG.setOpaque(false);
+        headerG.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(0, 0, 8, 0)));
+        JLabel lblG = new JLabel("Andamento Voti");
+        lblG.setFont(new Font("Arial", Font.BOLD, 18));
+        headerG.add(lblG, BorderLayout.WEST);
+
+        panelGraph.add(headerG, BorderLayout.NORTH);
+
         GraphVotiMaker gp = new GraphVotiMaker(350, 150);
         panelGraph.add(gp, BorderLayout.CENTER);
     }
@@ -709,6 +735,7 @@ public class PannelloVoti extends JPanel {
         optionBut.setFocusPainted(false);
         optionBut.setContentAreaFilled(false);
         optionBut.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        optionBut.setPreferredSize(new Dimension(30, 30));
 
         optionBut.addMouseListener(new MouseAdapter() {
             @Override

@@ -22,7 +22,6 @@ import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import javax.sound.sampled.AudioFormat;
@@ -48,8 +47,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.JFrame;
-import static javax.swing.SwingConstants.CENTER;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
@@ -77,7 +74,6 @@ public class PannelloPomodoro extends JPanel{
     private JProgressBar barraProgressi;
     private JPanel optionButtonPanel;
     private JPanel trophyButtonPanel;
-    private JPanel optionLeftSpacerPanel;
     private int optionIconSize = 24;
     private JLabel lblContatore;
     private JLabel lblMaxPomodori;
@@ -86,8 +82,7 @@ public class PannelloPomodoro extends JPanel{
     private int conteggioPomodori = 0;
     private int maxPomodoriGiornalieri = 0;
     private LocalTime oraAttuale;
-    private LocalDate dataOdierna;
-    private LocalDate dataEsame;
+    private JPanel card;
 
     private Timer timer;
     private int secondiRimanenti;
@@ -95,7 +90,6 @@ public class PannelloPomodoro extends JPanel{
     private long timestampFineTimer;
     private boolean inEsecuzione = false;
     private boolean isSessioneStudio = true;
-    private JFrame main;
     
     private static int MINUTI_STUDIO = 25;
     private static int MINUTI_PAUSA = 5;
@@ -103,11 +97,12 @@ public class PannelloPomodoro extends JPanel{
     public PannelloPomodoro(JFrame frame) {
         this.setLayout(new BorderLayout());
         this.setBorder(new EmptyBorder(20, 20, 20, 20));
-        main = frame;
-        // ---Titolo e Stato---
-        JPanel topPanel = new JPanel(new GridLayout(4, 1));
-        lblTitle = new JLabel("Timer Pomodoro", CENTER);
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 28));
+
+        // --- HEADER (Titolo, Trofeo, Opzioni) ---
+        JPanel topPanel = new JPanel(new GridLayout(2, 1));
+        topPanel.setOpaque(false);
+        lblTitle = new JLabel("Timer Pomodoro", SwingConstants.CENTER);
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 32));
         lblStato = new JLabel("Pronto per studiare?", SwingConstants.CENTER);
         lblStato.setFont(new Font("Arial", Font.ITALIC, 18));
         lblStato.setForeground(Color.GRAY);
@@ -116,23 +111,39 @@ public class PannelloPomodoro extends JPanel{
         topPanel.add(lblStato);
 
         JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
         setOptionButton();
         headerPanel.add(trophyButtonPanel, BorderLayout.WEST);
         headerPanel.add(topPanel, BorderLayout.CENTER);
         headerPanel.add(optionButtonPanel, BorderLayout.EAST);
         this.add(headerPanel, BorderLayout.NORTH);
-        // --- Menu Tendina ---
+
+        // --- CARD CENTRALE MODERNA ---
+        JPanel centerWrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 20));
+        centerWrapper.setOpaque(false);
+
+        card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        boolean temaScuro = GestoreDatabase.isTemaScuro();
+        card.setBackground(temaScuro ? new Color(48, 50, 54) : Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(temaScuro ? new Color(80, 80, 80) : new Color(220, 220, 220), 1, true),
+                BorderFactory.createEmptyBorder(25, 50, 30, 50)));
+
+        // Selezione Esame
         JPanel pnlSelezione = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        pnlSelezione.setOpaque(false);
         lblSelezione = new JLabel("Cosa stai studiando?");
         comboEsami = new JComboBox<>();
         aggiornaListaEsami();
         pnlSelezione.add(lblSelezione);
         pnlSelezione.add(comboEsami);
-        topPanel.add(pnlSelezione);
-        
-        // --- Selettore Timer ---
+        card.add(pnlSelezione);
+
+        // Selezione Studio/Pausa
         JPanel pnlTipoSezione = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
-        pnlTipoSezione.setBorder(BorderFactory.createEmptyBorder(20,0,0,0));
+        pnlTipoSezione.setOpaque(false);
+        pnlTipoSezione.setBorder(BorderFactory.createEmptyBorder(10, 0, 25, 0));
         radioStudio = new JRadioButton(" Studio");
         radioStudio.setIcon(new FlatSVGIcon("icone/books.svg", 20, 20));
         radioStudio.setFont(new Font("Arial", Font.BOLD, 14));
@@ -147,79 +158,79 @@ public class PannelloPomodoro extends JPanel{
         gruppoSessione.add(radioPausa);
         pnlTipoSezione.add(radioStudio);
         pnlTipoSezione.add(radioPausa);
-        topPanel.add(pnlTipoSezione);
+        card.add(pnlTipoSezione);
         radioStudio.addActionListener(e -> cambiaTipoSessione(true));
         radioPausa.addActionListener(e -> cambiaTipoSessione(false));
 
-        // --- Timer Display ---
-        JPanel centerPanel = new JPanel();
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        lblTimer = new JLabel("25:00", SwingConstants.CENTER);
-        lblTimer.setFont(new Font("Monospaced", Font.BOLD, 100));
-        lblTimer.setAlignmentX(Component.CENTER_ALIGNMENT); // Centra orizzontalmente
-        lblContatore = new JLabel(" Sessioni completate: 0");
-        lblContatore.setIcon(new FlatSVGIcon("icone/tomato.svg", 15 ,15));
-        lblContatore.setFont(new Font("Arial", Font.BOLD, 14));
-        lblContatore.setForeground(new Color(231, 76, 60)); // Colore "rosso pomodoro"
-        lblContatore.setHorizontalAlignment(SwingConstants.CENTER);
-        lblContatore.setAlignmentX(Component.CENTER_ALIGNMENT); // Centra orizzontalmente
-        lblMaxPomodori = new JLabel(" Max Pomodori: 0");
-        lblMaxPomodori.setIcon(new FlatSVGIcon("icone/fire.svg", 15, 15));
-        lblMaxPomodori.setFont(new Font("Arial", Font.BOLD, 14));
-        lblMaxPomodori.setForeground(new Color(231, 76, 60)); // Colore "rosso pomodoro"
-        lblMaxPomodori.setHorizontalAlignment(SwingConstants.CENTER);
-        lblMaxPomodori.setAlignmentX(Component.CENTER_ALIGNMENT); // Centra orizzontalmente
+        // Barra Progressi Moderna (Fina e senza bordi spigolosi)
         barraProgressi = new JProgressBar(0, (isSessioneStudio ? MINUTI_STUDIO : MINUTI_PAUSA) * 60);
-        barraProgressi.setForeground((isSessioneStudio ? Color.RED : Color.BLUE));
-        barraProgressi.setBackground(Color.GRAY);
-        barraProgressi.setBorder(BorderFactory.createEmptyBorder(10,0,0,0));
-        barraProgressi.setValue((isSessioneStudio ? MINUTI_STUDIO : MINUTI_PAUSA) * 60);
-        barraProgressi.setPreferredSize(new Dimension(400, 14));
-        barraProgressi.setStringPainted(false);
-
-        // Container dedicato per barra (non si espande)
+        barraProgressi.setForeground(new Color(231, 76, 60));
+        barraProgressi.setBackground(temaScuro ? new Color(60, 63, 65) : new Color(240, 240, 240));
+        barraProgressi.setBorderPainted(false);
+        barraProgressi.setPreferredSize(new Dimension(350, 8));
         JPanel panelBarra = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
         panelBarra.setOpaque(false);
-        panelBarra.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         panelBarra.add(barraProgressi);
+        card.add(panelBarra);
 
-        // Panel interno con barra, timer e contatori (layout fisso compatto)
-        JPanel timerBlock = new JPanel();
-        timerBlock.setLayout(new BoxLayout(timerBlock, BoxLayout.Y_AXIS));
-        timerBlock.setOpaque(false);
-        timerBlock.setAlignmentX(Component.CENTER_ALIGNMENT);
-        timerBlock.add(panelBarra);
-        timerBlock.add(Box.createRigidArea(new Dimension(0, 15)));
-        lblTimer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
-        timerBlock.add(lblTimer);
-        timerBlock.add(Box.createRigidArea(new Dimension(0, 10))); 
-        lblContatore.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        timerBlock.add(lblContatore);
-        lblMaxPomodori.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-        timerBlock.add(lblMaxPomodori);
+        // Timer
+        lblTimer = new JLabel("25:00", SwingConstants.CENTER);
+        lblTimer.setFont(new Font("Monospaced", Font.BOLD, 110));
+        lblTimer.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.add(Box.createRigidArea(new Dimension(0, 10)));
+        card.add(lblTimer);
 
-        // Aggiungiamo spazi elastici solo sopra e sotto il blocco timer
-        centerPanel.add(Box.createVerticalGlue());
-        centerPanel.add(timerBlock);
-        centerPanel.add(Box.createVerticalGlue());
-        this.add(centerPanel, BorderLayout.CENTER);
-        setPomoCounter();
+        // Contatori
+        lblContatore = new JLabel(" Sessioni completate: 0");
+        lblContatore.setIcon(new FlatSVGIcon("icone/tomato.svg", 16, 16));
+        lblContatore.setFont(new Font("Arial", Font.BOLD, 14));
+        lblContatore.setForeground(new Color(231, 76, 60));
+        lblContatore.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // --- Controlli ---
-        JPanel botPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 5));
+        lblMaxPomodori = new JLabel(" Max Pomodori: 0");
+        lblMaxPomodori.setIcon(new FlatSVGIcon("icone/fire.svg", 16, 16));
+        lblMaxPomodori.setFont(new Font("Arial", Font.BOLD, 14));
+        lblMaxPomodori.setForeground(new Color(231, 76, 60));
+        lblMaxPomodori.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        card.add(Box.createRigidArea(new Dimension(0, 10)));
+        card.add(lblContatore);
+        card.add(Box.createRigidArea(new Dimension(0, 5)));
+        card.add(lblMaxPomodori);
+        card.add(Box.createRigidArea(new Dimension(0, 25)));
+
+        // Pulsanti Moderni
+        JPanel botPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 25, 0));
+        botPanel.setOpaque(false);
         btnStartPause = new JButton("Avvia");
-        btnStartPause.setFont(new Font("SansSerif", Font.BOLD, 15));
+        btnStartPause.setFont(new Font("SansSerif", Font.BOLD, 16));
+        btnStartPause.putClientProperty("JButton.buttonType", "roundRect");
+        btnStartPause.setBackground(new Color(46, 204, 113)); // Verde brillante
+        btnStartPause.setForeground(Color.WHITE);
+        btnStartPause.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
         btnReset = new JButton("Reset");
-        btnReset.setFont(new Font("Sans-Serif", Font.BOLD, 15));
-        btnStartPause.setPreferredSize(new Dimension(120, 40));
-        btnReset.setPreferredSize(new Dimension(120, 40));
+        btnReset.setFont(new Font("SansSerif", Font.BOLD, 16));
+        btnReset.putClientProperty("JButton.buttonType", "roundRect");
+        btnReset.putClientProperty("JButton.outline", "error"); // Contorno rosso
+        btnReset.setForeground(new Color(211, 47, 47));
+        btnReset.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btnStartPause.setPreferredSize(new Dimension(130, 40));
+        btnReset.setPreferredSize(new Dimension(130, 40));
+
         btnStartPause.addActionListener(e -> toggleTimer());
         btnReset.addActionListener(e -> resetTimer());
         botPanel.add(btnStartPause);
         botPanel.add(btnReset);
-        this.add(botPanel, BorderLayout.SOUTH);
+        card.add(botPanel);
+
+        centerWrapper.add(card);
+        this.add(centerWrapper, BorderLayout.CENTER);
+
+        setPomoCounter();
         setNewMinutes();
-        resetTimer(); // Inizializza lo stato
+        resetTimer();
 
         addComponentListener(new ComponentAdapter() {
             @Override
@@ -248,11 +259,12 @@ public class PannelloPomodoro extends JPanel{
     private void avviaTimer() {
         inEsecuzione = true;
         btnStartPause.setText("Pausa");
-        if(isSessioneStudio) {
-            lblStato.setIcon(new FlatSVGIcon("icone/books.svg" , 20, 20));
+        btnStartPause.setBackground(new Color(230, 126, 34)); // Diventa Arancione
+        if (isSessioneStudio) {
+            lblStato.setIcon(new FlatSVGIcon("icone/books.svg", 20, 20));
             lblStato.setText(" Sessione di Studio...");
         } else {
-            lblStato.setIcon(new FlatSVGIcon("icone/coffee.svg" , 20, 20));
+            lblStato.setIcon(new FlatSVGIcon("icone/coffee.svg", 20, 20));
             lblStato.setText(" Pausa...");
         }
         lblStato.setForeground(isSessioneStudio ? new Color(231, 76, 60) : new Color(46, 204, 113));
@@ -267,14 +279,14 @@ public class PannelloPomodoro extends JPanel{
             }
         });
         timer.start();
-        dataOdierna = LocalDate.now();
-        dataEsame = getDataEsameSelezionato();
         verificaEAvvisaNuoviObiettivi();
     }
 
     private void pausaTimer() {
         inEsecuzione = false;
         btnStartPause.setText("Riprendi");
+        // Ritorna Verde per lo Studio, o Blu per la Pausa
+        btnStartPause.setBackground(isSessioneStudio ? new Color(46, 204, 113) : new Color(52, 152, 219));
         if (timer != null) {
             timer.stop();
             timer = null;
@@ -287,9 +299,24 @@ public class PannelloPomodoro extends JPanel{
         isSessioneStudio = radioStudio != null ? radioStudio.isSelected() : isSessioneStudio;
         impostaDurataSessioneCorrente();
         btnStartPause.setText("Avvia");
+        btnStartPause.setBackground(isSessioneStudio ? new Color(46, 204, 113) : new Color(52, 152, 219));
         lblStato.setIcon(new FlatSVGIcon(isSessioneStudio ? "icone/books.svg" : "icone/coffee.svg", 20, 20));
         lblStato.setText(isSessioneStudio ? "Pronto per studiare?" : "Pronto per la pausa");
         lblStato.setForeground(Color.GRAY);
+        aggiornaTimerEProgressBar();
+    }
+
+    public void cambiaTipoSessione(boolean isStudio) {
+        if (inEsecuzione) {
+            pausaTimer();
+        }
+        isSessioneStudio = isStudio;
+        impostaDurataSessioneCorrente();
+        lblStato.setText(isSessioneStudio ? "Pronto per studiare?" : "Pronto per la pausa");
+        lblStato.setForeground(Color.GRAY);
+        lblStato.setIcon(new FlatSVGIcon(isSessioneStudio ? "icone/books.svg" : "icone/coffee.svg", 20, 20));
+        btnStartPause.setText("Avvia");
+        btnStartPause.setBackground(isSessioneStudio ? new Color(46, 204, 113) : new Color(52, 152, 219));
         aggiornaTimerEProgressBar();
     }
 
@@ -317,19 +344,6 @@ public class PannelloPomodoro extends JPanel{
         barraProgressi.setValue(valoreCorrente);
         barraProgressi.setForeground(isSessioneStudio ? new Color(231, 76, 60) : new Color(52, 152, 219));
         barraProgressi.repaint();
-    }
-
-    public void cambiaTipoSessione(boolean isStudio) {
-        if(inEsecuzione) {
-            pausaTimer();
-        }
-        isSessioneStudio = isStudio;
-        impostaDurataSessioneCorrente();
-        lblStato.setText(isSessioneStudio ? "Pronto per studiare?" : "Pronto per la pausa");
-        lblStato.setForeground(Color.GRAY);
-        lblStato.setIcon(new FlatSVGIcon(isSessioneStudio ? "icone/books.svg" : "icone/coffee.svg", 20, 20));
-        btnStartPause.setText("Avvia");
-        aggiornaTimerEProgressBar();
     }
 
     public void aggiornaListaEsami() {
@@ -414,79 +428,9 @@ public class PannelloPomodoro extends JPanel{
     }
 
     private void verificaEAvvisaNuoviObiettivi() {
-        int totaleMinuti = 0;
-        for (String riga : GestoreDatabase.getTuttoLoStudioRaw()) {
-            if (riga != null && riga.contains(";")) {
-                try {
-                    totaleMinuti += Integer.parseInt(riga.split(";")[1]);
-                } catch (Exception ex) {
-                }
-            }
-        }
-        int oreTotali = totaleMinuti / 60;
-
-        int totaleLodi = 0;
-        String[] esamiRaw = GestoreDatabase.getVotiEsamiRaw();
-        for (String riga : esamiRaw) {
-            if (riga != null && (riga.startsWith("30L") || riga.toLowerCase().startsWith("30 e lode"))) {
-                totaleLodi++;
-            }
-        }
-
-        int cfuTotali = 0;
-        int cfuMaxImpostati = Integer.parseInt(GestoreDatabase.getImpostazione("CFU", "180"));
-        for (String riga : esamiRaw) {
-            String[] parti = riga.split(";");
-            if (parti.length == 3) {
-                cfuTotali += Integer.parseInt(parti[2]);
-            }
-        }
-
-        int numeroDiciotto = 0;
-        for (String riga : esamiRaw) {
-            if (riga != null && (riga.startsWith("18"))) {
-                numeroDiciotto++;
-            }
-        }
-
-        boolean[] votiDal18Al30 = new boolean[13];
-        boolean hasLode = false;
-        boolean has18 = false;
-        for (String riga : esamiRaw) {
-            if (riga == null || riga.isBlank()) {
-                continue;
-            }
-            String[] parti = riga.split(";");
-            if (parti.length == 0) {
-                continue;
-            }
-            String votoRaw = parti[0].trim();
-            if (votoRaw.equalsIgnoreCase("30L") || votoRaw.equalsIgnoreCase("30 e lode")) {
-                hasLode = true;
-                votiDal18Al30[12] = true;
-                continue;
-            }
-            try {
-                int voto = Integer.parseInt(votoRaw);
-                if (voto >= 18 && voto <= 30) {
-                    if (voto == 18) {
-                        has18 = true;
-                    }
-                    votiDal18Al30[voto - 18] = true;
-                }
-            } catch (NumberFormatException ex) {
-            }
-        }
-        boolean haTuttiIVotiDal18Al30 = true;
-        for (boolean votoPresente : votiDal18Al30) {
-            if (!votoPresente) {
-                haTuttiIVotiDal18Al30 = false;
-                break;
-            }
-        }
-
         boolean speedrunnerSbloccato = false;
         List<String> esamiSuperati = new ArrayList<>();
+
         for (String riga : GestoreDatabase.getEsamiSalvatiRaw()) {
             if (riga == null || !riga.contains(";")) {
                 continue;
@@ -512,6 +456,7 @@ public class PannelloPomodoro extends JPanel{
                 }
             }
         }
+
         Collections.sort(dateEsamiPassati);
         for (int i = 0; i < dateEsamiPassati.size() - 1; i++) {
             long giorni = ChronoUnit.DAYS.between(dateEsamiPassati.get(i), dateEsamiPassati.get(i + 1));
@@ -521,9 +466,15 @@ public class PannelloPomodoro extends JPanel{
             }
         }
 
-        sbloccaObiettivoSeNuovo("ACH_SPEEDRUNNER", "SpeedRunner", "Hai superato due esami a meno di 3 giorni di distanza l'uno dall'altro. Pura follia", speedrunnerSbloccato);
-        sbloccaObiettivoSeNuovo("ACH_CREATURA_NOTTE", "Creatura della Notte", "Hai completato un Pomodoro tra le 2:00 e le 4:00 del mattino. Vai a dormire, per favore", oraAttuale != null && oraAttuale.getHour() >= 2 && oraAttuale.getHour() <= 4);
-        sbloccaObiettivoSeNuovo("ACH_PROCRASTINAZIONE_SERIALE", "Procastinazione Seriale", "Hai avviato la tua primissima sessione di Pomodoro per un esame... a meno di 48 ore dalla data dell'appello", isProcastinazioneSerialeSbloccatoOra());
+        sbloccaObiettivoSeNuovo("ACH_SPEEDRUNNER", "SpeedRunner",
+                "Hai superato due esami a meno di 3 giorni di distanza l'uno dall'altro. Pura follia",
+                speedrunnerSbloccato);
+        sbloccaObiettivoSeNuovo("ACH_CREATURA_NOTTE", "Creatura della Notte",
+                "Hai completato un Pomodoro tra le 2:00 e le 4:00 del mattino. Vai a dormire, per favore",
+                oraAttuale != null && oraAttuale.getHour() >= 2 && oraAttuale.getHour() <= 4);
+        sbloccaObiettivoSeNuovo("ACH_PROCRASTINAZIONE_SERIALE", "Procastinazione Seriale",
+                "Hai avviato la tua primissima sessione di Pomodoro per un esame... a meno di 48 ore dalla data dell'appello",
+                isProcastinazioneSerialeSbloccatoOra());
     }
 
     private void timerFinito() {
@@ -561,6 +512,8 @@ public class PannelloPomodoro extends JPanel{
         btnStartPause.setText("Avvia");
         oraAttuale = LocalTime.now();
         verificaEAvvisaNuoviObiettivi();
+        btnStartPause.setText("Avvia");
+        btnStartPause.setBackground(isSessioneStudio ? new Color(46, 204, 113) : new Color(52, 152, 219));
     }
 
     private void riproduciSuono() {
@@ -636,8 +589,6 @@ public class PannelloPomodoro extends JPanel{
             Color coloreSfondoTrofei = temaScuro ? new Color(34, 37, 43) : Color.WHITE;
             Color coloreBordoTrofei = temaScuro ? new Color(86, 94, 106) : Color.DARK_GRAY;
             Color coloreTitoloTrofei = temaScuro ? new Color(235, 235, 235) : new Color(20, 45, 87);
-            Color coloreSfondoTesti = temaScuro ? new Color(43, 47, 54) : Color.WHITE;
-            Color coloreTestoDescrizione = temaScuro ? new Color(225, 225, 225) : new Color(34, 47, 62);
 
             JPanel pannelloTrofei = new JPanel();
             pannelloTrofei.setPreferredSize(new Dimension(550, 450));
@@ -1188,8 +1139,8 @@ public class PannelloPomodoro extends JPanel{
         }
 
         int targetWidth = (int) (getWidth() * 0.45f);
-        targetWidth = Math.max(220, Math.min(400, targetWidth));
-        barraProgressi.setPreferredSize(new Dimension(targetWidth, 14));
+        targetWidth = Math.max(220, Math.min(450, targetWidth));
+        barraProgressi.setPreferredSize(new Dimension(targetWidth, 8)); // Barra più fine!
         barraProgressi.revalidate();
         barraProgressi.repaint();
     }
@@ -1280,6 +1231,18 @@ public class PannelloPomodoro extends JPanel{
     @Override
     public void updateUI() {
         super.updateUI();
+        if (card == null)
+            return;
+
+        boolean temaScuro = com.minec.dati.GestoreDatabase.isTemaScuro();
+        card.setBackground(temaScuro ? new Color(48, 50, 54) : Color.WHITE);
+        card.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory.createLineBorder(temaScuro ? new Color(80, 80, 80) : new Color(220, 220, 220),
+                        1, true),
+                javax.swing.BorderFactory.createEmptyBorder(25, 50, 30, 50)));
+        if (barraProgressi != null) {
+            barraProgressi.setBackground(temaScuro ? new Color(60, 63, 65) : new Color(240, 240, 240));
+        }
         if (optionBut != null) {
             SwingUtilities.invokeLater(() -> applyOptionButtonAppearance(optionBut.getModel().isRollover()));
         }

@@ -8,21 +8,15 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.GridLayout;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.image.ColorConvertOp;
-import java.sql.Date;
 import java.time.LocalDate;
-import java.time.Month;
-import java.time.Year;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Flow;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -35,11 +29,10 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.plaf.BorderUIResource;
-import javax.swing.plaf.basic.DefaultMenuLayout;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.github.lgooddatepicker.components.DatePicker;
@@ -56,7 +49,6 @@ public class PannelloScadenze extends JPanel {
     private JPanel moduloPanel;
     private JPanel contenitoreLista;
     private TitledBorder listaTitledBorder;
-    private TitledBorder calendarTitledBorder;
     private JLabel title;
     private JPanel scadenzeListPanel;
     private JComboBox<String> comboEsami;
@@ -79,125 +71,142 @@ public class PannelloScadenze extends JPanel {
 
     public PannelloScadenze() {
         this.setLayout(new BorderLayout());
-
         cardLayout = new CardLayout();
 
-        moduloPanel = new JPanel();
-        moduloPanel.setPreferredSize(new Dimension(BASE_WIDTH, 150));
-        moduloPanel.setLayout(null);
+        // --- PANNELLO SUPERIORE (Input) ---
+        moduloPanel = new JPanel(new BorderLayout());
+        moduloPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
 
-        title = new JLabel("Imposta le date degli esami");
-        title.setHorizontalAlignment(JLabel.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 26));
-        moduloPanel.add(title);
+        title = new JLabel("Imposta le date degli esami", SwingConstants.CENTER);
+        title.setFont(new Font("Arial", Font.BOLD, 28));
+        moduloPanel.add(title, BorderLayout.NORTH);
 
+        // Riga di input centrale
+        JPanel rigaInput = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        
         comboEsami = new JComboBox<>();
+        comboEsami.setPreferredSize(new Dimension(250, 36));
+        comboEsami.setFont(new Font("Arial", Font.PLAIN, 14));
         caricaEsamiNelMenu();
-        moduloPanel.add(comboEsami);
-
+        
         datePicker = new DatePicker();
-        datePicker.setBackground(getBackground());
         applicaTemaCampoData();
-
         btnCalendario = datePicker.getComponentToggleCalendarButton();
         btnCalendario.setText("");
         btnCalendario.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-
-        moduloPanel.add(datePicker);
+        btnCalendario.setIcon(new FlatSVGIcon("icone/calendar.svg", 20, 20));
 
         btnSalva = new JButton("Salva Data");
-        moduloPanel.add(btnSalva);
+        btnSalva.putClientProperty("JButton.buttonType", "roundRect");
+        btnSalva.setBackground(new Color(33, 150, 243));
+        btnSalva.setForeground(Color.WHITE);
+        btnSalva.setFont(new Font("Arial", Font.BOLD, 14));
+        btnSalva.setPreferredSize(new Dimension(130, 36));
+        btnSalva.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
-        // --- PARTE CENTRO: Lista delle scadenze ---
-        javax.swing.border.Border bordoSoloSopra = BorderFactory.createMatteBorder(2, 0, 0, 0, Color.GRAY);
+        rigaInput.add(comboEsami);
+        rigaInput.add(datePicker);
+        rigaInput.add(btnSalva);
+        moduloPanel.add(rigaInput, BorderLayout.CENTER);
+
+        // --- VISTA: LISTA SCADENZE ---
         contenitoreLista = new JPanel(new BorderLayout());
-        listaTitledBorder = BorderFactory.createTitledBorder(
-            bordoSoloSopra, "Prossimi Esami", TitledBorder.CENTER,
-            TitledBorder.TOP, new Font("Arial", Font.BOLD, 16));
-        contenitoreLista.setBorder(listaTitledBorder);
+        contenitoreLista.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
 
-        JPanel barraStrumentiLista = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        btnOrdina = new JButton(ordinaPerData ? "Ordina: Aggiunta" : "Ordina: Cronologico");
-        btnOrdina.setFont(new Font("Arial", Font.ITALIC, 12));
-        barraStrumentiLista.add(btnOrdina);
+        JPanel headerLista = new JPanel(new BorderLayout());
+        headerLista.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)),
+            BorderFactory.createEmptyBorder(0, 0, 10, 0)
+        ));
+        JLabel lblTitoloLista = new JLabel("Prossimi Esami");
+        lblTitoloLista.setFont(new Font("Arial", Font.BOLD, 20));
+        headerLista.add(lblTitoloLista, BorderLayout.WEST);
+
+        JPanel barraStrumentiLista = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        barraStrumentiLista.setOpaque(false);
         
-        JButton btnScambia = new JButton("Calendario");
-        btnScambia.setIcon(new FlatSVGIcon("icone/calendar.svg", 22, 22));
-        btnScambia.setFont(new Font("Arial", Font.PLAIN, 12));
+        btnOrdina = new JButton(ordinaPerData ? "Ordina: Aggiunta" : "Ordina: Cronologico");
+        btnOrdina.putClientProperty("JButton.buttonType", "roundRect");
+        btnOrdina.setFont(new Font("Arial", Font.ITALIC, 12));
+        
+        JButton btnScambia = new JButton("Vedi Calendario");
+        btnScambia.putClientProperty("JButton.buttonType", "roundRect");
+        btnScambia.setIcon(new FlatSVGIcon("icone/calendar.svg", 18, 18));
         btnScambia.addActionListener(e -> scambiaViste(btnScambia));
+        
+        barraStrumentiLista.add(btnOrdina);
         barraStrumentiLista.add(btnScambia);
-
-        contenitoreLista.add(barraStrumentiLista, BorderLayout.NORTH);
+        headerLista.add(barraStrumentiLista, BorderLayout.EAST);
+        contenitoreLista.add(headerLista, BorderLayout.NORTH);
 
         scadenzeListPanel = new JPanel();
         scadenzeListPanel.setLayout(new BoxLayout(scadenzeListPanel, BoxLayout.Y_AXIS));
-
         JScrollPane scrollPane = new JScrollPane(scadenzeListPanel);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         contenitoreLista.add(scrollPane, BorderLayout.CENTER);
 
-        // ---Pannello Calendario---
-        JPanel bottomPanel = new JPanel();
-        bottomPanel.setPreferredSize(new Dimension(BASE_WIDTH, 320));
-        calendarTitledBorder = BorderFactory.createTitledBorder(
-                bordoSoloSopra, "Prossimi Esami", TitledBorder.CENTER,
-                TitledBorder.TOP, new Font("Arial", Font.BOLD, 16));
-        bottomPanel.setBorder(calendarTitledBorder);
+        // --- VISTA: CALENDARIO ---
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
 
+        JPanel headerCalendario = new JPanel(new BorderLayout());
+        headerCalendario.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)),
+            BorderFactory.createEmptyBorder(0, 0, 10, 0)
+        ));
+        
         LocalDate oggi = LocalDate.now();
         currentMonth = oggi.getMonthValue();
         currentYear = oggi.getYear();
         setCalendar(currentMonth, currentYear);
 
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setPreferredSize(new Dimension(0, 40));
-        topPanel.setMaximumSize(new Dimension(1900, 40));
-
         JLabel month = new JLabel(mesi[currentMonth - 1] + " " + currentYear);
-        month.setFont(new Font("Arial", Font.BOLD, 18));
-        JPanel btnPanel = new JPanel(new FlowLayout());
+        month.setFont(new Font("Arial", Font.BOLD, 20));
+        headerCalendario.add(month, BorderLayout.WEST);
 
-        JButton btnLeftArrow = new JButton("<<");
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        btnPanel.setOpaque(false);
+
+        JButton btnLeftArrow = new JButton("<");
+        btnLeftArrow.putClientProperty("JButton.buttonType", "roundRect");
         btnLeftArrow.addActionListener(e -> {
             currentMonth--;
-            if (currentMonth < 1) {
-                currentMonth = 12;
-                currentYear--;
-            }
+            if (currentMonth < 1) { currentMonth = 12; currentYear--; }
             setCalendar(currentMonth, currentYear);
             month.setText(mesi[currentMonth - 1] + " " + currentYear);
             aggiornaCalendario();
         });
-        JButton btnRightArrow = new JButton(">>");
+        
+        JButton btnRightArrow = new JButton(">");
+        btnRightArrow.putClientProperty("JButton.buttonType", "roundRect");
         btnRightArrow.addActionListener(e -> {
             currentMonth++;
-            if (currentMonth > 12) {
-                currentMonth = 1;
-                currentYear++;
-            }
+            if (currentMonth > 12) { currentMonth = 1; currentYear++; }
             setCalendar(currentMonth, currentYear);
             month.setText(mesi[currentMonth - 1] + " " + currentYear);
             aggiornaCalendario();
         });
         
-        JButton btnScambiaCalendario = new JButton(" Lista");
-        btnScambiaCalendario.setFont(new Font("Arial", Font.PLAIN, 12));
+        JButton btnScambiaCalendario = new JButton("Vedi Lista");
+        btnScambiaCalendario.putClientProperty("JButton.buttonType", "roundRect");
+        btnScambiaCalendario.setIcon(new FlatSVGIcon("icone/list.svg", 18, 18));
         btnScambiaCalendario.addActionListener(e -> scambiaViste(btnScambiaCalendario));
-        btnScambiaCalendario.setIcon(new FlatSVGIcon("icone/list.svg", 22, 22));
+        
         btnPanel.add(btnLeftArrow);
         btnPanel.add(btnRightArrow);
+        btnPanel.add(Box.createHorizontalStrut(10));
         btnPanel.add(btnScambiaCalendario);
-        topPanel.add(month, BorderLayout.CENTER);
-        topPanel.add(btnPanel, BorderLayout.EAST);
+        headerCalendario.add(btnPanel, BorderLayout.EAST);
 
+        bottomPanel.add(headerCalendario, BorderLayout.NORTH);
         
-        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
-        bottomPanel.add(topPanel);
-        bottomPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        bottomPanel.add(calendar);
+        JPanel wrapperCal = new JPanel(new BorderLayout());
+        wrapperCal.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        wrapperCal.add(calendar, BorderLayout.CENTER);
+        bottomPanel.add(wrapperCal, BorderLayout.CENTER);
 
-        // Card panel per scambiare tra lista e calendario
+        // --- Card Panel ---
         cardPanel = new JPanel(cardLayout);
         cardPanel.add(contenitoreLista, "LISTA");
         cardPanel.add(bottomPanel, "CALENDARIO");
@@ -206,6 +215,7 @@ public class PannelloScadenze extends JPanel {
         this.add(moduloPanel, BorderLayout.NORTH);
         this.add(cardPanel, BorderLayout.CENTER);
 
+        // --- LOGICA FINALE (Quella che mancava!) ---
         setupResponsiveLayout();
         initListaScadenze();
         SwingUtilities.invokeLater(this::applyResponsiveLayout);
@@ -224,7 +234,7 @@ public class PannelloScadenze extends JPanel {
         });
 
         btnOrdina.addActionListener(e -> {
-            ordinaPerData = !ordinaPerData; // Inverte il valore (da falso a vero e viceversa)
+            ordinaPerData = !ordinaPerData; 
             GestoreDatabase.salvaOrdineScadenze(ordinaPerData);
             btnOrdina.setText(ordinaPerData ? "Ordina: Aggiunta" : "Ordina: Cronologico");
             aggiornaListaScadenze();
@@ -232,7 +242,7 @@ public class PannelloScadenze extends JPanel {
     }
 
     public void setCalendar(int numMese, int anno) {
-        boolean isBisestile = Year.of(anno).isLeap();
+        boolean isBisestile = java.time.Year.of(anno).isLeap();
         numGiorni = 0;
         if (numMese == 4 || numMese == 6 || numMese == 9 || numMese == 11)
             numGiorni = 30;
@@ -243,31 +253,49 @@ public class PannelloScadenze extends JPanel {
         else
             numGiorni = 31;
 
-        // Costruisci il nuovo pannello calendario
-        JPanel newCalendar = new JPanel(new GridLayout(0, 7));
-        newCalendar.setPreferredSize(new Dimension(BASE_WIDTH - 10, 280));
+        // Creiamo la griglia del calendario (7 colonne per i giorni della settimana)
+        JPanel newCalendar = new JPanel(new java.awt.GridLayout(0, 7, 5, 5));
+        newCalendar.setOpaque(false);
+
         JPanel[] newPnlGiorni = new JPanel[numGiorni];
+        java.time.LocalDate oggi = java.time.LocalDate.now();
+
+        boolean temaScuro = com.minec.dati.GestoreDatabase.isTemaScuro();
+
         for (int i = 0; i < numGiorni; i++) {
-            JPanel p = new JPanel();
-            if(i + 1 == LocalDate.now().getDayOfMonth() && LocalDate.now().getMonthValue() == currentMonth)
-                p.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
-            else
-                p.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
-            JLabel date = new JLabel((i + 1) + "/" + String.format("%02d", numMese) + "/" + anno);
-            p.add(date);
+            JPanel p = new JPanel(new java.awt.BorderLayout());
+            p.setPreferredSize(new java.awt.Dimension(40, 40));
+
+            // Colori moderni per i quadratini dei giorni
+            p.setBackground(temaScuro ? new java.awt.Color(60, 63, 65) : java.awt.Color.WHITE);
+
+            // Evidenziamo il giorno corrente in rosso, gli altri con un bordo grigio
+            if (i + 1 == oggi.getDayOfMonth() && oggi.getMonthValue() == currentMonth
+                    && oggi.getYear() == currentYear) {
+                p.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(231, 76, 60), 2, true));
+            } else {
+                p.setBorder(javax.swing.BorderFactory.createLineBorder(
+                        temaScuro ? new java.awt.Color(80, 80, 80) : new java.awt.Color(230, 230, 230), 1, true));
+            }
+
+            JLabel date = new JLabel(String.valueOf(i + 1), javax.swing.SwingConstants.LEFT);
+            date.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 0, 0));
+            date.setFont(new java.awt.Font("Arial", java.awt.Font.PLAIN, 12));
+            p.add(date, java.awt.BorderLayout.NORTH);
+
             newPnlGiorni[i] = p;
             newCalendar.add(p);
         }
 
-        // Se esiste già un calendar visibile, sostituiscilo nel suo parent
+        // Sostituiamo il vecchio calendario con quello nuovo
         JPanel oldCalendar = this.calendar;
         this.calendar = newCalendar;
         this.pnlGiorni = newPnlGiorni;
 
         if (oldCalendar != null && oldCalendar.getParent() != null) {
-            Container parent = oldCalendar.getParent();
+            java.awt.Container parent = oldCalendar.getParent();
             parent.remove(oldCalendar);
-            parent.add(this.calendar, BorderLayout.CENTER);
+            parent.add(this.calendar, java.awt.BorderLayout.CENTER);
             parent.revalidate();
             parent.repaint();
         }
@@ -294,25 +322,6 @@ public class PannelloScadenze extends JPanel {
         float scaleX = (float) getWidth() / BASE_WIDTH;
         float scaleY = (float) getHeight() / BASE_HEIGHT;
         currentScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, Math.min(scaleX, scaleY)));
-
-        int topHeight = Math.max(145, Math.round(150 * currentScale));
-        moduloPanel.setPreferredSize(new Dimension(getWidth(), topHeight));
-        moduloPanel.setMinimumSize(new Dimension(0, topHeight));
-        moduloPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, topHeight));
-
-        title.setBounds(0, Math.round(20 * currentScale), getWidth(), Math.round(40 * currentScale));
-
-        int comboWidth = Math.round(250 * currentScale);
-        int dateWidth = Math.round(200 * currentScale);
-        int saveWidth = Math.round(150 * currentScale);
-        int rowGap = Math.max(12, Math.round(18 * currentScale));
-        int rowY = Math.round(80 * currentScale);
-        int rowWidth = comboWidth + rowGap + dateWidth + rowGap + saveWidth;
-        int rowX = Math.max(Math.round(20 * currentScale), (getWidth() - rowWidth) / 2);
-
-        comboEsami.setBounds(rowX, rowY, comboWidth, Math.round(35 * currentScale));
-        datePicker.setBounds(rowX + comboWidth + rowGap, rowY, dateWidth, Math.round(35 * currentScale));
-        btnSalva.setBounds(rowX + comboWidth + rowGap + dateWidth + rowGap, rowY, saveWidth, Math.round(35 * currentScale));
 
         if (btnCalendario != null) {
             btnCalendario.setIcon(new FlatSVGIcon("icone/calendar.svg", Math.max(20, Math.round(24 * currentScale)), Math.max(20, Math.round(24 * currentScale))));
@@ -391,7 +400,6 @@ public class PannelloScadenze extends JPanel {
             }
         }
         comboEsami.setSelectedIndex(-1);
-        comboEsami.setToolTipText("Nome esame...");
     }
 
     public void aggiornaListaScadenze() {
@@ -426,7 +434,10 @@ public class PannelloScadenze extends JPanel {
                 panel.setPreferredSize(dim);
                 panel.setMaximumSize(dim);
                 panel.setMinimumSize(dim);
-                panel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
+                // Colore di sfondo della card e bordo arrotondato
+                boolean temaScuro = GestoreDatabase.isTemaScuro();
+                panel.setBackground(temaScuro ? new Color(48, 50, 54) : Color.WHITE);
+                panel.setBorder(BorderFactory.createLineBorder(temaScuro ? new Color(70, 70, 75) : new Color(220, 220, 220), 1, true));
 
                 JLabel lblNome = new JLabel(" " + nomeEsame + " (" + parti[1] + ")");
                 lblNome.setBorder(new EmptyBorder(0, 15, 0, 0));
@@ -451,10 +462,14 @@ public class PannelloScadenze extends JPanel {
                 }
 
                 // --- BOTTONE RIMOZIONE ---
-                JButton btnRimuovi = new JButton("");
-                btnRimuovi.setIcon(new FlatSVGIcon("icone/x.svg", Math.max(18, Math.round(24 * currentScale)), Math.max(18, Math.round(24 * currentScale))));
-                btnRimuovi.setContentAreaFilled(false);
-                btnRimuovi.setBorderPainted(false);
+                JButton btnRimuovi = new JButton();
+                try {
+                    btnRimuovi.setIcon(new FlatSVGIcon("icone/bin1.svg", 22, 22));
+                } catch (Exception e) {
+                    btnRimuovi.setText("X");
+                }
+                btnRimuovi.putClientProperty("JButton.buttonType", "toolBarButton"); // Piatto
+                btnRimuovi.setForeground(new Color(211, 47, 47));
                 btnRimuovi.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
                 btnRimuovi.addActionListener(e -> {
@@ -472,6 +487,7 @@ public class PannelloScadenze extends JPanel {
                 JPanel pannelloDestra = new JPanel();
                 pannelloDestra.setLayout(new BoxLayout(pannelloDestra, BoxLayout.X_AXIS));
                 pannelloDestra.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 15));
+                pannelloDestra.setBackground(panel.getBackground());
 
                 pannelloDestra.add(lblGiorni);
                 pannelloDestra.add(Box.createRigidArea(new Dimension(15, 0)));
@@ -546,7 +562,6 @@ public class PannelloScadenze extends JPanel {
                 lblExam.setOpaque(false);
                 lblExam.setFont(new Font("Arial", Font.PLAIN, 12));
                 lblExam.setVerticalAlignment(JLabel.CENTER);
-                lblExam.setHorizontalAlignment(JLabel.CENTER);
                 p.add(lblExam, BorderLayout.CENTER);
             } else if (esami.size() >= 2) {
                 // Due o più esami: usa uno scrollpane
@@ -558,8 +573,6 @@ public class PannelloScadenze extends JPanel {
                     lblExam.setOpaque(false);
                     lblExam.setFont(new Font("Arial", Font.PLAIN, 12));
                     lblExam.setVerticalAlignment(JLabel.CENTER);
-                    lblExam.setHorizontalAlignment(JLabel.CENTER);
-                    lblExam.setAlignmentX(Component.CENTER_ALIGNMENT);
                     esamiPanel.add(lblExam);
                 }
                 JScrollPane scrollPane = new JScrollPane(esamiPanel);
@@ -588,6 +601,16 @@ public class PannelloScadenze extends JPanel {
             aggiornaListaScadenze();
         } else {
             cardLayout.show(cardPanel, "CALENDARIO");
+            aggiornaCalendario();
+        }
+    }
+    
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        applicaTemaCampoData();
+        if (currentMonth > 0 && currentYear > 0) {
+            setCalendar(currentMonth, currentYear);
             aggiornaCalendario();
         }
     }

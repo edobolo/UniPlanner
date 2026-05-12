@@ -18,20 +18,18 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.minec.GestoreNotifiche;
 import com.minec.dati.GestoreDatabase;
-import com.formdev.flatlaf.extras.FlatSVGIcon;
 import java.awt.Cursor;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -44,8 +42,6 @@ public class PannelloAggiungi extends JPanel {
     private static final int BASE_EXAM_CARD_HEIGHT = 50;
     private static final int BASE_EXAM_GAP = 5;
     private static final int BASE_EXAM_SIDE_MARGIN = 16;
-    private static final int BASE_EXAM_HORIZONTAL_PADDING = 10;
-    private static final int BASE_EXAM_VERTICAL_PADDING = 10;
     private static final float MIN_SCALE = 1.0f;
     private static final float MAX_SCALE = 1.8f;
 
@@ -55,7 +51,6 @@ public class PannelloAggiungi extends JPanel {
     private float currentScale = 1.0f;
     private final PannelloVoti pv;
     private JPanel esamiPanel;
-    private JComboBox<String> tendina;
 
     public PannelloAggiungi(PannelloVoti pv) {
         this.pv = pv;
@@ -107,9 +102,9 @@ public class PannelloAggiungi extends JPanel {
         boolean isCompletato = estraiCompletato(parti);
         boolean isIdoneita = estraiIdoneita(parti);
 
-        // Recupero CFU/Voto
-        cfuSalvati = 0;
-        votoSalvato = "";
+        // --- Recupero CFU e Voto salvati per la visualizzazione ---
+        int cfuSalvati = 0;
+        String votoSalvato = "";
         String[] votiRaw = GestoreDatabase.getVotiEsamiRaw();
         for (String rigaVoto : votiRaw) {
             String[] pVoto = rigaVoto.split(";");
@@ -124,6 +119,7 @@ public class PannelloAggiungi extends JPanel {
             }
         }
 
+        // --- STILE CARD MODERNA ---
         JPanel panelSingoloEsame = new JPanel(new BorderLayout());
         Dimension dimensioneCard = getScaledExamCardDimension();
         panelSingoloEsame.setPreferredSize(dimensioneCard);
@@ -132,181 +128,175 @@ public class PannelloAggiungi extends JPanel {
         boolean temaScuro = GestoreDatabase.isTemaScuro();
         Color cardBg = temaScuro ? new Color(48, 50, 54) : Color.WHITE;
         panelSingoloEsame.setBackground(cardBg);
-        panelSingoloEsame.setBorder(
-                BorderFactory.createLineBorder(temaScuro ? new Color(70, 70, 75) : new Color(220, 220, 220), 1, true));
+        panelSingoloEsame
+                .setBorder(BorderFactory.createLineBorder(temaScuro ? new Color(80, 80, 80) : Color.LIGHT_GRAY, 1));
 
         // --- SINISTRA: Nome Esame ---
+        JPanel pSinistra = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 10));
+        pSinistra.setOpaque(false);
+
         JLabel nomeEsameLabel = new JLabel(nome);
         nomeEsameLabel.setFont(new Font("Arial", isCompletato ? Font.ITALIC : Font.BOLD, 18));
         nomeEsameLabel.setForeground(temaScuro ? new Color(230, 230, 230) : Color.DARK_GRAY);
         if (isCompletato) {
-            // Effetto sbarrato se completato
             Map<TextAttribute, Object> attributes = new HashMap<>();
             attributes.put(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON);
             nomeEsameLabel.setFont(nomeEsameLabel.getFont().deriveFont(attributes));
         }
+        pSinistra.add(nomeEsameLabel);
 
-        // --- DESTRA: Info e Azioni ---
-        JPanel pannelloAzioni = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 13));
-        pannelloAzioni.setOpaque(false);
-        pannelloAzioni.setAlignmentY(Component.CENTER_ALIGNMENT);
+        // --- DESTRA: Area Interattiva / Bottone e Cestino ---
+        JPanel pDestra = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
+        pDestra.setOpaque(false);
 
-        // Testo Stato (Voto e CFU)
         if (isCompletato) {
-            String info = (isIdoneita ? "IDONEO" : "Voto: " + votoSalvato) + " (" + cfuSalvati + " CFU)";
-            JLabel labelInfo = new JLabel(info);
-            labelInfo.setFont(new Font("Arial", Font.BOLD, 14));
-            labelInfo.setForeground(new Color(76, 175, 80)); // Verde
-            labelInfo.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            labelInfo.setToolTipText("Clicca per modificare voto/CFU");
-            labelInfo.addMouseListener(new MouseAdapter() {
+            // 1. SE L'ESAME È FATTO: Mostriamo la scritta interattiva verde per la modifica
+            JPanel pnlInterattivo = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 6));
+            pnlInterattivo.setOpaque(false);
+
+            String testo = (isIdoneita ? "IDONEO" : "Voto: " + votoSalvato) + " (" + cfuSalvati + " CFU)";
+            JLabel lblScritta = new JLabel(testo);
+            lblScritta.setFont(new Font("Arial", Font.BOLD, 14));
+            lblScritta.setForeground(new Color(76, 175, 80));
+            pnlInterattivo.add(lblScritta);
+
+            pnlInterattivo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            pnlInterattivo.addMouseListener(new MouseAdapter() {
                 @Override
-                public void mouseClicked(MouseEvent me) {
-                    if (!SwingUtilities.isLeftMouseButton(me)) return;
-                    if (isIdoneita) {
-                        String[] opzioni = { "1", "2", "3", "4", "5", "6", "8", "10", "12", "13", "14", "15" };
-                        String scelta = (String) JOptionPane.showInputDialog(PannelloAggiungi.this,
-                                "CFU per Idoneità:",
-                                "Modifica CFU",
-                                JOptionPane.QUESTION_MESSAGE,
-                                null,
-                                opzioni,
-                                cfuSalvati > 0 ? String.valueOf(cfuSalvati) : "6");
-                        if (scelta != null) {
-                            try {
-                                int cfu = Integer.parseInt(scelta);
-                                GestoreDatabase.setVotiEsami("IDONEO", nome, cfu);
-                                GestoreDatabase.aggiornaStatoEsame(nome, true);
-                                aggiornaTutto();
-                                pv.refresh();
-                                GestoreNotifiche.aggiornaTrofeiEAvvisa(PannelloAggiungi.this);
-                            } catch (NumberFormatException ex) {
-                                // ignoriamo input non validi
-                            }
-                        }
-                    } else {
-                        String nuovoVoto = JOptionPane.showInputDialog(PannelloAggiungi.this,
-                                "Modifica voto (18-30 o 30L):", votoSalvato);
-                        if (nuovoVoto == null) return; // annullato
-                        nuovoVoto = nuovoVoto.trim().toUpperCase();
-                        boolean valido = false;
-                        if (nuovoVoto.equals("30L") || nuovoVoto.equals("30 E LODE")) valido = true;
-                        else {
-                            try {
-                                int v = Integer.parseInt(nuovoVoto);
-                                valido = (v >= 18 && v <= 30);
-                            } catch (NumberFormatException ex) {
-                                valido = false;
-                            }
-                        }
-                        if (!valido) {
-                            JOptionPane.showMessageDialog(PannelloAggiungi.this,
-                                    "Voto non valido! Inserisci un numero tra 18 e 30, oppure '30L'.");
-                            return;
-                        }
-                        String nuovaCfu = JOptionPane.showInputDialog(PannelloAggiungi.this,
-                                "CFU:", cfuSalvati > 0 ? String.valueOf(cfuSalvati) : "6");
-                        if (nuovaCfu == null) return;
-                        try {
-                            int cfu = Integer.parseInt(nuovaCfu.trim());
-                            GestoreDatabase.setVotiEsami(nuovoVoto, nome, cfu);
-                            GestoreDatabase.aggiornaStatoEsame(nome, true);
-                            aggiornaTutto();
-                            pv.refresh();
-                            GestoreNotifiche.aggiornaTrofeiEAvvisa(PannelloAggiungi.this);
-                        } catch (NumberFormatException ex) {
-                            JOptionPane.showMessageDialog(PannelloAggiungi.this, "CFU non valido!");
-                        }
-                    }
+                public void mouseClicked(MouseEvent e) {
+                    registraEsame(nome, isIdoneita);
+                }
+
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    pnlInterattivo.setOpaque(true);
+                    pnlInterattivo.setBackground(temaScuro ? new Color(60, 63, 67) : new Color(242, 242, 242));
+                    pnlInterattivo.repaint();
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    pnlInterattivo.setOpaque(false);
+                    pnlInterattivo.repaint();
                 }
             });
-            pannelloAzioni.add(labelInfo);
+            pDestra.add(pnlInterattivo);
+
         } else {
+            // 2. SE L'ESAME È DA FARE: Bottone pulito originale di FlatLaf
             JButton btnRegistra = new JButton("Registra Voto");
             btnRegistra.putClientProperty("JButton.buttonType", "roundRect");
-            btnRegistra.setFont(new Font("Arial", Font.PLAIN, 12));
+
             btnRegistra.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            btnRegistra.setAlignmentY(Component.CENTER_ALIGNMENT);
             btnRegistra.addActionListener(e -> registraEsame(nome, isIdoneita));
-            pannelloAzioni.add(btnRegistra);
+            pDestra.add(btnRegistra);
         }
 
-        // PULSANTE ELIMINA (Cestino)
+        // --- BOTTONE CESTINO (ELIMINA) ---
         JButton btnElimina = new JButton();
-        btnElimina.setBorder(BorderFactory.createEmptyBorder(1,0,0,0));
-        // Se hai icone SVG usa FlatSVGIcon, altrimenti un semplice testo "X" o icona
-        // standard
         try {
-            btnElimina.setIcon(new com.formdev.flatlaf.extras.FlatSVGIcon("icone/bin1.svg", 22, 22));
+            btnElimina.setIcon(new FlatSVGIcon("icone/bin1.svg", 18, 18));
         } catch (Exception e) {
             btnElimina.setText("🗑");
         }
-        btnElimina.setToolTipText("Elimina esame");
         btnElimina.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnElimina.putClientProperty("JButton.buttonType", "toolBarButton"); // Rende il bottone piatto
+        btnElimina.putClientProperty("JButton.buttonType", "toolBarButton");
         btnElimina.setForeground(new Color(211, 47, 47));
-        btnElimina.setAlignmentY(Component.CENTER_ALIGNMENT);
-
         btnElimina.addActionListener(e -> {
-            int confirm = JOptionPane.showConfirmDialog(this, "Eliminare definitivamente " + nome + "?", "Conferma",
-                    JOptionPane.YES_NO_OPTION);
-            if (confirm == JOptionPane.YES_OPTION) {
+            if (JOptionPane.showConfirmDialog(this, "Eliminare definitivamente " + nome + "?", "Conferma",
+                    JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                 GestoreDatabase.removeNomeEsame(nome);
                 GestoreDatabase.removeVotiEsame(nome);
                 aggiornaTutto();
                 pv.refresh();
             }
         });
-
-        pannelloAzioni.add(btnElimina);
-
-        JPanel pSinistra = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 10));
-        pSinistra.setOpaque(false);
-        pSinistra.add(nomeEsameLabel);
+        pDestra.add(btnElimina);
 
         panelSingoloEsame.add(pSinistra, BorderLayout.WEST);
-        panelSingoloEsame.add(pannelloAzioni, BorderLayout.EAST);
-
+        panelSingoloEsame.add(pDestra, BorderLayout.EAST);
         esamiPanel.add(panelSingoloEsame);
         esamiPanel.add(Box.createRigidArea(new Dimension(0, getScaledExamGap())));
     }
 
-    // Metodo di supporto per la registrazione veloce
     private void registraEsame(String nome, boolean isIdoneita) {
+        // --- CASO 1: IDONEITÀ ---
         if (isIdoneita) {
-            String[] opzioni = { "1", "2", "3", "4", "5", "6", "8", "10", "12", "13", "14", "15" };
-            String cfu = (String) JOptionPane.showInputDialog(this, "CFU per Idoneità:", "Registra",
-                    JOptionPane.QUESTION_MESSAGE, null, opzioni, "6");
+            String[] opzioni = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
+                    "17", "18" };
+            String cfu = (String) JOptionPane.showInputDialog(this, "Modifica CFU per Idoneità (" + nome + "):",
+                    "Registra", JOptionPane.QUESTION_MESSAGE, null, opzioni, "6");
             if (cfu != null) {
-                GestoreDatabase.setVotiEsami("IDONEO", nome, Integer.parseInt(cfu));
+                GestoreDatabase.removeVotiEsame(nome);
+                GestoreDatabase.setVotiEsami("IDONEO", nome, 0);
+                GestoreDatabase.addCfuEsame(nome, Integer.parseInt(cfu));
                 GestoreDatabase.aggiornaStatoEsame(nome, true);
+            } else {
+                aggiornaTutto(); // Se annullo, resetto la grafica della checkbox
+                return;
             }
-        } else {
-            String voto = JOptionPane.showInputDialog(this, "Inserisci il voto (18-30L):");
-            if (voto != null && !voto.isEmpty()) {
-                String cfu = JOptionPane.showInputDialog(this, "Inserisci i CFU:");
-                if (cfu != null && !cfu.isEmpty()) {
-                    GestoreDatabase.setVotiEsami(voto.toUpperCase(), nome, Integer.parseInt(cfu));
-                    GestoreDatabase.aggiornaStatoEsame(nome, true);
+        }
+        // --- CASO 2: ESAME NORMALE (CON VOTO) ---
+        else {
+            String votoPulito = "";
+            boolean votoValido = false;
+
+            // Ciclo che richiede il voto finché non è valido o finché non si annulla
+            while (!votoValido) {
+                String voto = JOptionPane.showInputDialog(this,
+                        "Inserisci/Modifica il voto per " + nome + " (18-30L):");
+
+                // Se l'utente preme "Annulla" o chiude la finestra
+                if (voto == null) {
+                    aggiornaTutto(); // Resetta la checkbox
+                    return;
+                }
+
+                votoPulito = voto.trim().toUpperCase();
+                if (votoPulito.equals("30 E LODE"))
+                    votoPulito = "30L";
+
+                // VALIDAZIONE
+                if (votoPulito.equals("30L")) {
+                    votoValido = true;
+                } else {
+                    try {
+                        int v = Integer.parseInt(votoPulito);
+                        if (v >= 18 && v <= 30) {
+                            votoValido = true;
+                        } else {
+                            JOptionPane.showMessageDialog(this, "Errore: Il voto deve essere compreso tra 18 e 30.",
+                                    "Voto non valido", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } catch (NumberFormatException ex) {
+                        JOptionPane.showMessageDialog(this, "Errore: Inserisci un numero tra 18 e 30, oppure '30L'.",
+                                "Formato non valido", JOptionPane.ERROR_MESSAGE);
+                    }
                 }
             }
+
+            // Se il voto è valido, chiediamo i CFU (Max 18)
+            String[] opzioni = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
+                    "17", "18" };
+            String cfu = (String) JOptionPane.showInputDialog(this, "Seleziona i CFU per " + nome + " (Max 18):",
+                    "Selezione CFU", JOptionPane.QUESTION_MESSAGE, null, opzioni, "6");
+
+            if (cfu != null) {
+                GestoreDatabase.removeVotiEsame(nome);
+                GestoreDatabase.setVotiEsami(votoPulito, nome, 0);
+                GestoreDatabase.addCfuEsame(nome, Integer.parseInt(cfu));
+                GestoreDatabase.aggiornaStatoEsame(nome, true);
+            } else {
+                aggiornaTutto(); // Se annullo sui CFU, resetto la checkbox
+                return;
+            }
         }
+
+        // Aggiornamento finale di tutti i dati grafici se il salvataggio è andato a
+        // buon fine
         aggiornaTutto();
         pv.refresh();
-    }
-
-    // Metodo di supporto per applicare lo sbarramento
-    private void autoAggiornaSbarramento(JLabel label, JCheckBox check, Font originale) {
-        Map<TextAttribute, Object> attributes = new HashMap<>(originale.getAttributes());
-        if (check.isSelected()) {
-            attributes.put(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON);
-        } else {
-            attributes.put(TextAttribute.STRIKETHROUGH, false);
-        }
-        Font fontConSbarramento = originale.deriveFont(attributes)
-                .deriveFont(Math.max(11f, originale.getSize2D() * currentScale));
-        label.putClientProperty("baseFont", originale.deriveFont(attributes));
-        label.setFont(fontConSbarramento);
+        GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
     }
 
     private void setupResponsiveScaling() {
@@ -352,14 +342,6 @@ public class PannelloAggiungi extends JPanel {
 
     private int getScaledExamSideMargin() {
         return Math.max(10, Math.round(BASE_EXAM_SIDE_MARGIN * currentScale));
-    }
-
-    private int getScaledExamHorizontalPadding() {
-        return Math.max(6, Math.round(BASE_EXAM_HORIZONTAL_PADDING * currentScale));
-    }
-
-    private int getScaledExamVerticalPadding() {
-        return Math.max(6, Math.round(BASE_EXAM_VERTICAL_PADDING * currentScale));
     }
 
     private boolean estraiCompletato(String[] parti) {
@@ -483,21 +465,40 @@ public class PannelloAggiungi extends JPanel {
 
     private void initAddedExamsLayout(JPanel esamiAggiunti) {
         esamiAggiunti.setLayout(new BorderLayout());
-        esamiAggiunti.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        esamiAggiunti.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+
+        // --- Intestazione Moderna (Header) ---
+        JPanel headerLista = new JPanel(new BorderLayout());
+        headerLista.setOpaque(false);
+        headerLista.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(0, 0, 10, 0)));
+
+        JLabel lblTitolo = new JLabel("Esami nel Libretto");
+        lblTitolo.setFont(new Font("Arial", Font.BOLD, 20));
+        headerLista.add(lblTitolo, BorderLayout.WEST);
+
+        esamiAggiunti.add(headerLista, BorderLayout.NORTH);
+
+        // --- Area della Lista (Scroll) ---
         esamiPanel = new JPanel();
         esamiPanel.setLayout(new BoxLayout(esamiPanel, BoxLayout.Y_AXIS));
-        esamiPanel.setBorder(BorderFactory.createEmptyBorder(0, getScaledExamSideMargin(), 0, getScaledExamSideMargin()));
+        esamiPanel.setOpaque(false);
+        // Togliamo il margine superiore da qui...
+        esamiPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+
         JScrollPane scrollPane = new JScrollPane(esamiPanel);
-        javax.swing.border.Border bordoSoloSopra = BorderFactory.createMatteBorder(2, 0, 0, 0, Color.GRAY);
-        scrollPane.setBorder(BorderFactory.createTitledBorder(
-                bordoSoloSopra,
-                "Aggiunti di recente",
-                javax.swing.border.TitledBorder.CENTER,
-                javax.swing.border.TitledBorder.TOP,
-                new Font("Arial", Font.BOLD, 16)));
-        scrollPane.setBackground(GestoreDatabase.isTemaScuro() ? new Color(34,37,43) : Color.WHITE);
-        scrollPane.getViewport().setBackground(GestoreDatabase.isTemaScuro() ? new Color(34,37,43) : Color.WHITE);
+        // ...E LO SPOSTIAMO QUI! (15 pixel di distanza dalla linea superiore)
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+
+        boolean temaScuro = GestoreDatabase.isTemaScuro();
+        Color bg = temaScuro ? new Color(34, 37, 43) : Color.WHITE;
+        scrollPane.setBackground(bg);
+
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
         esamiAggiunti.add(scrollPane, BorderLayout.CENTER);
     }
 }
