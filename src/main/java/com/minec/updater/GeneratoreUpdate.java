@@ -13,24 +13,24 @@ public class GeneratoreUpdate {
                 // 1. IL LINK GIUSTO DOVE SONO I FILE
                 .baseUri("https://raw.githubusercontent.com/edobolo/UniPlanner/main/aggiornamenti")
 
-                // 2. DOVE SALVARLI SUL PC
+                // 2. DOVE SALVARLI SUL PC DELL'UTENTE
                 .basePath("${user.dir}")
 
-                // 3. IL FILE JAR (Aggiungiamo .classpath() per dire che è codice eseguibile)
-                .file(FileMetadata.readFrom("target/UniPlanner.jar")
+                // 3. IL FILE JAR (Leggiamo direttamente quello che sta per andare online!)
+                .file(FileMetadata.readFrom("aggiornamenti/UniPlanner.jar")
                         .uri("UniPlanner.jar")
                         .classpath())
 
-                // 4. LA CLASSE DA AVVIARE (Sostituisci con il nome corretto!)
-                // Scrivi qui il nome completo della classe che apre il vero UniPlanner.
+                // 4. LA CLASSE DA AVVIARE
                 .property("default.launcher.main.class", "com.minec.MainApp")
 
                 .build();
 
-        try (Writer out = Files.newBufferedWriter(Paths.get("config.xml"))) {
+        // SALVIAMO IL CONFIG DIRETTAMENTE NELLA CARTELLA DEGLI AGGIORNAMENTI
+        try (Writer out = Files.newBufferedWriter(Paths.get("aggiornamenti/config.xml"))) {
             config.write(out);
         }
 
-        System.out.println("Nuovo config.xml generato con i parametri di avvio corretti!");
+        System.out.println("Nuovo config.xml generato correttamente nella cartella 'aggiornamenti'!");
     }
 }
