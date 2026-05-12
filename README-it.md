@@ -8,22 +8,27 @@ Gestisci i tuoi esami, monitora i CFU, tieni d'occhio le scadenze e calcola la t
 
 ## ✨ Funzionalità Principali
 
-* **Gestione Esami:** Aggiungi i tuoi esami e segna quali hai già superato.
-* **Libretto Voti:** Registra i voti presi e i relativi CFU (Crediti Formativi Universitari).
-* **Calcolo della Media:** Tieni sempre sotto controllo la tua media (con supporto personalizzabile per il peso della Lode).
-* **Gestione Scadenze:** Segnati le date dei prossimi appelli per non farti trovare impreparato.
-* **Impostazioni Personalizzate:** * Imposta il tuo obiettivo di CFU (es. 180 per la Triennale).
-  * Imposta il tuo obiettivo di Media.
-  * Tema scuro disponibile per non affaticare la vista.
+* **Gestione Esami:** Aggiungi il tuo piano di studi e segna gli esami man mano che li superi.
+* **Libretto e Statistiche:** Registra i voti e i relativi crediti, visualizzando l'andamento della tua carriera tramite grafici interattivi.
+* **Calcolo della Media:** Monitora costantemente la tua media ponderata e aritmetica (con supporto personalizzabile per il peso delle lodi e punti bonus laurea).
+* **Timer Pomodoro Integrato:** Gestisci sessioni di studio e pause direttamente dall'app per massimizzare la produttività.
+* **Tracciamento Tempo di Studio:** Registra quanto tempo dedichi effettivamente a ogni singola materia.
+* **Gestione Scadenze:** Salva le date dei tuoi appelli per avere sempre sotto controllo il calendario degli esami.
+* **Obiettivi e Gamification:** Resta motivato grazie a un sistema di trofei sbloccabili che premia i tuoi traguardi (dalle maratone di studio ai voti eccellenti).
+* **Esportazione e Backup:** Genera un PDF professionale del tuo libretto o esporta/importa i tuoi dati in formato CSV per non perdere mai i progressi.
+* **Personalizzazione Totale:**
+    * Imposta obiettivi di CFU totali e media desiderata.
+    * Modalità Scura (Dark Mode) inclusa per non affaticare la vista durante le sessioni notturne.
 
-## 🚀 Come installare e avviare l'app
+## 🚀 Installazione e Avvio
 
-L'applicazione è stata pacchettizzata per essere utilizzata facilmente su Windows senza dover installare Java.
+L'applicazione è stata pacchettizzata per essere utilizzata facilmente su Windows senza la necessità di installare Java separatamente.
 
-1. Vai nella sezione **Releases** e scarica il file `Setup_UniPlanner.zip`.
-2. Fai doppio clic sul file scaricato.
-3. Segui la breve procedura guidata per installare l'app e creare un comodo collegamento sul Desktop.
-4. Avvia UniPlanner e inizia a organizzare il tuo studio!
+1. Vai nella sezione **Releases** di questo repository e scarica il file `Setup_UniPlanner.zip`.
+2. Estrai il contenuto dell'archivio `.zip` in una cartella a tua scelta.
+3. Fai doppio clic sul file di installazione (`Setup_UniPlanner.exe`).
+4. Segui la breve procedura guidata (Wizard) per installare l'app e creare una comoda icona sul Desktop.
+5. Avvia UniPlanner e inizia a organizzare la tua vita universitaria!
 
 ## 🛠️ Tecnologie Utilizzate
 
