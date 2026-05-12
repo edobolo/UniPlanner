@@ -6,20 +6,19 @@ UniPlanner è un'applicazione desktop progettata per aiutare gli studenti univer
 
 Gestisci i tuoi esami, monitora i CFU, tieni d'occhio le scadenze e calcola la tua media, tutto in un unico posto. I dati vengono salvati in modo sicuro e automatico sul tuo computer, senza bisogno di connessione internet.
 
-## ✨ Key Features
+## ✨ Funzionalità Principali
 
-* **Exam Management:** Add your exams and mark which ones you've already passed.
-* **Grade Book & Analytics:** Record your grades, track corresponding credits, and visualize your progress over time with interactive charts.
-* **GPA Calculator:** Keep track of your average grade (includes customizable support for "Cum Laude" weight and bonus points).
-* **Built-in Pomodoro Timer:** Manage your study sessions and breaks directly within the app to maximize focus and productivity.
-* **Study Time Tracking:** Log the hours you spend studying for each specific exam to understand where your effort goes.
-* **Deadline Tracker:** Save the dates of your upcoming exam sessions so you are never caught unprepared.
-* **Achievements & Gamification:** Stay motivated with an unlockable trophy system that rewards your study milestones and academic successes.
-* **Export & Backup:** Generate a beautiful PDF version of your grade book, or export/import all your data as a CSV file.
-* **Custom Settings:**
-    * Set your target credits (e.g., 180 for a Bachelor's degree).
-    * Set your target average grade to see how far you are from your goal.
-    * Dark mode available to reduce eye strain during late-night study sessions.
+* **Gestione Esami:** Aggiungi il tuo piano di studi e segna gli esami man mano che li superi.
+* **Libretto e Statistiche:** Registra i voti e i relativi crediti, visualizzando l'andamento della tua carriera tramite grafici interattivi.
+* **Calcolo della Media:** Monitora costantemente la tua media ponderata e aritmetica (con supporto personalizzabile per il peso delle lodi e punti bonus laurea).
+* **Timer Pomodoro Integrato:** Gestisci sessioni di studio e pause direttamente dall'app per massimizzare la produttività.
+* **Tracciamento Tempo di Studio:** Registra quanto tempo dedichi effettivamente a ogni singola materia.
+* **Gestione Scadenze:** Salva le date dei tuoi appelli per avere sempre sotto controllo il calendario degli esami.
+* **Obiettivi e Gamification:** Resta motivato grazie a un sistema di trofei sbloccabili che premia i tuoi traguardi (dalle maratone di studio ai voti eccellenti).
+* **Esportazione e Backup:** Genera un PDF professionale del tuo libretto o esporta/importa i tuoi dati in formato CSV per non perdere mai i progressi.
+* **Personalizzazione Totale:**
+    * Imposta obiettivi di CFU totali e media desiderata.
+    * Modalità Scura (Dark Mode) inclusa per non affaticare la vista durante le sessioni notturne.
 
 ## 🚀 Installazione e Avvio
 
