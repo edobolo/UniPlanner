@@ -16,10 +16,10 @@ public class GeneratoreUpdate {
                 // 2. DOVE SALVARLI SUL PC
                 .basePath("${user.dir}")
 
-                // 3. IL TRUCCO MAGICO: Legge il file per l'hash, ma gli cambia nome quando lo
-                // scarica!
+                // 3. IL TRUCCO MAGICO CORRETTO
                 .file(FileMetadata.readFrom("aggiornamenti/UniPlanner.jar")
-                        .uri("UniPlanner_Aggiornato.jar") // <-- Questo bypassa il blocco di Windows!
+                        .uri("UniPlanner.jar") // <-- Come si chiama su GitHub (Internet)
+                        .path(Paths.get("UniPlanner_Aggiornato.jar")) // <-- Come lo salviamo sul PC (Anti-Blocco)
                         .classpath())
 
                 // 4. LA CLASSE DA AVVIARE
@@ -31,6 +31,6 @@ public class GeneratoreUpdate {
             config.write(out);
         }
 
-        System.out.println("Nuovo config.xml generato con il trucco anti-blocco Windows!");
+        System.out.println("Nuovo config.xml generato con il trucco anti-blocco Windows corretto!");
     }
 }
