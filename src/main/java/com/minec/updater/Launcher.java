@@ -91,8 +91,30 @@ public class Launcher {
                 // Chiudiamo la schermata di caricamento
                 splashFrame.dispose();
 
-                // 4. Lanciamo il vero UniPlanner.jar!
-                config.launch();
+                // 4. Avvio di UniPlanner in un PROCESSO SEPARATO
+                aggiornaTesto("Avvio di UniPlanner...");
+                Thread.sleep(500);
+                splashFrame.dispose();
+
+                // Determiniamo quale file avviare (quello aggiornato o quello base)
+                String jarDaAvviare = "UniPlanner_Aggiornato.jar";
+                if (!new java.io.File(jarDaAvviare).exists()) {
+                    jarDaAvviare = "UniPlanner.jar";
+                }
+
+                // Troviamo il percorso di Java (funziona sia sul tuo PC che su quello dell'utente
+                String javaBin = System.getProperty("java.home") + java.io.File.separator + "bin"
+                        + java.io.File.separator + "java";
+
+                // Creiamo il comando per far partire l'app vera e propria
+                ProcessBuilder pb = new ProcessBuilder(
+                        javaBin,
+                        "-cp", jarDaAvviare,
+                        "com.minec.MainApp"
+                );
+
+                pb.start(); // Lanciamo l'app in una nuova vita!
+                System.exit(0); // Chiudiamo il launcher (rilasciando ogni blocco sui file)
 
             } catch (Exception e) {
                 SwingUtilities.invokeLater(() -> {
