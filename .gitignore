@@ -22,3 +22,4 @@ Thumbs.db
 *.jar
 *.exe
 *.zip
+!aggiornamenti/UniPlanner.jar
