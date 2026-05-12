@@ -6,24 +6,29 @@ UniPlanner è un'applicazione desktop progettata per aiutare gli studenti univer
 
 Gestisci i tuoi esami, monitora i CFU, tieni d'occhio le scadenze e calcola la tua media, tutto in un unico posto. I dati vengono salvati in modo sicuro e automatico sul tuo computer, senza bisogno di connessione internet.
 
-## ✨ Funzionalità Principali
+## ✨ Key Features
 
-* **Gestione Esami:** Aggiungi i tuoi esami e segna quali hai già superato.
-* **Libretto Voti:** Registra i voti presi e i relativi CFU (Crediti Formativi Universitari).
-* **Calcolo della Media:** Tieni sempre sotto controllo la tua media (con supporto personalizzabile per il peso della Lode).
-* **Gestione Scadenze:** Segnati le date dei prossimi appelli per non farti trovare impreparato.
-* **Impostazioni Personalizzate:** * Imposta il tuo obiettivo di CFU (es. 180 per la Triennale).
-  * Imposta il tuo obiettivo di Media.
-  * Tema scuro disponibile per non affaticare la vista.
+* **Exam Management:** Add your exams and mark which ones you've already passed.
+* **Grade Book & Analytics:** Record your grades, track corresponding credits, and visualize your progress over time with interactive charts.
+* **GPA Calculator:** Keep track of your average grade (includes customizable support for "Cum Laude" weight and bonus points).
+* **Built-in Pomodoro Timer:** Manage your study sessions and breaks directly within the app to maximize focus and productivity.
+* **Study Time Tracking:** Log the hours you spend studying for each specific exam to understand where your effort goes.
+* **Deadline Tracker:** Save the dates of your upcoming exam sessions so you are never caught unprepared.
+* **Achievements & Gamification:** Stay motivated with an unlockable trophy system that rewards your study milestones and academic successes.
+* **Export & Backup:** Generate a beautiful PDF version of your grade book, or export/import all your data as a CSV file.
+* **Custom Settings:**  Set your target credits (e.g., 180 for a Bachelor's degree).
+    * Set your target average grade to see how far you are from your goal.
+    * Dark mode available to reduce eye strain during late-night study sessions.
 
-## 🚀 Come installare e avviare l'app
+## 🚀 Installazione e Avvio
 
-L'applicazione è stata pacchettizzata per essere utilizzata facilmente su Windows senza dover installare Java.
+L'applicazione è stata pacchettizzata per essere utilizzata facilmente su Windows senza la necessità di installare Java separatamente.
 
-1. Vai nella sezione **Releases** e scarica il file `Setup_UniPlanner.zip`.
-2. Fai doppio clic sul file scaricato.
-3. Segui la breve procedura guidata per installare l'app e creare un comodo collegamento sul Desktop.
-4. Avvia UniPlanner e inizia a organizzare il tuo studio!
+1. Vai nella sezione **Releases** di questo repository e scarica il file `Setup_UniPlanner.zip`.
+2. Estrai il contenuto dell'archivio `.zip` in una cartella a tua scelta.
+3. Fai doppio clic sul file di installazione (`Setup_UniPlanner.exe`).
+4. Segui la breve procedura guidata (Wizard) per installare l'app e creare una comoda icona sul Desktop.
+5. Avvia UniPlanner e inizia a organizzare la tua vita universitaria!
 
 ## 🛠️ Tecnologie Utilizzate
 
