@@ -138,7 +138,7 @@ public class MainApp {
                             });
                             btnVoti.setIcon(new FlatSVGIcon("icone/bar.svg", 24, 24));
 
-                            JButton btnAggiungi = creaBottoneMenu(" Aggiungi Esame", coloreSfondoMenu);
+                            JButton btnAggiungi = creaBottoneMenu(" Aggiungi Esame (Ultima)", coloreSfondoMenu);
                             btnAggiungi.addActionListener(evt -> {
                                 cardLayout.show(pannelloSchermate, "Aggiungi");
                                 schermataAggiungi.aggiornaTutto();
