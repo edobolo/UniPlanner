@@ -724,6 +724,71 @@ public class PannelloVoti extends JPanel {
         }
     }
 
+    private JPanel creaCardImpostazione(String titolo, String descrizione, JComponent controllo, String iconPath) {
+        boolean temaScuro = GestoreDatabase.isTemaScuro();
+
+        JPanel card = new JPanel(new BorderLayout(15, 0));
+        card.setBackground(temaScuro ? new Color(55, 58, 63) : new Color(248, 250, 252));
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(temaScuro ? new Color(80, 80, 80) : new Color(225, 225, 225), 1, true),
+                BorderFactory.createEmptyBorder(12, 15, 12, 15
+        )));
+        card.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // --- PARTE SINISTRA: Icona + Testi ---
+        JPanel leftPanel = new JPanel(new BorderLayout(15, 0));
+        leftPanel.setOpaque(false);
+
+        if (iconPath != null && !iconPath.isEmpty()) {
+            JLabel lblIcona = new JLabel(new FlatSVGIcon(iconPath, 24, 24));
+            // Applichiamo un colore grigio chiaro all'icona se siamo in tema scuro per
+            // farla risaltare
+            lblIcona.setForeground(temaScuro ? new Color(200, 200, 200) : Color.DARK_GRAY);
+            leftPanel.add(lblIcona, BorderLayout.WEST);
+        }
+
+        // Pannello per Titolo e Descrizione
+        JPanel textPanel = new JPanel(new GridLayout(2, 1, 0, 2));
+        textPanel.setOpaque(false);
+
+        JLabel lblTitolo = new JLabel(titolo);
+        lblTitolo.setFont(new Font("Arial", Font.BOLD, 14));
+        lblTitolo.setForeground(temaScuro ? new Color(230, 230, 230) : Color.DARK_GRAY);
+
+        JLabel lblDesc = new JLabel(descrizione);
+        lblDesc.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblDesc.setForeground(Color.GRAY);
+
+        textPanel.add(lblTitolo);
+        textPanel.add(lblDesc);
+        leftPanel.add(textPanel, BorderLayout.CENTER);
+
+        card.add(leftPanel, BorderLayout.CENTER);
+
+        // --- PARTE DESTRA: Il controllo ---
+        JPanel controlPanel = new JPanel(new GridBagLayout());
+        controlPanel.setOpaque(false);
+        controlPanel.add(controllo);
+        card.add(controlPanel, BorderLayout.EAST);
+
+        // Manteniamo la flessibilità orizzontale
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 75));
+        card.setMinimumSize(new Dimension(300, 75));
+
+        return card;
+    }
+    
+    private JLabel creaHeaderSezione(String testo) {
+        JLabel lbl = new JLabel(testo);
+        lbl.setFont(new Font("Arial", Font.BOLD, 12));
+        lbl.setForeground(new Color(140, 140, 140));
+        lbl.setBorder(BorderFactory.createEmptyBorder(20, 5, 8, 0));
+        lbl.setHorizontalAlignment(SwingConstants.LEFT);
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lbl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        return lbl;
+    }
+
     public void setOptionButton() {
         JButton optionBut = new JButton("");
         if (GestoreDatabase.isTemaScuro()) {
@@ -775,150 +840,33 @@ public class PannelloVoti extends JPanel {
             shadowOverlay.addMouseListener(new java.awt.event.MouseAdapter() {
             });
 
-            JPanel pannelloImpostazioni = new JPanel();
-            pannelloImpostazioni.setPreferredSize(new Dimension(390, 530));
-            pannelloImpostazioni.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 2));
-            pannelloImpostazioni.setLayout(new BorderLayout());
+            boolean scuro = GestoreDatabase.isTemaScuro();
 
+            JPanel pannelloImpostazioni = new JPanel();
+            pannelloImpostazioni.setPreferredSize(new Dimension(560, 600)); // Finestra leggermente più grande per far
+                                                                            // respirare le card
+            pannelloImpostazioni.setBorder(
+                    BorderFactory.createLineBorder(scuro ? new Color(80, 80, 80) : new Color(200, 200, 200), 1, true));
+            pannelloImpostazioni.setLayout(new BorderLayout());
+            pannelloImpostazioni.setBackground(scuro ? new Color(48, 50, 54) : Color.WHITE);
+
+            // --- HEADER ---
             JLabel titolo = new JLabel("Impostazioni", SwingConstants.CENTER);
             titolo.setFont(new Font("Arial", Font.BOLD, 22));
-            titolo.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
+            titolo.setBorder(BorderFactory.createEmptyBorder(20, 0, 10, 0));
             pannelloImpostazioni.add(titolo, BorderLayout.NORTH);
 
-            // --- CONTENUTO CENTRALE ---
+            // --- CONTENUTO (Scrollabile) ---
             JPanel centro = new JPanel();
             centro.setLayout(new BoxLayout(centro, BoxLayout.Y_AXIS));
-            centro.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+            centro.setOpaque(false);
+            centro.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
 
-            // 1. Cambio CFU
-            JPanel pnlCfu = new JPanel(new FlowLayout(FlowLayout.CENTER));
-            JLabel lblCfu = new JLabel("Obiettivo CFU totali: ");
-            lblCfu.setIcon(new FlatSVGIcon("icone/target.svg", 22, 22));
-            lblCfu.setHorizontalAlignment(SwingConstants.CENTER);
-            pnlCfu.setBorder(BorderFactory.createEmptyBorder(20, 10, 0, 10));
-            JTextField txtCfu = new JTextField(String.valueOf(GestoreDatabase.getObiettivoCFU()), 4);
-            JButton btnSalvaCfu = new JButton("Salva");
-            btnSalvaCfu.addActionListener(ev -> {
-                try {
-                    int nuovoObiettivo = Integer.parseInt(txtCfu.getText());
-                    GestoreDatabase.salvaObiettivoCfu(nuovoObiettivo);
-                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Obiettivo salvato!");
-                } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Inserisci un numero valido!");
-                }
-            });
-            pnlCfu.add(lblCfu);
-            pnlCfu.add(txtCfu);
-            pnlCfu.add(btnSalvaCfu);
+            // --- SEZIONE 1: ASPETTO E PREFERENZE ---
+            centro.add(creaHeaderSezione("ASPETTO E PREFERENZE"));
 
-            // 2. Ordine scadenze
-            JPanel pnlOrdine = new JPanel(new FlowLayout(FlowLayout.CENTER));
-            pnlOrdine.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
-            JLabel lblOrdine = new JLabel("Ordine predefinito scadenze: ");
-            lblOrdine.setIcon(new FlatSVGIcon("icone/calendar.svg", 22, 22));
-            lblOrdine.setIconTextGap(5);
-            lblOrdine.setHorizontalAlignment(SwingConstants.CENTER);
-            boolean ordinePreferito = GestoreDatabase.getOrdineScadenza();
-            JButton btnOrdine = new JButton(ordinePreferito ? "Aggiunta" : "Cronologico");
-            btnOrdine.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            btnOrdine.addActionListener(ez -> {
-                String text1 = btnOrdine.getText();
-                if (text1.equals("Cronologico")) {
-                    btnOrdine.setText("Aggiunta");
-                    GestoreDatabase.salvaOrdineScadenze(true);
-                } else {
-                    btnOrdine.setText("Cronologico");
-                    GestoreDatabase.salvaOrdineScadenze(false);
-                }
-            });
-            pnlOrdine.add(lblOrdine);
-            pnlOrdine.add(btnOrdine);
-
-            // 3. MENU A SCOMPARSA: Parametri Laurea
-            JPanel pnlGruppoParametri = new JPanel();
-            pnlGruppoParametri.setLayout(new BoxLayout(pnlGruppoParametri, BoxLayout.Y_AXIS));
-            pnlGruppoParametri.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1, true));
-            pnlGruppoParametri.setMaximumSize(new Dimension(340, 200));
-
-            // A. L'Intestazione (Cliccabile)
-            JPanel pnlHeader = new JPanel(new BorderLayout());
-            pnlHeader.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-            pnlHeader.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            JLabel lblTitoloParam = new JLabel("Parametri Laurea");
-            lblTitoloParam.setIcon(new FlatSVGIcon("icone/hat.svg", 22, 22));
-            lblTitoloParam.setIconTextGap(5);
-            lblTitoloParam.setFont(new Font("Arial", Font.BOLD, 14));
-            JLabel lblFreccia = new JLabel("▼");
-            lblTitoloParam.setHorizontalAlignment(SwingConstants.CENTER);
-            pnlHeader.add(lblTitoloParam, BorderLayout.CENTER);
-            pnlHeader.add(lblFreccia, BorderLayout.EAST);
-
-            // B. Il Contenuto (Invisibile all'inizio)
-            JPanel pnlContenuto = new JPanel(new GridLayout(3, 2, 10, 10));
-            pnlContenuto.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-            pnlContenuto.setVisible(false);
-            JLabel lblValoreLode = new JLabel(" Valore Lode (es. 30):");
-            lblValoreLode.setHorizontalAlignment(SwingConstants.CENTER);
-            pnlContenuto.add(lblValoreLode);
-            JTextField txtLode = new JTextField(GestoreDatabase.getImpostazione("LODE", "30"));
-            pnlContenuto.add(txtLode);
-            JLabel lblBonusExtra = new JLabel(" Punti Bonus extra:");
-            lblBonusExtra.setHorizontalAlignment(SwingConstants.CENTER);
-            pnlContenuto.add(lblBonusExtra);
-            JTextField txtBonus = new JTextField(GestoreDatabase.getImpostazione("BONUS_LODE", "0"));
-            pnlContenuto.add(txtBonus);
-            JButton btnSalvaParametri = new JButton("Salva");
-            btnSalvaParametri.addActionListener(ev -> {
-                GestoreDatabase.salvaImpostazione("LODE", txtLode.getText());
-                GestoreDatabase.salvaImpostazione("BONUS_LODE", txtBonus.getText());
-                JOptionPane.showMessageDialog(pannelloImpostazioni, "Parametri salvati!");
-            });
-            pnlContenuto.add(new JLabel(""));
-            pnlContenuto.add(btnSalvaParametri);
-
-            // C. L'Azione del Click sull'Intestazione
-            pnlHeader.addMouseListener(new java.awt.event.MouseAdapter() {
-                @Override
-                public void mouseClicked(java.awt.event.MouseEvent e) {
-                    boolean isVisible = pnlContenuto.isVisible();
-                    pnlContenuto.setVisible(!isVisible);
-                    lblFreccia.setText(isVisible ? "▼" : "▲");
-                    pannelloImpostazioni.revalidate();
-                    pannelloImpostazioni.repaint();
-                }
-            });
-            pnlGruppoParametri.add(pnlHeader);
-            pnlGruppoParametri.add(pnlContenuto);
-
-            // 4. Bottone Reset
-            JPanel pnlReset = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            pnlReset.setBorder(BorderFactory.createEmptyBorder(20, 60, 0, 0));
-            JButton btnReset = new JButton("Cancella tutti i dati");
-            btnReset.setIcon(new FlatSVGIcon("icone/bin1.svg", 22, 22));
-            btnReset.setForeground(Color.RED);
-            btnReset.setFont(new Font("Arial", Font.BOLD, 14));
-            btnReset.addActionListener(ev -> {
-                int conf1 = JOptionPane.showConfirmDialog(pannelloImpostazioni,
-                        "Vuoi davvero svuotare il libretto?", "Conferma Reset", JOptionPane.YES_NO_OPTION);
-                if (conf1 == JOptionPane.YES_OPTION) {
-                    GestoreDatabase.resetTutto();
-                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Dati azzerati. L'applicazione si chiuderà.");
-                    System.exit(0);
-                }
-            });
-            pnlReset.add(btnReset);
-
-            // 5. cambia modalità colore
-            JPanel pnlTema = new JPanel(new FlowLayout(FlowLayout.CENTER));
-            JLabel lblTema = new JLabel("Modalità Scura: ");
-            lblTema.setHorizontalAlignment(JLabel.CENTER);
-            if (GestoreDatabase.isTemaScuro()) {
-                lblTema.setIcon(new FlatSVGIcon("icone/dark2.svg", 20, 20)); 
-            }else {
-                lblTema.setIcon(new FlatSVGIcon("icone/dark1.svg", 20, 20));
-            }
             JCheckBox chkTema = new JCheckBox();
-            chkTema.setSelected(GestoreDatabase.isTemaScuro()); // Mette la spunta se era già scuro
+            chkTema.setSelected(scuro);
             chkTema.setCursor(new Cursor(Cursor.HAND_CURSOR));
             chkTema.addActionListener(ev -> {
                 boolean isScuro = chkTema.isSelected();
@@ -926,101 +874,175 @@ public class PannelloVoti extends JPanel {
                 try {
                     if (isScuro) {
                         javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatDarkLaf());
-                        lblTema.setIcon(new FlatSVGIcon("icone/dark2.svg", 20, 20));
                         optionBut.setIcon(new FlatSVGIcon("icone/opzioniH.svg", 24, 24));
                     } else {
                         javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatLightLaf());
-                        lblTema.setIcon(new FlatSVGIcon("icone/dark1.svg", 20, 20));
                         optionBut.setIcon(new FlatSVGIcon("icone/opzioni.svg", 24, 24));
                     }
                     SwingUtilities.updateComponentTreeUI(frame);
+                    shadowOverlay.setVisible(false); // Chiudiamo per forzare l'aggiornamento visivo pulito
                     refresh();
                 } catch (Exception ex) {
-                    ex.printStackTrace();
                 }
             });
-            pnlTema.add(lblTema);
-            pnlTema.add(chkTema);
+            boolean isDark = GestoreDatabase.isTemaScuro();
+            String pathIcon = "";
+            if(isDark)
+                pathIcon = "icone/dark2.svg";
+            else 
+                pathIcon = "icone/dark1.svg";
+            centro.add(creaCardImpostazione("Modalità Scura", "Affatica meno la vista durante la sera", chkTema, pathIcon));
+            centro.add(Box.createRigidArea(new Dimension(0, 8)));
 
-            // --- 6. Bottone ESPORTA/IMPORTA EXCEL ---
-            JPanel pnlImportExport = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
-            pnlImportExport.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
-            // Bottone ESPORTA
-            JButton btnExport = new JButton("Esporta CSV");
-            btnExport.setFont(new Font("Arial", Font.BOLD, 14));
-            btnExport.setForeground(new Color(33, 115, 70)); // Verde Excel
-            btnExport.setIcon(new FlatSVGIcon("icone/excel.svg", 22, 22));
-            btnExport.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            btnExport.addActionListener(ev -> {
-                esportaLibrettoInExcel(pannelloImpostazioni);
+            JButton btnOrdine = new JButton(GestoreDatabase.getOrdineScadenza() ? "Aggiunta" : "Cronologico");
+            btnOrdine.putClientProperty("JButton.buttonType", "roundRect");
+            btnOrdine.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnOrdine.addActionListener(ez -> {
+                boolean crono = btnOrdine.getText().equals("Cronologico");
+                btnOrdine.setText(crono ? "Aggiunta" : "Cronologico");
+                GestoreDatabase.salvaOrdineScadenze(crono);
             });
-            // Bottone IMPORTA
+            centro.add(creaCardImpostazione("Ordine Appelli", "Scegli l'ordine nella pagina Scadenze", btnOrdine, "icone/calendar.svg"));
+
+            // --- SEZIONE 2: LAUREA ---
+            centro.add(creaHeaderSezione("LAUREA E OBIETTIVI"));
+
+            JPanel pnlCfu = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+            pnlCfu.setOpaque(false);
+            JTextField txtCfu = new JTextField(String.valueOf(GestoreDatabase.getObiettivoCFU()), 4);
+            JButton btnSalvaCfu = new JButton("Salva");
+            btnSalvaCfu.putClientProperty("JButton.buttonType", "roundRect");
+            btnSalvaCfu.setBackground(new Color(33, 150, 243));
+            btnSalvaCfu.setForeground(Color.WHITE);
+            btnSalvaCfu.addActionListener(ev -> {
+                try {
+                    GestoreDatabase.salvaObiettivoCfu(Integer.parseInt(txtCfu.getText()));
+                    JOptionPane.showMessageDialog(pannelloImpostazioni, "CFU Aggiornati!");
+                    refresh();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Numero non valido.");
+                }
+            });
+            pnlCfu.add(txtCfu);
+            pnlCfu.add(btnSalvaCfu);
+            centro.add(creaCardImpostazione("Obiettivo CFU", "Crediti totali per completare gli studi", pnlCfu, "icone/target.svg"));
+            centro.add(Box.createRigidArea(new Dimension(0, 8)));
+
+            // Sostituiamo il menu a tendina complicato con una card pulita e diretta
+            JPanel pnlParam = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+            pnlParam.setOpaque(false);
+            JTextField txtLode = new JTextField(GestoreDatabase.getImpostazione("LODE", "30"), 2);
+            JTextField txtBonus = new JTextField(GestoreDatabase.getImpostazione("BONUS_LODE", "0"), 2);
+            JButton btnSalvaParam = new JButton("Salva");
+            btnSalvaParam.putClientProperty("JButton.buttonType", "roundRect");
+            btnSalvaParam.setBackground(new Color(33, 150, 243));
+            btnSalvaParam.setForeground(Color.WHITE);
+            btnSalvaParam.addActionListener(ev -> {
+                GestoreDatabase.salvaImpostazione("LODE", txtLode.getText());
+                GestoreDatabase.salvaImpostazione("BONUS_LODE", txtBonus.getText());
+                JOptionPane.showMessageDialog(pannelloImpostazioni, "Parametri Laurea salvati!");
+                refresh();
+            });
+            pnlParam.add(new JLabel("Lode:"));
+            pnlParam.add(txtLode);
+            pnlParam.add(Box.createRigidArea(new Dimension(5, 0)));
+            pnlParam.add(new JLabel("Bonus:"));
+            pnlParam.add(txtBonus);
+            pnlParam.add(btnSalvaParam);
+            centro.add(creaCardImpostazione("Parametri di Calcolo", "Valore lode e punti extra alla laurea", pnlParam, "icone/hat.svg"));
+
+            // --- SEZIONE 3: DATI E BACKUP ---
+            centro.add(creaHeaderSezione("DATI E BACKUP"));
+
+            JPanel pnlBackup = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+            pnlBackup.setOpaque(false);
+            JButton btnExport = new JButton("Esporta CSV");
+            btnExport.putClientProperty("JButton.buttonType", "roundRect");
+            // Verde chiaro se scuro, Verde Excel se chiaro
+            btnExport.setForeground(scuro ? new Color(129, 199, 132) : new Color(33, 115, 70));
+            btnExport.addActionListener(ev -> esportaLibrettoInExcel(pannelloImpostazioni));
+
             JButton btnImport = new JButton("Importa CSV");
-            btnImport.setFont(new Font("Arial", Font.BOLD, 14));
-            btnImport.setForeground(new Color(0, 102, 204)); // Blu classico
-            btnImport.setIcon(new FlatSVGIcon("icone/import.svg", 22, 22));
-            btnImport.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnImport.putClientProperty("JButton.buttonType", "roundRect");
+            // Azzurro chiaro se scuro, Blu classico se chiaro
+            btnImport.setForeground(scuro ? new Color(100, 181, 246) : new Color(0, 102, 204));
             btnImport.addActionListener(ev -> {
                 importaLibrettoDaExcel(pannelloImpostazioni);
                 shadowOverlay.setVisible(false);
                 refresh();
             });
-            pnlImportExport.add(btnExport);
-            pnlImportExport.add(btnImport);
+            pnlBackup.add(btnImport);
+            pnlBackup.add(btnExport);
+            centro.add(creaCardImpostazione("Salvataggi Database", "Metti al sicuro i tuoi dati o ripristinali", pnlBackup, "icone/excel.svg"));
+            centro.add(Box.createRigidArea(new Dimension(0, 8)));
 
-            // --- 7.Bottone esporta come PDF
-            JPanel pnlExportPDF = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
-            pnlExportPDF.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
-            JButton btnEsportaPDF = new JButton("Esporta PDF");
-            btnEsportaPDF.setFont(new Font("Arial", Font.BOLD, 15));
-            btnEsportaPDF.setForeground(new Color(140, 24, 26));
-            btnEsportaPDF.setIcon(new FlatSVGIcon("icone/pdf.svg", 22, 22));
-            btnEsportaPDF.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            btnEsportaPDF.addActionListener(ev -> {
+            JButton btnPDF = new JButton("Crea PDF");
+            btnPDF.putClientProperty("JButton.buttonType", "roundRect");
+            // Rosso pastello se scuro, Rosso scuro se chiaro
+            btnPDF.setForeground(scuro ? new Color(229, 115, 115) : new Color(140, 24, 26));
+            btnPDF.addActionListener(ev -> { /* La tua logica PDF rimane identica a prima */
                 JFileChooser fileChooser = new JFileChooser();
                 fileChooser.setDialogTitle("Salva il tuo libretto");
                 fileChooser.setSelectedFile(new java.io.File("Libretto_UniPlanner.pdf"));
                 if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
                     try {
                         String path = fileChooser.getSelectedFile().getAbsolutePath();
-                        if (!path.toLowerCase().endsWith(".pdf")) {
+                        if (!path.toLowerCase().endsWith(".pdf"))
                             path += ".pdf";
-                        }
                         EsportatorePDF.generaLibretto(path);
-
-                        JOptionPane.showMessageDialog(null, "PDF creato con successo!", "Completato", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "PDF creato con successo!");
                     } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null, "Errore nella creazione del PDF: " + ex.getMessage(), "Errore", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "Errore: " + ex.getMessage());
                     }
                 }
             });
-            pnlExportPDF.add(btnEsportaPDF);
+            centro.add(creaCardImpostazione("Esporta Libretto", "Genera un file PDF del tuo libretto", btnPDF, "icone/pdf.svg"));
 
-            // ASSEMBLIAMO I PEZZI NELL'ORDINE GIUSTO NEL CENTRO
-            centro.add(Box.createRigidArea(new Dimension(0, 10)));
-            centro.add(pnlCfu);
-            centro.add(pnlOrdine);
-            centro.add(pnlTema);
-            centro.add(pnlImportExport);
-            centro.add(pnlExportPDF);
-            centro.add(Box.createRigidArea(new Dimension(0, 10)));
-            centro.add(pnlGruppoParametri); // <--- Inserito qui!
-            centro.add(pnlReset);
-            pannelloImpostazioni.add(centro, BorderLayout.CENTER);
+            // --- SEZIONE 4: PERICOLO ---
+            centro.add(creaHeaderSezione("ZONA PERICOLOSA"));
 
-            // --- BOTTONE CHIUDI ---
-            JButton btnChiudi = new JButton("Chiudi");
-            btnChiudi.setFont(new Font("Arial", Font.BOLD, 14));
-            btnChiudi.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            btnChiudi.addActionListener(chiudiEvent -> {
-                shadowOverlay.setVisible(false);
+            JButton btnReset = new JButton("Azzera Dati");
+            btnReset.putClientProperty("JButton.buttonType", "roundRect");
+            btnReset.setForeground(scuro ? new Color(255, 100, 100) : Color.RED);
+            btnReset.addActionListener(ev -> {
+                if (JOptionPane.showConfirmDialog(pannelloImpostazioni, "Vuoi davvero svuotare il libretto?",
+                        "Conferma Reset", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                    GestoreDatabase.resetTutto();
+                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Dati azzerati. L'applicazione si chiuderà.");
+                    System.exit(0);
+                }
             });
+            JPanel cardReset = creaCardImpostazione("Reset Completo", "Attenzione: l'azione è irreversibile", btnReset, "icone/bin1.svg");
+            cardReset.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(220, 100, 100), 1, true),
+                    BorderFactory.createEmptyBorder(12, 15, 12, 15)));
+            centro.add(cardReset);
 
-            JPanel panelBottone = new JPanel(new FlowLayout(FlowLayout.CENTER));
-            panelBottone.setBorder(BorderFactory.createEmptyBorder(10, 0, 20, 0));
-            panelBottone.add(btnChiudi);
-            pannelloImpostazioni.add(panelBottone, BorderLayout.SOUTH);
+            // Applichiamo lo Scroll
+            JScrollPane scroll = new JScrollPane(centro);
+            scroll.setBorder(null);
+            scroll.setOpaque(false);
+            scroll.getViewport().setOpaque(false);
+            scroll.getVerticalScrollBar().setUnitIncrement(16);
+            pannelloImpostazioni.add(scroll, BorderLayout.CENTER);
 
+            // --- FOOTER (Bottone Chiudi) ---
+            JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            footer.setOpaque(false);
+            footer.setBorder(BorderFactory.createEmptyBorder(10, 0, 15, 0));
+            JButton btnChiudi = new JButton("Chiudi");
+            btnChiudi.putClientProperty("JButton.buttonType", "roundRect");
+            btnChiudi.putClientProperty("FlatLaf.style", "arc: 99");
+            btnChiudi.setFont(new Font("Arial", Font.BOLD, 14));
+            btnChiudi.setBackground(scuro ? new Color(70, 70, 70) : new Color(200, 200, 200));
+            btnChiudi.setForeground(scuro ? Color.WHITE : Color.DARK_GRAY);
+            btnChiudi.setBorder(BorderFactory.createEmptyBorder(8, 30, 8, 30));
+            btnChiudi.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnChiudi.addActionListener(chiudiEvent -> shadowOverlay.setVisible(false));
+            footer.add(btnChiudi);
+            pannelloImpostazioni.add(footer, BorderLayout.SOUTH);
+
+            // Mostriamo il pannello
             shadowOverlay.add(pannelloImpostazioni, new GridBagConstraints());
             frame.setGlassPane(shadowOverlay);
             shadowOverlay.setVisible(true);

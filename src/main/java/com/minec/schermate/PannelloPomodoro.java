@@ -591,7 +591,7 @@ public class PannelloPomodoro extends JPanel{
             Color coloreTitoloTrofei = temaScuro ? new Color(235, 235, 235) : new Color(20, 45, 87);
 
             JPanel pannelloTrofei = new JPanel();
-            pannelloTrofei.setPreferredSize(new Dimension(550, 450));
+            pannelloTrofei.setPreferredSize(new Dimension(500, 480));
             pannelloTrofei.setBorder(BorderFactory.createLineBorder(coloreBordoTrofei, 2));
             pannelloTrofei.setBackground(coloreSfondoTrofei);
             pannelloTrofei.setOpaque(true);
@@ -942,10 +942,10 @@ public class PannelloPomodoro extends JPanel{
             JPanel pnlHeader = new JPanel(new BorderLayout());
             pnlHeader.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
             pnlHeader.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            JLabel lblTitoloParam = new JLabel(" Parametri Timer:");
+            JLabel lblTitoloParam = new JLabel(" Parametri Timer");
             lblTitoloParam.setIcon(new FlatSVGIcon("icone/clock.svg", 22, 22));
             lblTitoloParam.setIconTextGap(5);
-            lblTitoloParam.setFont(new Font("Arial", Font.BOLD, 14));
+            lblTitoloParam.setFont(new Font("Arial", Font.BOLD, 15));
             lblTitoloParam.setBorder(BorderFactory.createEmptyBorder(0,65,0,0));
             JLabel lblFreccia = new JLabel("▼");
             pnlHeader.add(lblTitoloParam, BorderLayout.WEST);
