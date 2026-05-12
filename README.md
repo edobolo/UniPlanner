@@ -9,19 +9,24 @@ Manage your exams, track your university credits (CFU), monitor deadlines, and c
 ## ✨ Key Features
 
 * **Exam Management:** Add your exams and mark which ones you've already passed.
-* **Grade Book:** Record your grades and the corresponding credits.
-* **GPA Calculator:** Keep track of your average grade (includes customizable support for "Cum Laude" weight).
+* **Grade Book & Analytics:** Record your grades, track corresponding credits, and visualize your progress over time with interactive charts.
+* **GPA Calculator:** Keep track of your average grade (includes customizable support for "Cum Laude" weight and bonus points).
+* **Built-in Pomodoro Timer:** Manage your study sessions and breaks directly within the app to maximize focus and productivity.
+* **Study Time Tracking:** Log the hours you spend studying for each specific exam to understand where your effort goes.
 * **Deadline Tracker:** Save the dates of your upcoming exam sessions so you are never caught unprepared.
+* **Achievements & Gamification:** Stay motivated with an unlockable trophy system that rewards your study milestones and academic successes.
+* **Export & Backup:** Generate a beautiful PDF version of your grade book, or export/import all your data as a CSV file.
 * **Custom Settings:** * Set your target credits (e.g., 180 for a Bachelor's degree).
-  * Set your target average grade.
-  * Dark mode available to reduce eye strain.
+    * Set your target average grade to see how far you are from your goal.
+    * Dark mode available to reduce eye strain during late-night study sessions.
 
 ## 🚀 How to install and run
 
 The application has been packaged for easy use on Windows without needing to install Java.
 
 1. Go to the **Releases** section of this repository and download the `Setup_UniPlanner.zip` file.
-3. Double-click the downloaded file.
+2. Extract the downloaded `.zip` archive.
+3. Double-click the setup file.
 4. Follow the short setup wizard to install the app and create a handy Desktop shortcut.
 5. Launch UniPlanner and start organizing your studies!
 
