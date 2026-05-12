@@ -16,7 +16,8 @@ Manage your exams, track your university credits (CFU), monitor deadlines, and c
 * **Deadline Tracker:** Save the dates of your upcoming exam sessions so you are never caught unprepared.
 * **Achievements & Gamification:** Stay motivated with an unlockable trophy system that rewards your study milestones and academic successes.
 * **Export & Backup:** Generate a beautiful PDF version of your grade book, or export/import all your data as a CSV file.
-* **Custom Settings:** * Set your target credits (e.g., 180 for a Bachelor's degree).
+* **Custom Settings:**
+    * Set your target credits (e.g., 180 for a Bachelor's degree).
     * Set your target average grade to see how far you are from your goal.
     * Dark mode available to reduce eye strain during late-night study sessions.
 
