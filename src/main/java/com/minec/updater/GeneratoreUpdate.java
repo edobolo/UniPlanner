@@ -13,12 +13,13 @@ public class GeneratoreUpdate {
                 // 1. IL LINK GIUSTO DOVE SONO I FILE
                 .baseUri("https://raw.githubusercontent.com/edobolo/UniPlanner/main/aggiornamenti")
 
-                // 2. DOVE SALVARLI SUL PC DELL'UTENTE
+                // 2. DOVE SALVARLI SUL PC
                 .basePath("${user.dir}")
 
-                // 3. IL FILE JAR (Leggiamo direttamente quello che sta per andare online!)
+                // 3. IL TRUCCO MAGICO: Legge il file per l'hash, ma gli cambia nome quando lo
+                // scarica!
                 .file(FileMetadata.readFrom("aggiornamenti/UniPlanner.jar")
-                        .uri("UniPlanner.jar")
+                        .uri("UniPlanner_Aggiornato.jar") // <-- Questo bypassa il blocco di Windows!
                         .classpath())
 
                 // 4. LA CLASSE DA AVVIARE
@@ -26,11 +27,10 @@ public class GeneratoreUpdate {
 
                 .build();
 
-        // SALVIAMO IL CONFIG DIRETTAMENTE NELLA CARTELLA DEGLI AGGIORNAMENTI
         try (Writer out = Files.newBufferedWriter(Paths.get("aggiornamenti/config.xml"))) {
             config.write(out);
         }
 
-        System.out.println("Nuovo config.xml generato correttamente nella cartella 'aggiornamenti'!");
+        System.out.println("Nuovo config.xml generato con il trucco anti-blocco Windows!");
     }
 }
