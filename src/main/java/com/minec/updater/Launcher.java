@@ -95,6 +95,12 @@ public class Launcher {
                 config.launch();
 
             } catch (Exception e) {
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(splashFrame,
+                            "Aggiornamento fallito!\nMotivo: " + e.toString(),
+                            "Errore Update4j",
+                            JOptionPane.ERROR_MESSAGE);
+                });
                 // Se non c'è internet o il link è sbagliato, lo diciamo e proviamo ad avviare
                 // offline
                 e.printStackTrace();
