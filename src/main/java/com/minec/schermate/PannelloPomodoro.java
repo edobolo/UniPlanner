@@ -39,7 +39,6 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButton;
@@ -499,7 +498,7 @@ public class PannelloPomodoro extends JPanel{
             titolo = "Pausa Finita!";
             msg = "La pausa è finita, torna sui libri!";
         }
-        JOptionPane.showMessageDialog(this, msg, titolo, JOptionPane.INFORMATION_MESSAGE);
+        DialoghiModerni.mostraMessaggio(this, titolo, msg, false);
         // Cambia modalità (se era studio passa a pausa, e viceversa)
         isSessioneStudio = !isSessioneStudio;
         radioStudio.setSelected(isSessioneStudio);
@@ -982,9 +981,10 @@ public class PannelloPomodoro extends JPanel{
                     lblStato.setForeground(Color.GRAY);
                     lblStato.setIcon(new FlatSVGIcon(isSessioneStudio ? "icone/books.svg" : "icone/coffee.svg", 20, 20));
                     aggiornaTimerEProgressBar();
-                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Parametri salvati!");
+                    DialoghiModerni.mostraMessaggio(pannelloImpostazioni, "Successo", "Parametri salvati!", false);
                 } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Inserisci minuti validi (numeri interi maggiori di 0).");
+                    DialoghiModerni.mostraMessaggio(pannelloImpostazioni, "Attenzione!", 
+                            "Inserisci minuti validi (numeri interi maggiori di 0)", true);
                 }
             });
             pnlContenuto.add(new JLabel(""));
@@ -1018,13 +1018,15 @@ public class PannelloPomodoro extends JPanel{
             btnReset.setForeground(Color.RED);
             btnReset.setFont(new Font("Arial", Font.BOLD, 14));
             btnReset.addActionListener(ev -> {
-                int conf1 = JOptionPane.showConfirmDialog(pannelloImpostazioni,
-                        "Vuoi davvero azzerare il max pomodori?", "Conferma Reset", JOptionPane.YES_NO_OPTION);
-                if (conf1 == JOptionPane.YES_OPTION) {
+                boolean conf1 = DialoghiModerni.chiediConferma(pannelloImpostazioni,
+                     "Conferma Reset", 
+                     "Vuoi davvero azzerare il max pomodori?", 
+                     "Si, azzera", true);
+                if (conf1) {
                     GestoreDatabase.salvaMaxPomodoriGiornalieri(0);
                     maxPomodoriGiornalieri = 0;
                     aggiornaLblContatore();
-                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Max pomodori azzerato.");
+                    DialoghiModerni.mostraMessaggio(pannelloImpostazioni, "Successo", "Max pomodori azzerato", false);
                 }
             });
             pnlReset.add(btnReset);

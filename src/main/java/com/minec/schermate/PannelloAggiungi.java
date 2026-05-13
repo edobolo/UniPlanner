@@ -11,6 +11,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.font.TextAttribute;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
@@ -20,8 +21,9 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -46,11 +48,10 @@ public class PannelloAggiungi extends JPanel {
     private static final float MAX_SCALE = 1.8f;
 
     private int index = 0;
-    private int cfuSalvati;
-    private String votoSalvato;
     private float currentScale = 1.0f;
     private final PannelloVoti pv;
     private JPanel esamiPanel;
+    private String criterioOrdinamento = "RECENTI";
 
     public PannelloAggiungi(PannelloVoti pv) {
         this.pv = pv;
@@ -61,6 +62,7 @@ public class PannelloAggiungi extends JPanel {
         // Inizializziamo prima la struttura
         initAddedExamsLayout(esamiAggiuntiPanel);
         initAddExamLayout(aggiungiEsamePanel);
+
 
         this.add(aggiungiEsamePanel, BorderLayout.NORTH);
         this.add(esamiAggiuntiPanel, BorderLayout.CENTER);
@@ -80,17 +82,81 @@ public class PannelloAggiungi extends JPanel {
     private void refreshDataUI() {
         // 1. Aggiorna la lista grafica (il centro)
         esamiPanel.removeAll();
-        String[] esami = GestoreDatabase.getEsamiSalvatiRaw();
-        index = 0;
-        for (String s : esami) {
-            if (s != null) {
-                disegnaEsameSuSchermo(s);
-                index++;
+        // 2. Recupero dati
+        String[] esamiRaw = GestoreDatabase.getEsamiSalvatiRaw();
+        String[] votiRaw = GestoreDatabase.getVotiEsamiRaw();
+        // 3. Sistemo i voti per la logica ordinamento esami
+        HashMap<String, Integer> mappaVoti = new java.util.HashMap<>();
+        if (votiRaw != null) {
+            for (String riga : votiRaw) {
+                if (riga != null) {
+                    String[] p = riga.split(";");
+                    if (p.length >= 2) {
+                        String votoStr = p[0];
+                        String nomeEsame = p[1];
+                        int votoNum = -1; // -1 = senza voto / da dare
+                        if (votoStr.equals("30L"))
+                            votoNum = 31; // Diamo 31 per farlo stare sopra il 30
+                        else if (votoStr.equals("IDONEO"))
+                            votoNum = 0; // Le idoneità valgono 0 ai fini della classifica
+                        else {
+                            try {
+                                votoNum = Integer.parseInt(votoStr);
+                            } catch (Exception e) {
+                            }
+                        }
+                        mappaVoti.put(nomeEsame, votoNum);
+                    }
+                }
             }
         }
-        applyExamRowScaling();
+        // 4. Creo lista dinamica per ordinarla
+        List<String> listaEsami = new java.util.ArrayList<>();
+        if (esamiRaw != null) {
+            for (String s : esamiRaw) {
+                if (s != null && !s.trim().isEmpty()) {
+                    listaEsami.add(s);
+                }
+            }
+        }
+        // 5. Logica di ordinamento
+        if (!criterioOrdinamento.equals("RECENTI")) {
+            listaEsami.sort((raw1, raw2) -> {
+                String nome1 = raw1.split(";")[0];
+                String nome2 = raw2.split(";")[0];
 
-        // 2. Forza il ridisegno della UI
+                if (criterioOrdinamento.equals("NOME")) {
+                    return nome1.compareToIgnoreCase(nome2); // Ordine Alfabetico A-Z
+                } else {
+                    int v1 = mappaVoti.getOrDefault(nome1, -1);
+                    int v2 = mappaVoti.getOrDefault(nome2, -1);
+
+                    // Trucco: Mettiamo gli esami "Da fare" (voto -1) SEMPRE in fondo
+                    if (v1 == -1 && v2 != -1)
+                        return 1;
+                    if (v2 == -1 && v1 != -1)
+                        return -1;
+                    // Se entrambi non hanno voto, li mettiamo in ordine alfabetico
+                    if (v1 == -1 && v2 == -1)
+                        return nome1.compareToIgnoreCase(nome2);
+
+                    if (criterioOrdinamento.equals("VOTO_DESC")) {
+                        return Integer.compare(v2, v1); // Dal più alto al più basso
+                    } else if (criterioOrdinamento.equals("VOTO_ASC")) {
+                        return Integer.compare(v1, v2); // Dal più basso al più alto
+                    }
+                }
+                return 0;
+            });
+        }
+        // 6. Disegniamo gli esami (ora ordinati) su schermo
+        index = 0;
+        for (String s : listaEsami) {
+            disegnaEsameSuSchermo(s);
+            index++;
+        }
+        applyExamRowScaling();
+        // 7. Forza il ridisegno della UI
         esamiPanel.revalidate();
         esamiPanel.repaint();
         GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
@@ -203,8 +269,9 @@ public class PannelloAggiungi extends JPanel {
         btnElimina.putClientProperty("JButton.buttonType", "toolBarButton");
         btnElimina.setForeground(new Color(211, 47, 47));
         btnElimina.addActionListener(e -> {
-            if (JOptionPane.showConfirmDialog(this, "Eliminare definitivamente " + nome + "?", "Conferma",
-                    JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            if (DialoghiModerni.chiediConferma(this, "Conferma rimozione", 
+                "Eliminare definitivamente ", 
+                "Si, elimina", true)) {
                 GestoreDatabase.removeNomeEsame(nome);
                 GestoreDatabase.removeVotiEsame(nome);
                 aggiornaTutto();
@@ -222,10 +289,8 @@ public class PannelloAggiungi extends JPanel {
     private void registraEsame(String nome, boolean isIdoneita) {
         // --- CASO 1: IDONEITÀ ---
         if (isIdoneita) {
-            String[] opzioni = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
-                    "17", "18" };
-            String cfu = (String) JOptionPane.showInputDialog(this, "Modifica CFU per Idoneità (" + nome + "):",
-                    "Registra", JOptionPane.QUESTION_MESSAGE, null, opzioni, "6");
+            String cfu = DialoghiModerni.chiediInput(this, "Registra", "Modifica CFU per Idoneità (" + nome + "):", "Conferma",
+                    "");
             if (cfu != null) {
                 GestoreDatabase.removeVotiEsame(nome);
                 GestoreDatabase.setVotiEsami("IDONEO", nome, 0);
@@ -243,8 +308,9 @@ public class PannelloAggiungi extends JPanel {
 
             // Ciclo che richiede il voto finché non è valido o finché non si annulla
             while (!votoValido) {
-                String voto = JOptionPane.showInputDialog(this,
-                        "Inserisci/Modifica il voto per " + nome + " (18-30L):");
+                String voto = DialoghiModerni.chiediInput(this, "Modifica Voto",
+                    "Inserisci/Modifica il voto per " + nome + "(18-30L):",
+                    "Conferma", "");
 
                 // Se l'utente preme "Annulla" o chiude la finestra
                 if (voto == null) {
@@ -265,21 +331,18 @@ public class PannelloAggiungi extends JPanel {
                         if (v >= 18 && v <= 30) {
                             votoValido = true;
                         } else {
-                            JOptionPane.showMessageDialog(this, "Errore: Il voto deve essere compreso tra 18 e 30.",
-                                    "Voto non valido", JOptionPane.ERROR_MESSAGE);
+                            DialoghiModerni.mostraMessaggio(this, "Attenzione!", 
+                                    "Errore: Il voto deve essere compreso tra 18 e 30", true);
                         }
                     } catch (NumberFormatException ex) {
-                        JOptionPane.showMessageDialog(this, "Errore: Inserisci un numero tra 18 e 30, oppure '30L'.",
-                                "Formato non valido", JOptionPane.ERROR_MESSAGE);
+                        DialoghiModerni.mostraMessaggio(this, "Attenzione!", 
+                                "Errore: Inserisci un numero tra 18 e 30, oppure '30L'", true);
                     }
                 }
             }
 
-            // Se il voto è valido, chiediamo i CFU (Max 18)
-            String[] opzioni = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
-                    "17", "18" };
-            String cfu = (String) JOptionPane.showInputDialog(this, "Seleziona i CFU per " + nome + " (Max 18):",
-                    "Selezione CFU", JOptionPane.QUESTION_MESSAGE, null, opzioni, "6");
+            String cfu = DialoghiModerni.chiediInput(this, "Selezione CFU", "Seleziona i CFU per " + nome + "(Max 18):",
+                    "Conferma", "");
 
             if (cfu != null) {
                 GestoreDatabase.removeVotiEsame(nome);
@@ -450,7 +513,7 @@ public class PannelloAggiungi extends JPanel {
         btnSalva.addActionListener(e -> {
             String nome = campoNome.getText().trim();
             if (nome.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Inserisci un nome!");
+                DialoghiModerni.mostraMessaggio(this, "Attenzione!", "Inserisci un nome!", true);
                 return;
             }
             if (index < 40) {
@@ -477,6 +540,36 @@ public class PannelloAggiungi extends JPanel {
         JLabel lblTitolo = new JLabel("Esami nel Libretto");
         lblTitolo.setFont(new Font("Arial", Font.BOLD, 20));
         headerLista.add(lblTitolo, BorderLayout.WEST);
+
+        // --- IL NUOVO BOTTONE E MENU DI ORDINAMENTO ---
+        JButton btnOrdina = new JButton("Ordina ▼");
+        btnOrdina.putClientProperty("FlatLaf.style", "arc: 999; focusWidth: 0;");
+        btnOrdina.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnOrdina.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        JPopupMenu menuOrdina = new JPopupMenu();
+        JMenuItem mnuNome = new JMenuItem("Alfabetico (A-Z)");
+        JMenuItem mnuVotoAlto = new JMenuItem("Voto (Dal più alto)");
+        JMenuItem mnuVotoBasso = new JMenuItem("Voto (Dal più basso)");
+        JMenuItem mnuRecenti = new JMenuItem("Aggiunti di recente");
+        btnOrdina.setText(menuOrdina.isVisible() ? "Ordina ▲" : "Ordina ▼");
+
+        menuOrdina.add(mnuNome);
+        menuOrdina.add(mnuVotoAlto);
+        menuOrdina.add(mnuVotoBasso);
+        menuOrdina.addSeparator();
+        menuOrdina.add(mnuRecenti);
+
+        // Mostra il menu al click
+        btnOrdina.addActionListener(e -> menuOrdina.show(btnOrdina, 0, btnOrdina.getHeight()));
+
+        // Azioni delle voci
+        mnuNome.addActionListener(e -> { criterioOrdinamento = "NOME"; refreshDataUI(); });
+        mnuVotoAlto.addActionListener(e -> { criterioOrdinamento = "VOTO_DESC"; refreshDataUI(); });
+        mnuVotoBasso.addActionListener(e -> { criterioOrdinamento = "VOTO_ASC"; refreshDataUI(); });
+        mnuRecenti.addActionListener(e -> { criterioOrdinamento = "RECENTI"; refreshDataUI(); });
+
+        headerLista.add(btnOrdina, BorderLayout.EAST); // Aggiunto a DESTRA dell'header
 
         esamiAggiunti.add(headerLista, BorderLayout.NORTH);
 

@@ -25,7 +25,6 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
@@ -224,7 +223,7 @@ public class PannelloScadenze extends JPanel {
             String esameSelezionato = (String) comboEsami.getSelectedItem();
             LocalDate dataSelezionata = datePicker.getDate();
             if (esameSelezionato == null || dataSelezionata == null) {
-                JOptionPane.showMessageDialog(this, "Seleziona sia un esame che una data valida!");
+                DialoghiModerni.mostraMessaggio(this, "Attenzione!", "Selezione sia un esame che una data valida!", true);
                 return;
             }
             GestoreDatabase.salvaScadenza(esameSelezionato, dataSelezionata.toString());
@@ -473,11 +472,10 @@ public class PannelloScadenze extends JPanel {
                 btnRimuovi.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
                 btnRimuovi.addActionListener(e -> {
-                    int conferma = JOptionPane.showConfirmDialog(this,
-                            "Vuoi davvero rimuovere la data per " + nomeEsame + "?",
-                            "Conferma rimozione", JOptionPane.YES_NO_OPTION);
+                    boolean conferma = DialoghiModerni.chiediConferma(this, "Conferma rimozione",
+                            "Vuoi davvero rimuovere la data per " + nomeEsame + "?", "Si, elimina", true);
 
-                    if (conferma == JOptionPane.YES_OPTION) {
+                    if (conferma) {
                         GestoreDatabase.removeScadenza(nomeEsame);
                         aggiornaListaScadenze();
                         GestoreNotifiche.aggiornaTrofeiEAvvisa(this);

@@ -29,7 +29,6 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
@@ -282,7 +281,12 @@ public class PannelloVoti extends JPanel {
         pnlObiettivo.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                String newOb = JOptionPane.showInputDialog(PannelloVoti.this, "Inserire obiettivo");
+                String newOb = DialoghiModerni.chiediInput(
+                        PannelloVoti.this,
+                        "Obiettivo Media",
+                        "Inserisci il tuo nuovo obiettivo di media (18-30):",
+                        "Salva", ""
+                );
                 if (newOb != null && !newOb.trim().isEmpty()) {
                     try {
                         int nuovoObiettivo = Integer.parseInt(newOb);
@@ -291,7 +295,7 @@ public class PannelloVoti extends JPanel {
                         GestoreDatabase.salvaObiettivoMedia(nuovoObiettivo);
                         refresh();
                     } catch (NumberFormatException e1) {
-                        JOptionPane.showMessageDialog(PannelloVoti.this, "Inserisci un voto valido tra 18 e 30");
+                        DialoghiModerni.mostraMessaggio(PannelloVoti.this, "Attenzione!", "Inserisci un voto valido tra 18 e 30", true);
                     }
                 }
             }
@@ -439,12 +443,48 @@ public class PannelloVoti extends JPanel {
             etichettaTempo.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    String tempoRaw = JOptionPane.showInputDialog("Inserire il tempo di studio (HH:mm)");
-                    if (tempoRaw != null && tempoRaw.matches("\\d{2}:\\d{2}")) {
-                        String[] p = tempoRaw.split(":");
-                        int mTot = Integer.parseInt(p[0]) * 60 + Integer.parseInt(p[1]);
-                        GestoreDatabase.setNuovoTempoStudio(nomeEsame, mTot);
-                        refresh();
+                    String tempoRaw = DialoghiModerni.chiediInput(
+                            PannelloVoti.this,
+                            "Tempo di Studio",
+                            "Quanto hai studiato per " + nomeEsame + "? (es. '120' per minuti, oppure '2:30')",
+                            "Salva",
+                            "" // Lasciamo vuoto all'inizio
+                    );
+
+                    // 2. Controlliamo che l'utente non abbia annullato
+                    if (tempoRaw != null && !tempoRaw.trim().isEmpty()) {
+                        tempoRaw = tempoRaw.trim();
+                        int mTot = -1;
+
+                        try {
+                            if (tempoRaw.contains(":")) {
+                                String[] p = tempoRaw.split(":");
+                                if (p.length == 2) {
+                                    int ore = Integer.parseInt(p[0]);
+                                    int minuti = Integer.parseInt(p[1]);
+                                    mTot = (ore * 60) + minuti;
+                                } else {
+                                    throw new NumberFormatException(); // Lancia errore se scrive roba strana tipo
+                                                                       // "2:30:15"
+                                }
+                            } else {
+                                mTot = Integer.parseInt(tempoRaw);
+                            }
+                            // 4. Salvataggio e aggiornamento
+                            if (mTot >= 0) {
+                                GestoreDatabase.setNuovoTempoStudio(nomeEsame, mTot);
+                                refresh();
+                            } else {
+                                throw new NumberFormatException(); // Niente numeri negativi
+                            }
+                        } catch (NumberFormatException ex) {
+                            // 5. Gestione dell'errore moderna
+                            DialoghiModerni.mostraMessaggio(
+                                    PannelloVoti.this,
+                                    "Formato non valido",
+                                    "Inserisci solo i minuti (es. 120) o il formato ore:minuti (es. 2:30).",
+                                    true);
+                        }
                     }
                 }
             });
@@ -917,10 +957,10 @@ public class PannelloVoti extends JPanel {
             btnSalvaCfu.addActionListener(ev -> {
                 try {
                     GestoreDatabase.salvaObiettivoCfu(Integer.parseInt(txtCfu.getText()));
-                    JOptionPane.showMessageDialog(pannelloImpostazioni, "CFU Aggiornati!");
+                    DialoghiModerni.mostraMessaggio(pannelloImpostazioni, "Successo", "Cfu Aggiornati!", false);
                     refresh();
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Numero non valido.");
+                    DialoghiModerni.mostraMessaggio(pannelloImpostazioni, "Attenzione!", "Numero non valido", true);
                 }
             });
             pnlCfu.add(txtCfu);
@@ -940,7 +980,7 @@ public class PannelloVoti extends JPanel {
             btnSalvaParam.addActionListener(ev -> {
                 GestoreDatabase.salvaImpostazione("LODE", txtLode.getText());
                 GestoreDatabase.salvaImpostazione("BONUS_LODE", txtBonus.getText());
-                JOptionPane.showMessageDialog(pannelloImpostazioni, "Parametri Laurea salvati!");
+                DialoghiModerni.mostraMessaggio(pannelloImpostazioni, "Successo","Parametri Laurea salvati!", false);
                 refresh();
             });
             pnlParam.add(new JLabel("Lode:"));
@@ -990,9 +1030,9 @@ public class PannelloVoti extends JPanel {
                         if (!path.toLowerCase().endsWith(".pdf"))
                             path += ".pdf";
                         EsportatorePDF.generaLibretto(path);
-                        JOptionPane.showMessageDialog(null, "PDF creato con successo!");
+                        DialoghiModerni.mostraMessaggio(null, "Successo", "PDF creato con successo!", false);
                     } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null, "Errore: " + ex.getMessage());
+                        DialoghiModerni.mostraMessaggio(null, "Attenzione!", "Errore: " + ex.getMessage(), true);
                     }
                 }
             });
@@ -1005,10 +1045,14 @@ public class PannelloVoti extends JPanel {
             btnReset.putClientProperty("JButton.buttonType", "roundRect");
             btnReset.setForeground(scuro ? new Color(255, 100, 100) : Color.RED);
             btnReset.addActionListener(ev -> {
-                if (JOptionPane.showConfirmDialog(pannelloImpostazioni, "Vuoi davvero svuotare il libretto?",
-                        "Conferma Reset", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                if (DialoghiModerni.chiediConferma(pannelloImpostazioni, 
+                    "Conferma Reset", 
+                    "Vuoi davvero svuotare il libretto?",
+                    "Si, svuota", true)) {
+
                     GestoreDatabase.resetTutto();
-                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Dati azzerati. L'applicazione si chiuderà.");
+                    DialoghiModerni.mostraMessaggio(pannelloImpostazioni, "Successo", 
+                            "Dati azzerati. L'applicazione si chiuderà", false);
                     System.exit(0);
                 }
             });
@@ -1153,17 +1197,18 @@ public class PannelloVoti extends JPanel {
                         if (st != null && !st.trim().isEmpty()) { fw.write(st + "\n"); }
                     }
                 }
+                DialoghiModerni.mostraMessaggio(parentComponent, "Successo", "Backup esportato con successo in:\n" + percorso, false);
 
-                JOptionPane.showMessageDialog(parentComponent, "Backup esportato con successo in:\n" + percorso);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(parentComponent, "Errore durante l'esportazione.", "Errore", JOptionPane.ERROR_MESSAGE);
+                DialoghiModerni.mostraMessaggio(parentComponent, "Attenzione!", "Errore durante l'esportazione", true);
             }
         }
     }
     private void importaLibrettoDaExcel(JPanel parentComponent) {
         if (GestoreDatabase.getEsamiSalvatiRaw().length != 0 || GestoreDatabase.getScadenzeRaw().length != 0 || 
             GestoreDatabase.getVotiEsamiRaw().length != 0) {
-            JOptionPane.showMessageDialog(this, "Assicurati di aver cancellato tutti i dati (Fai reset da impostazioni prima di importare)");
+            DialoghiModerni.mostraMessaggio(this, "Attenzione!", 
+                    "Assicurati di aver cancellato tutti i dati (Fai reset da impostazioni prima di importare)", true);
             return;
         }
         JFileChooser fileChooser = new JFileChooser();
@@ -1256,9 +1301,12 @@ public class PannelloVoti extends JPanel {
                     javax.swing.UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatLightLaf());
                 }
                 SwingUtilities.updateComponentTreeUI(SwingUtilities.getWindowAncestor(this));
-                JOptionPane.showMessageDialog(parentComponent, "Backup ripristinato!\nSono stati importati " + esamiImportati + " esami, le ore di studio e le tue impostazioni.");
+                DialoghiModerni.mostraMessaggio(parentComponent, "Successo", 
+                        "Backup ripristinato!\nSono stati importati " + esamiImportati
+                                + " esami, le ore di studio e le tue impostazioni", false);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(parentComponent, "Errore durante l'importazione del file.", "Errore", JOptionPane.ERROR_MESSAGE);
+                DialoghiModerni.mostraMessaggio(parentComponent, "Attenzione!", 
+                        "Errore durante l'importazione del file", true);
             }
         }
     }
