@@ -67,8 +67,13 @@ public class Launcher {
                 URL configUrl = new URL(
                         "https://raw.githubusercontent.com/edobolo/UniPlanner/main/aggiornamenti/config.xml");
 
+                // --- MODIFICA ANTI-CACHE ---
+                java.net.URLConnection connessione = configUrl.openConnection();
+                connessione.setUseCaches(false); // FORZA IL DOWNLOAD REALE IGNORANDO LA CACHE DEL PC
+
                 Configuration config;
-                try (Reader lettoreInternet = new InputStreamReader(configUrl.openStream(), StandardCharsets.UTF_8)) {
+                try (Reader lettoreInternet = new InputStreamReader(connessione.getInputStream(),
+                        StandardCharsets.UTF_8)) {
                     config = Configuration.read(lettoreInternet);
                 }
 
