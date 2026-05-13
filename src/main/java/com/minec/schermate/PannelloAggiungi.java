@@ -7,6 +7,9 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.font.TextAttribute;
@@ -19,6 +22,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -127,6 +131,18 @@ public class PannelloAggiungi extends JPanel {
 
                 if (criterioOrdinamento.equals("NOME")) {
                     return nome1.compareToIgnoreCase(nome2); // Ordine Alfabetico A-Z
+                } 
+                if (criterioOrdinamento.equals("ANNO")) {
+                    // Estraiamo l'anno dalle stringhe grezze
+                    String anno1 = (raw1.split(";").length > 3) ? raw1.split(";")[3] : "Z";
+                    String anno2 = (raw2.split(";").length > 3) ? raw2.split(";")[3] : "Z";
+
+                    // Ordine alfabetico 
+                    int confrontoAnno = anno1.compareTo(anno2);
+                    if (confrontoAnno == 0) {
+                        return nome1.compareToIgnoreCase(nome2);
+                    }
+                    return confrontoAnno;
                 } else {
                     int v1 = mappaVoti.getOrDefault(nome1, -1);
                     int v2 = mappaVoti.getOrDefault(nome2, -1);
@@ -167,6 +183,7 @@ public class PannelloAggiungi extends JPanel {
         String nome = parti[0];
         boolean isCompletato = estraiCompletato(parti);
         boolean isIdoneita = estraiIdoneita(parti);
+        String annoEsame = (parti.length > 3) ? parti[3] : "N/D";
 
         // --- Recupero CFU e Voto salvati per la visualizzazione ---
         int cfuSalvati = 0;
@@ -198,8 +215,47 @@ public class PannelloAggiungi extends JPanel {
                 .setBorder(BorderFactory.createLineBorder(temaScuro ? new Color(80, 80, 80) : Color.LIGHT_GRAY, 1));
 
         // --- SINISTRA: Nome Esame ---
-        JPanel pSinistra = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 10));
+        JPanel pSinistra = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 14));
         pSinistra.setOpaque(false);
+
+        JLabel badgeAnno = new JLabel(" " + annoEsame + " ") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // Bordi fluidi
+                g2.setColor(getBackground());
+                // Disegna la forma a pillola
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
+                g2.dispose();
+                super.paintComponent(g); // Disegna il testo sopra
+            }
+        };
+        badgeAnno.setOpaque(true);
+        if(annoEsame.startsWith("1")) {
+            badgeAnno.setBackground(Color.GREEN);
+            badgeAnno.setForeground(Color.BLACK);
+        } 
+        else if(annoEsame.startsWith("2")) {
+            badgeAnno.setBackground(Color.YELLOW);
+            badgeAnno.setForeground(Color.BLACK);
+        }
+        else if(annoEsame.startsWith("3")) {
+            badgeAnno.setBackground(Color.RED);
+            badgeAnno.setForeground(Color.WHITE);
+        } 
+        else if(annoEsame.startsWith("4")) {
+            badgeAnno.setBackground(new Color(101, 0, 3));
+            badgeAnno.setForeground(Color.WHITE);
+        } 
+        else if(annoEsame.startsWith("5")) {
+            badgeAnno.setBackground(new Color(120, 0, 139));
+            badgeAnno.setForeground(Color.WHITE);
+        } else {
+            badgeAnno.setBackground(new Color(100, 116, 139));
+            badgeAnno.setForeground(Color.WHITE);
+        }
+        badgeAnno.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        pSinistra.add(badgeAnno);
 
         JLabel nomeEsameLabel = new JLabel(nome);
         nomeEsameLabel.setFont(new Font("Arial", isCompletato ? Font.ITALIC : Font.BOLD, 18));
@@ -496,6 +552,16 @@ public class PannelloAggiungi extends JPanel {
         JCheckBox checkIdoneita = new JCheckBox("Idoneità");
         checkIdoneita.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
+        // --- NUOVO: Selettore dell'Anno ---
+        String[] anniDisponibili = {"1° Anno", "2° Anno", "3° Anno", "4° Anno", "5° Anno", "Opzionale"};
+        JComboBox<String> comboAnno = new JComboBox<>(anniDisponibili);
+        comboAnno.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        comboAnno.setPreferredSize(new Dimension(90, 32));
+        comboAnno.setMaximumSize(new Dimension(90, 32));
+        comboAnno.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        comboAnno.putClientProperty("JComponent.roundRect", true);
+        comboAnno.putClientProperty("FlatLaf.style", "arc: 999; focusWidth: 0;");
+
         JButton btnSalva = new JButton("Aggiungi Esame");
         btnSalva.putClientProperty("JButton.buttonType", "roundRect");
         btnSalva.setBackground(new Color(33, 150, 243));
@@ -505,6 +571,7 @@ public class PannelloAggiungi extends JPanel {
         btnSalva.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         rigaInput.add(campoNome);
+        rigaInput.add(comboAnno);
         rigaInput.add(checkIdoneita);
         rigaInput.add(btnSalva);
         aggiungiEsame.add(rigaInput, BorderLayout.CENTER);
@@ -512,12 +579,13 @@ public class PannelloAggiungi extends JPanel {
         // Azione Salva
         btnSalva.addActionListener(e -> {
             String nome = campoNome.getText().trim();
+            String annoScelto = comboAnno.getSelectedItem().toString();
             if (nome.isEmpty()) {
                 DialoghiModerni.mostraMessaggio(this, "Attenzione!", "Inserisci un nome!", true);
                 return;
             }
             if (index < 40) {
-                GestoreDatabase.salvaEsame(nome, checkIdoneita.isSelected());
+                GestoreDatabase.salvaEsame(nome, checkIdoneita.isSelected(), annoScelto);
                 checkIdoneita.setSelected(false);
                 campoNome.setText("");
                 aggiornaTutto();
@@ -551,12 +619,14 @@ public class PannelloAggiungi extends JPanel {
         JMenuItem mnuNome = new JMenuItem("Alfabetico (A-Z)");
         JMenuItem mnuVotoAlto = new JMenuItem("Voto (Dal più alto)");
         JMenuItem mnuVotoBasso = new JMenuItem("Voto (Dal più basso)");
+        JMenuItem mnuAnno = new JMenuItem("Per Anno Universitario");
         JMenuItem mnuRecenti = new JMenuItem("Aggiunti di recente");
         btnOrdina.setText(menuOrdina.isVisible() ? "Ordina ▲" : "Ordina ▼");
 
         menuOrdina.add(mnuNome);
         menuOrdina.add(mnuVotoAlto);
         menuOrdina.add(mnuVotoBasso);
+        menuOrdina.add(mnuAnno);
         menuOrdina.addSeparator();
         menuOrdina.add(mnuRecenti);
 
@@ -567,6 +637,7 @@ public class PannelloAggiungi extends JPanel {
         mnuNome.addActionListener(e -> { criterioOrdinamento = "NOME"; refreshDataUI(); });
         mnuVotoAlto.addActionListener(e -> { criterioOrdinamento = "VOTO_DESC"; refreshDataUI(); });
         mnuVotoBasso.addActionListener(e -> { criterioOrdinamento = "VOTO_ASC"; refreshDataUI(); });
+        mnuAnno.addActionListener(e -> { criterioOrdinamento = "ANNO"; refreshDataUI(); });
         mnuRecenti.addActionListener(e -> { criterioOrdinamento = "RECENTI"; refreshDataUI(); });
 
         headerLista.add(btnOrdina, BorderLayout.EAST); // Aggiunto a DESTRA dell'header

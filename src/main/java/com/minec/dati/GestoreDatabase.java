@@ -18,14 +18,25 @@ public class GestoreDatabase {
     public static void inizializzaDatabase() {
         try (Connection conn = connect();
                 Statement stmt = conn.createStatement()) {
-            // Tabella Esami (contiene anche voti e minuti studio)
+
+            // 1. Creiamo la tabella con la nuova colonna 'anno' (per le nuove installazioni)
             stmt.execute("CREATE TABLE IF NOT EXISTS esami ("
                     + "nome TEXT PRIMARY KEY, "
                     + "completato BOOLEAN NOT NULL DEFAULT 0, "
                     + "idoneita BOOLEAN NOT NULL DEFAULT 0, "
                     + "voto TEXT, "
                     + "cfu INTEGER DEFAULT 0, "
-                    + "minuti_studio INTEGER DEFAULT 0);");
+                    + "minuti_studio INTEGER DEFAULT 0, "
+                    + "anno TEXT DEFAULT 'N/D');");
+
+            // 2. MIGRAZIONE PER I VECCHI DATABASE
+            // Chiediamo al DB di aggiungere la colonna se non esiste.
+            try {
+                stmt.execute("ALTER TABLE esami ADD COLUMN anno TEXT DEFAULT 'N/D';");
+                System.out.println("Database aggiornato: nuova colonna 'anno' aggiunta!");
+            } catch (SQLException ignore) {
+                // La colonna esiste già, non facciamo nulla.
+            }
 
             // Tabella Scadenze
             stmt.execute("CREATE TABLE IF NOT EXISTS scadenze ("
@@ -47,18 +58,23 @@ public class GestoreDatabase {
 
     public static String[] getEsamiSalvatiRaw() {
         java.util.List<String> listaEsami = new java.util.ArrayList<>();
-        // Diciamo al DB: "Seleziona le colonne nome, completato e idoneita dalla tabella esami"
-        String sql = "SELECT nome, completato, idoneita FROM esami";
+        // 1. MODIFICA: Ora chiediamo a SQLite di estrarre anche la colonna 'anno'
+        String sql = "SELECT nome, completato, idoneita, anno FROM esami";
+
         try (Connection conn = connect();
                 Statement stmt = conn.createStatement();
                 java.sql.ResultSet rs = stmt.executeQuery(sql)) {
-            // rs.next() scorre i risultati uno ad uno finché ce ne sono
             while (rs.next()) {
                 String nome = rs.getString("nome");
                 boolean completato = rs.getBoolean("completato");
                 boolean idoneita = rs.getBoolean("idoneita");
-
-                listaEsami.add(nome + ";" + completato + ";" + idoneita);
+                // 2. MODIFICA: Recuperiamo l'anno (se per qualche motivo è vuoto, mettiamo "N/D")
+                String anno = rs.getString("anno");
+                if (anno == null) {
+                    anno = "N/D";
+                }
+                // 3. MODIFICA: Aggiungiamo l'anno in fondo alla stringa (con il ; di separazione)
+                listaEsami.add(nome + ";" + completato + ";" + idoneita + ";" + anno);
             }
         } catch (SQLException e) {
             System.out.println("Errore in lettura: " + e.getMessage());
@@ -66,13 +82,14 @@ public class GestoreDatabase {
         return listaEsami.toArray(new String[0]);
     }
     
-    public static void salvaEsame(String nome, boolean idoneita) {
-        String sql = "INSERT INTO esami(nome, idoneita) VALUES(?, ?)";
+    public static void salvaEsame(String nome, boolean idoneita, String anno) {
+        String sql = "INSERT INTO esami(nome, idoneita, anno) VALUES(?, ?, ?)";
         try (Connection conn = connect();
                 java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, nome);
             pstmt.setBoolean(2, idoneita);
+            pstmt.setString(3, anno);
             pstmt.executeUpdate();
 
         } catch (SQLException e) {

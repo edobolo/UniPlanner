@@ -1241,7 +1241,7 @@ public class PannelloVoti extends JPanel {
                             String cfuStr = (parti.length > 2) ? parti[2].trim() : "0";
                             boolean completato = (parti.length > 3) ? Boolean.parseBoolean(parti[3].trim()) : (!voto.isEmpty());
                             boolean idoneita = (parti.length > 4) && Boolean.parseBoolean(parti[4].trim());
-                            GestoreDatabase.salvaEsame(nomeEsame, idoneita);
+                            GestoreDatabase.salvaEsame(nomeEsame, idoneita, "N/D"); //Nelle vecchie versioni non c'era il tag
                             if (completato) {
                                 GestoreDatabase.aggiornaStatoEsame(nomeEsame, true);
                                 if (!voto.isEmpty()) GestoreDatabase.setVotiEsami(voto, nomeEsame, 0);
