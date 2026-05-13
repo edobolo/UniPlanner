@@ -891,7 +891,7 @@ public class PannelloVoti extends JPanel {
                 pathIcon = "icone/dark2.svg";
             else 
                 pathIcon = "icone/dark1.svg";
-            centro.add(creaCardImpostazione("Modalità Scura", "Affatica meno la vista durante la sera", chkTema, pathIcon));
+            centro.add(creaCardImpostazione("Modalità Scura ", "Affatica meno la vista durante la sera", chkTema, pathIcon));
             centro.add(Box.createRigidArea(new Dimension(0, 8)));
 
             JButton btnOrdine = new JButton(GestoreDatabase.getOrdineScadenza() ? "Aggiunta" : "Cronologico");
