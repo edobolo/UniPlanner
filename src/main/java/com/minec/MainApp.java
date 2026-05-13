@@ -131,7 +131,7 @@ public class MainApp {
                                     .setBorder(BorderFactory.createMatteBorder(3, 0, 0, 0, new Color(41, 128, 185)));
 
                             // Bottoni
-                            JButton btnVoti = creaBottoneMenu(" Voti e Media (Prova)", coloreSfondoMenu);
+                            JButton btnVoti = creaBottoneMenu(" Voti e Media", coloreSfondoMenu);
                             btnVoti.addActionListener(evt -> {
                                 cardLayout.show(pannelloSchermate, "Voti");
                                 schermataVoti.refresh();
