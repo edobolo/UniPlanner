@@ -56,6 +56,8 @@ public class PannelloAggiungi extends JPanel {
     private final PannelloVoti pv;
     private JPanel esamiPanel;
     private String criterioOrdinamento = "RECENTI";
+    JButton btnOrdina;
+    JPopupMenu menuOrdina;
 
     public PannelloAggiungi(PannelloVoti pv) {
         this.pv = pv;
@@ -132,18 +134,34 @@ public class PannelloAggiungi extends JPanel {
                 if (criterioOrdinamento.equals("NOME")) {
                     return nome1.compareToIgnoreCase(nome2); // Ordine Alfabetico A-Z
                 } 
-                if (criterioOrdinamento.equals("ANNO")) {
-                    // Estraiamo l'anno dalle stringhe grezze
-                    String anno1 = (raw1.split(";").length > 3) ? raw1.split(";")[3] : "Z";
-                    String anno2 = (raw2.split(";").length > 3) ? raw2.split(";")[3] : "Z";
+                if (criterioOrdinamento.startsWith("ANNO")) {
+                    String anno1 = (raw1.split(";").length > 3) ? raw1.split(";")[3] : "N/D";
+                    String anno2 = (raw2.split(";").length > 3) ? raw2.split(";")[3] : "N/D";
 
-                    // Ordine alfabetico 
-                    int confrontoAnno = anno1.compareTo(anno2);
+                    // Identifichiamo i tag che non sono anni numerici
+                    boolean senzaAnno1 = anno1.equals("N/D") || anno1.equals("Opzionale");
+                    boolean senzaAnno2 = anno2.equals("N/D") || anno2.equals("Opzionale");
+
+                    // Se uno dei due non ha un anno numerico, lo forziamo SEMPRE in fondo
+                    if (senzaAnno1 && !senzaAnno2)
+                        return 1;
+                    if (senzaAnno2 && !senzaAnno1)
+                        return -1;
+
+                    int confrontoAnno;
+                    if (criterioOrdinamento.equals("ANNO_ASC")) {
+                        confrontoAnno = anno1.compareTo(anno2);
+                    } else {
+                        confrontoAnno = anno2.compareTo(anno1);
+                    }
+
+                    // Se l'anno è lo stesso (o se sono entrambi N/D), ordiniamo alfabeticamente per
+                    // nome
                     if (confrontoAnno == 0) {
                         return nome1.compareToIgnoreCase(nome2);
                     }
                     return confrontoAnno;
-                } else {
+                }else {
                     int v1 = mappaVoti.getOrDefault(nome1, -1);
                     int v2 = mappaVoti.getOrDefault(nome2, -1);
 
@@ -254,7 +272,40 @@ public class PannelloAggiungi extends JPanel {
             badgeAnno.setBackground(new Color(100, 116, 139));
             badgeAnno.setForeground(Color.WHITE);
         }
+        //TODO: rendere modificabili i tag premendoci sopra
         badgeAnno.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        badgeAnno.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        badgeAnno.setToolTipText("Clicca per cambiare l'anno");
+
+        JPopupMenu menuCambioAnno = new JPopupMenu();
+        String[] anniScelta = { "1° Anno", "2° Anno", "3° Anno", "4° Anno", "5° Anno", "Opzionale", "N/D" };
+
+        for (String annoSelezionato : anniScelta) {
+            JMenuItem itemAnno = new JMenuItem(annoSelezionato);
+
+            // Se la voce del menu è uguale all'anno attuale dell'esame, la mettiamo in
+            // grassetto
+            if (annoSelezionato.equals(annoEsame)) {
+                itemAnno.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            }
+
+            itemAnno.addActionListener(e -> {
+                // Quando clicchi una voce, aggiorna il DB e ricarica le schermate
+                GestoreDatabase.aggiornaAnnoEsame(nome, annoSelezionato);
+                aggiornaTutto();
+                pv.refresh();
+            });
+            menuCambioAnno.add(itemAnno);
+        }
+
+        // Mostriamo il menu quando si clicca sul badge
+        badgeAnno.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                menuCambioAnno.show(badgeAnno, 0, badgeAnno.getHeight());
+            }
+        });
+        
         pSinistra.add(badgeAnno);
 
         JLabel nomeEsameLabel = new JLabel(nome);
@@ -610,39 +661,61 @@ public class PannelloAggiungi extends JPanel {
         headerLista.add(lblTitolo, BorderLayout.WEST);
 
         // --- IL NUOVO BOTTONE E MENU DI ORDINAMENTO ---
-        JButton btnOrdina = new JButton("Ordina ▼");
+        btnOrdina = new JButton("Ordina ▼");
         btnOrdina.putClientProperty("FlatLaf.style", "arc: 999; focusWidth: 0;");
         btnOrdina.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btnOrdina.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        JPopupMenu menuOrdina = new JPopupMenu();
+        menuOrdina = new JPopupMenu();
         JMenuItem mnuNome = new JMenuItem("Alfabetico (A-Z)");
         JMenuItem mnuVotoAlto = new JMenuItem("Voto (Dal più alto)");
         JMenuItem mnuVotoBasso = new JMenuItem("Voto (Dal più basso)");
-        JMenuItem mnuAnno = new JMenuItem("Per Anno Universitario");
+        JMenuItem mnuAnnoAsc = new JMenuItem("Anno (1° → 5°)");
+        JMenuItem mnuAnnoDesc = new JMenuItem("Anno (5° → 1°)");
         JMenuItem mnuRecenti = new JMenuItem("Aggiunti di recente");
-        btnOrdina.setText(menuOrdina.isVisible() ? "Ordina ▲" : "Ordina ▼");
 
         menuOrdina.add(mnuNome);
         menuOrdina.add(mnuVotoAlto);
         menuOrdina.add(mnuVotoBasso);
-        menuOrdina.add(mnuAnno);
+        menuOrdina.add(mnuAnnoAsc);
+        menuOrdina.add(mnuAnnoDesc);
         menuOrdina.addSeparator();
         menuOrdina.add(mnuRecenti);
 
         // Mostra il menu al click
-        btnOrdina.addActionListener(e -> menuOrdina.show(btnOrdina, 0, btnOrdina.getHeight()));
+        btnOrdina.addActionListener(e -> {menuOrdina.show(btnOrdina, 0, btnOrdina.getHeight());});
 
         // Azioni delle voci
         mnuNome.addActionListener(e -> { criterioOrdinamento = "NOME"; refreshDataUI(); });
         mnuVotoAlto.addActionListener(e -> { criterioOrdinamento = "VOTO_DESC"; refreshDataUI(); });
         mnuVotoBasso.addActionListener(e -> { criterioOrdinamento = "VOTO_ASC"; refreshDataUI(); });
-        mnuAnno.addActionListener(e -> { criterioOrdinamento = "ANNO"; refreshDataUI(); });
+        mnuAnnoAsc.addActionListener(e -> { criterioOrdinamento = "ANNO_ASC"; refreshDataUI(); });
+        mnuAnnoDesc.addActionListener(e -> { criterioOrdinamento = "ANNO_DESC"; refreshDataUI(); });
         mnuRecenti.addActionListener(e -> { criterioOrdinamento = "RECENTI"; refreshDataUI(); });
+
+        // --- ANIMAZIONE FRECCIA DEL MENU ---
+        menuOrdina.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent e) {
+                // Quando il menu si apre, la freccia punta in alto
+                btnOrdina.setText("Ordina ▲");
+            }
+            @Override
+            public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent e) {
+                // Quando il menu si chiude, la freccia torna in basso
+                btnOrdina.setText("Ordina ▼");
+            }
+            @Override
+            public void popupMenuCanceled(javax.swing.event.PopupMenuEvent e) {
+                // Se annulli cliccando fuori dal menu, la freccia torna in basso
+                btnOrdina.setText("Ordina ▼");
+            }
+        });
 
         headerLista.add(btnOrdina, BorderLayout.EAST); // Aggiunto a DESTRA dell'header
 
         esamiAggiunti.add(headerLista, BorderLayout.NORTH);
+        
 
         // --- Area della Lista (Scroll) ---
         esamiPanel = new JPanel();

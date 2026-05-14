@@ -137,6 +137,18 @@ public class GestoreDatabase {
         }
     }
 
+    public static void aggiornaAnnoEsame(String nomeEsame, String nuovoAnno) {
+        String sql = "UPDATE esami SET anno = ? WHERE nome = ?";
+        try (Connection conn = connect();
+                java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, nuovoAnno);
+            pstmt.setString(2, nomeEsame);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Errore in aggiornamento anno: " + e.getMessage());
+        }
+    }
+
     // --- VOTI E I CFU ---
 
     public static String[] getVotiEsamiRaw() {

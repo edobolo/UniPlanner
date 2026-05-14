@@ -42,7 +42,6 @@ import com.minec.EsportatorePDF;
 import com.minec.GestoreNotifiche;
 import com.minec.dati.GestoreDatabase;
 
-// Questa riga significa: "SchermataVoti è un tipo personalizzato di JPanel"
 public class PannelloVoti extends JPanel {
 
     private static final int BASE_WIDTH = 800;
@@ -88,7 +87,7 @@ public class PannelloVoti extends JPanel {
         mediaPanel.setBorder(
                 BorderFactory.createLineBorder(temaScuro ? new Color(80, 80, 80) : new Color(220, 220, 220), 1, true));
 
-        // --- LOGICA CALCOLO MEDIA (Ripristinata) ---
+        // --- LOGICA CALCOLO MEDIA ---
         String[] voti = GestoreDatabase.getVotiEsamiRaw();
         int sommaVoti = 0;
         int sommaVotiSemplice = 0;
@@ -268,7 +267,7 @@ public class PannelloVoti extends JPanel {
                 GestoreDatabase.numeroVoti() + "/" + GestoreDatabase.numeroEsami(), temaScuro);
         autoCreazioneInfo(panelInfo, "Base Laurea", Math.round(baseL) + "/110", temaScuro);
 
-        // --- 3. PANNELLO OBIETTIVO (con logica click e stacco dal fondo) ---
+        // --- 3. PANNELLO OBIETTIVO ---
         JPanel pnlObiettivo = autoCreazioneInfo(panelInfo, "Obiettivo", obiettivoSalvato + "/30", temaScuro);
         double differenza = mediaVoti - obiettivoSalvato;
         differenza = Math.round(differenza * 10.0) / 10.0;
@@ -301,7 +300,7 @@ public class PannelloVoti extends JPanel {
             }
         });
 
-        // --- 4. PANNELLO CREDITI (con barra sistemata) ---
+        // --- 4. PANNELLO CREDITI ---
         JPanel pnlCrediti = new JPanel(new BorderLayout());
         pnlCrediti.setBackground(temaScuro ? new Color(48, 50, 54) : Color.WHITE);
 
@@ -321,7 +320,7 @@ public class PannelloVoti extends JPanel {
 
         JProgressBar jp = new JProgressBar(0, maxCfu);
         jp.setValue(Math.min(sommaCfu, maxCfu));
-        jp.setPreferredSize(new Dimension(100, 6)); // Leggermente più fine
+        jp.setPreferredSize(new Dimension(100, 7));
         jp.setForeground(new Color(76, 175, 80));
         jp.setBorderPainted(false);
 
