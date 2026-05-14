@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class GestoreDatabase {
-    // Il database verrà salvato nella tua stessa cartella UniplannerDati!
+    // Il database verrà salvato nella cartella UniplannerDati
     private static final String PERCORSO_DB = "jdbc:sqlite:" + System.getProperty("user.home")
             + java.io.File.separator + "UniplannerDati" + java.io.File.separator + "uniplanner.db";
 
@@ -58,7 +58,6 @@ public class GestoreDatabase {
 
     public static String[] getEsamiSalvatiRaw() {
         java.util.List<String> listaEsami = new java.util.ArrayList<>();
-        // 1. MODIFICA: Ora chiediamo a SQLite di estrarre anche la colonna 'anno'
         String sql = "SELECT nome, completato, idoneita, anno FROM esami";
 
         try (Connection conn = connect();
@@ -68,12 +67,12 @@ public class GestoreDatabase {
                 String nome = rs.getString("nome");
                 boolean completato = rs.getBoolean("completato");
                 boolean idoneita = rs.getBoolean("idoneita");
-                // 2. MODIFICA: Recuperiamo l'anno (se per qualche motivo è vuoto, mettiamo "N/D")
+                // Recuperiamo l'anno (se per qualche motivo è vuoto, mettiamo "N/D")
                 String anno = rs.getString("anno");
                 if (anno == null) {
                     anno = "N/D";
                 }
-                // 3. MODIFICA: Aggiungiamo l'anno in fondo alla stringa (con il ; di separazione)
+                // Aggiungiamo l'anno in fondo alla stringa (con il ; di separazione)
                 listaEsami.add(nome + ";" + completato + ";" + idoneita + ";" + anno);
             }
         } catch (SQLException e) {
@@ -103,8 +102,8 @@ public class GestoreDatabase {
         String sql = "UPDATE esami SET completato = ? WHERE nome = ?";
         try (Connection conn = connect();
             java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setBoolean(1, completato); // Primo punto interrogativo
-            pstmt.setString(2, nomeEsame); // Secondo punto interrogativo
+            pstmt.setBoolean(1, completato); 
+            pstmt.setString(2, nomeEsame); 
             pstmt.executeUpdate();
         } catch (SQLException e) {
             System.out.println("Errore in aggiornamento: " + e.getMessage());
@@ -167,8 +166,7 @@ public class GestoreDatabase {
     }
 
     public static void setVotiEsami(String voto, String nome, int CFU) {
-        // Aggiorna il voto e segna come completato (ignoriamo il CFU passato qui perché
-        // lo aggiorni a parte)
+        // Aggiorna il voto e segna come completato
         String sql = "UPDATE esami SET voto = ?, completato = 1 WHERE nome = ?";
         try (Connection conn = connect();
                 java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -456,7 +454,7 @@ public class GestoreDatabase {
     // --- METODO RESET ---
 
     public static void resetTutto() {
-        // Cancella il contenuto di tutte le tabelle in un colpo solo!
+        // Cancella il contenuto di tutte le tabelle in un colpo solo
         try (Connection conn = connect();
                 Statement stmt = conn.createStatement()) {
             stmt.execute("DELETE FROM esami");

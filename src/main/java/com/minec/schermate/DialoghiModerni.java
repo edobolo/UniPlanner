@@ -5,30 +5,27 @@ import java.awt.*;
 
 public class DialoghiModerni {
 
-    // --- IL SEGRETO: UN BOTTONE A PILLOLA DISEGNATO DA ZERO ---
-    // (Ignora i limiti di FlatLaf e si disegna perfettamente curvo)
     static class BottonePillola extends JButton {
         private Color coloreSfondo;
 
         public BottonePillola(String testo, Color colore) {
             super(testo);
             this.coloreSfondo = colore;
-            setContentAreaFilled(false); // Blocca il disegno standard
+            setContentAreaFilled(false);
             setFocusPainted(false);
             setBorderPainted(false);
             setOpaque(false);
             setForeground(Color.WHITE);
             setFont(new Font("Segoe UI", Font.BOLD, 14));
             setCursor(new Cursor(Cursor.HAND_CURSOR));
-            setBorder(BorderFactory.createEmptyBorder(8, 25, 8, 25)); // Spazio ai lati
+            setBorder(BorderFactory.createEmptyBorder(8, 25, 8, 25));
         }
 
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // Bordi fluidi
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Colori quando clicchi o ci passi sopra col mouse
             if (getModel().isPressed()) {
                 g2.setColor(coloreSfondo.darker());
             } else if (getModel().isRollover()) {
@@ -37,11 +34,10 @@ public class DialoghiModerni {
                 g2.setColor(coloreSfondo);
             }
 
-            // Disegna la forma a pillola (l'arco è uguale all'altezza)
             g2.fillRoundRect(0, 0, getWidth(), getHeight(), getHeight(), getHeight());
             g2.dispose();
 
-            super.paintComponent(g); // Disegna il testo sopra
+            super.paintComponent(g); 
         }
     }
 
@@ -99,9 +95,7 @@ public class DialoghiModerni {
         inputField.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         inputField.putClientProperty("JTextField.placeholderText", "Inserisci valore...");
         inputField.putClientProperty("JComponent.roundRect", true);
-        inputField.setHorizontalAlignment(JTextField.LEFT); // Centra il testo che scrivi!
-
-        // La magia che gli impedisce di allargarsi:
+        inputField.setHorizontalAlignment(JTextField.LEFT);
         inputField.setMaximumSize(new Dimension(180, 35));
         inputField.setPreferredSize(new Dimension(180, 35));
 
@@ -140,7 +134,7 @@ public class DialoghiModerni {
         inputField.addActionListener(e -> {
             pane.setValue(JOptionPane.OK_OPTION);
             dialog.dispose();
-        }); // Funziona l'invio!
+        });
 
         // Autofocus
         dialog.addWindowFocusListener(new java.awt.event.WindowAdapter() {

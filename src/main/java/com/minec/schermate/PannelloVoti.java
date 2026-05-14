@@ -304,7 +304,6 @@ public class PannelloVoti extends JPanel {
         JPanel pnlCrediti = new JPanel(new BorderLayout());
         pnlCrediti.setBackground(temaScuro ? new Color(48, 50, 54) : Color.WHITE);
 
-        // Aggiungiamo padding interno anche qui!
         javax.swing.border.Border linea = BorderFactory
                 .createLineBorder(temaScuro ? new Color(70, 70, 70) : new Color(230, 230, 230), 1, true);
         javax.swing.border.Border margine = BorderFactory.createEmptyBorder(6, 6, 6, 6);
@@ -314,7 +313,6 @@ public class PannelloVoti extends JPanel {
         t.setFont(new Font("Arial", Font.PLAIN, 12));
         t.setForeground(Color.GRAY);
 
-        // Ora il font è 18, identico alle altre caselle
         JLabel lblCfu = new JLabel(sommaCfu + "/" + maxCfu, SwingConstants.CENTER);
         lblCfu.setFont(new Font("Arial", Font.BOLD, 18));
 
@@ -324,10 +322,9 @@ public class PannelloVoti extends JPanel {
         jp.setForeground(new Color(76, 175, 80));
         jp.setBorderPainted(false);
 
-        // Contenitore per la barra per staccarla dai lati e dal fondo
         JPanel contenitoreBarra = new JPanel(new BorderLayout());
         contenitoreBarra.setOpaque(false);
-        contenitoreBarra.setBorder(BorderFactory.createEmptyBorder(5, 5, 2, 5)); // top, left, bottom, right
+        contenitoreBarra.setBorder(BorderFactory.createEmptyBorder(5, 5, 2, 5));
         contenitoreBarra.add(jp, BorderLayout.CENTER);
 
         pnlCrediti.add(t, BorderLayout.NORTH);
@@ -438,7 +435,7 @@ public class PannelloVoti extends JPanel {
             etichettaTempo.setFont(new Font("Arial", Font.ITALIC, 12));
             etichettaTempo.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-            // Listener per il tempo (Invariato)
+            // Listener per il tempo
             etichettaTempo.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
@@ -447,7 +444,7 @@ public class PannelloVoti extends JPanel {
                             "Tempo di Studio",
                             "Quanto hai studiato per " + nomeEsame + "? (es. '120' per minuti, oppure '2:30')",
                             "Salva",
-                            "" // Lasciamo vuoto all'inizio
+                            ""
                     );
 
                     // 2. Controlliamo che l'utente non abbia annullato
@@ -463,8 +460,7 @@ public class PannelloVoti extends JPanel {
                                     int minuti = Integer.parseInt(p[1]);
                                     mTot = (ore * 60) + minuti;
                                 } else {
-                                    throw new NumberFormatException(); // Lancia errore se scrive roba strana tipo
-                                                                       // "2:30:15"
+                                    throw new NumberFormatException(); // Lancia errore se scrive cose sbagliate
                                 }
                             } else {
                                 mTot = Integer.parseInt(tempoRaw);
@@ -474,10 +470,9 @@ public class PannelloVoti extends JPanel {
                                 GestoreDatabase.setNuovoTempoStudio(nomeEsame, mTot);
                                 refresh();
                             } else {
-                                throw new NumberFormatException(); // Niente numeri negativi
+                                throw new NumberFormatException();
                             }
                         } catch (NumberFormatException ex) {
-                            // 5. Gestione dell'errore moderna
                             DialoghiModerni.mostraMessaggio(
                                     PannelloVoti.this,
                                     "Formato non valido",
@@ -546,8 +541,8 @@ public class PannelloVoti extends JPanel {
             optionButtonPanel.setBounds(
                     getWidth() - buttonSize - Math.round(15 * currentScale),
                     Math.round(10 * currentScale),
-                    buttonSize, // Larghezza
-                    buttonSize // Altezza
+                    buttonSize,
+                    buttonSize
             );
         }
         applyVotiRowsScaling();
@@ -780,8 +775,6 @@ public class PannelloVoti extends JPanel {
 
         if (iconPath != null && !iconPath.isEmpty()) {
             JLabel lblIcona = new JLabel(new FlatSVGIcon(iconPath, 24, 24));
-            // Applichiamo un colore grigio chiaro all'icona se siamo in tema scuro per
-            // farla risaltare
             lblIcona.setForeground(temaScuro ? new Color(200, 200, 200) : Color.DARK_GRAY);
             leftPanel.add(lblIcona, BorderLayout.WEST);
         }
@@ -967,7 +960,6 @@ public class PannelloVoti extends JPanel {
             centro.add(creaCardImpostazione("Obiettivo CFU", "Crediti totali per completare gli studi", pnlCfu, "icone/target.svg"));
             centro.add(Box.createRigidArea(new Dimension(0, 8)));
 
-            // Sostituiamo il menu a tendina complicato con una card pulita e diretta
             JPanel pnlParam = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
             pnlParam.setOpaque(false);
             JTextField txtLode = new JTextField(GestoreDatabase.getImpostazione("LODE", "30"), 2);
@@ -1019,7 +1011,7 @@ public class PannelloVoti extends JPanel {
             btnPDF.putClientProperty("JButton.buttonType", "roundRect");
             // Rosso pastello se scuro, Rosso scuro se chiaro
             btnPDF.setForeground(scuro ? new Color(229, 115, 115) : new Color(140, 24, 26));
-            btnPDF.addActionListener(ev -> { /* La tua logica PDF rimane identica a prima */
+            btnPDF.addActionListener(ev -> {
                 JFileChooser fileChooser = new JFileChooser();
                 fileChooser.setDialogTitle("Salva il tuo libretto");
                 fileChooser.setSelectedFile(new java.io.File("Libretto_UniPlanner.pdf"));
@@ -1188,7 +1180,7 @@ public class PannelloVoti extends JPanel {
                     }
                 }
 
-                // --- SEZIONE 4: TEMPO DI STUDIO (NUOVA) ---
+                // --- SEZIONE 4: TEMPO DI STUDIO ---
                 fw.write("\n### STUDIO ###\n");
                 String[] studio = GestoreDatabase.getTuttoLoStudioRaw();
                 if (studio != null) {
@@ -1224,7 +1216,7 @@ public class PannelloVoti extends JPanel {
                     linea = linea.trim();
                     if (linea.isEmpty()) continue;
                     
-                    // Gestione delle Sezioni (Aggiunto il blocco STUDIO)
+                    // Gestione delle Sezioni
                     if (linea.startsWith("### ESAMI ###")) { sezioneAttuale = "ESAMI"; continue; }
                     if (linea.startsWith("### IMPOSTAZIONI ###")) { sezioneAttuale = "IMPOSTAZIONI"; continue; }
                     if (linea.startsWith("### SCADENZE ###")) { sezioneAttuale = "SCADENZE"; continue; }

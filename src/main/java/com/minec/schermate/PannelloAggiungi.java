@@ -77,7 +77,7 @@ public class PannelloAggiungi extends JPanel {
         // Carichiamo i dati iniziali
         refreshDataUI();
 
-        // Prima scalatura appena il pannello viene mostrato.
+        // Prima scalatura appena il pannello viene mostrato
         SwingUtilities.invokeLater(this::applyResponsiveScaling);
     }
 
@@ -86,7 +86,7 @@ public class PannelloAggiungi extends JPanel {
     }
 
     private void refreshDataUI() {
-        // 1. Aggiorna la lista grafica (il centro)
+        // 1. Aggiorna la lista grafica
         esamiPanel.removeAll();
         // 2. Recupero dati
         String[] esamiRaw = GestoreDatabase.getEsamiSalvatiRaw();
@@ -155,8 +155,7 @@ public class PannelloAggiungi extends JPanel {
                         confrontoAnno = anno2.compareTo(anno1);
                     }
 
-                    // Se l'anno è lo stesso (o se sono entrambi N/D), ordiniamo alfabeticamente per
-                    // nome
+                    // Se l'anno è lo stesso (o se sono entrambi N/D), ordiniamo alfabeticamente per nome
                     if (confrontoAnno == 0) {
                         return nome1.compareToIgnoreCase(nome2);
                     }
@@ -242,10 +241,9 @@ public class PannelloAggiungi extends JPanel {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // Bordi fluidi
                 g2.setColor(getBackground());
-                // Disegna la forma a pillola
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
                 g2.dispose();
-                super.paintComponent(g); // Disegna il testo sopra
+                super.paintComponent(g);
             }
         };
         badgeAnno.setOpaque(true);
@@ -272,7 +270,7 @@ public class PannelloAggiungi extends JPanel {
             badgeAnno.setBackground(new Color(100, 116, 139));
             badgeAnno.setForeground(Color.WHITE);
         }
-        //TODO: rendere modificabili i tag premendoci sopra
+
         badgeAnno.setFont(new Font("Segoe UI", Font.BOLD, 11));
         badgeAnno.setCursor(new Cursor(Cursor.HAND_CURSOR));
         badgeAnno.setToolTipText("Clicca per cambiare l'anno");
@@ -283,8 +281,7 @@ public class PannelloAggiungi extends JPanel {
         for (String annoSelezionato : anniScelta) {
             JMenuItem itemAnno = new JMenuItem(annoSelezionato);
 
-            // Se la voce del menu è uguale all'anno attuale dell'esame, la mettiamo in
-            // grassetto
+            // Se la voce del menu è uguale all'anno attuale dell'esame, la mettiamo in grassetto
             if (annoSelezionato.equals(annoEsame)) {
                 itemAnno.setFont(new Font("Segoe UI", Font.BOLD, 12));
             }
@@ -305,7 +302,7 @@ public class PannelloAggiungi extends JPanel {
                 menuCambioAnno.show(badgeAnno, 0, badgeAnno.getHeight());
             }
         });
-        
+
         pSinistra.add(badgeAnno);
 
         JLabel nomeEsameLabel = new JLabel(nome);
@@ -462,8 +459,6 @@ public class PannelloAggiungi extends JPanel {
             }
         }
 
-        // Aggiornamento finale di tutti i dati grafici se il salvataggio è andato a
-        // buon fine
         aggiornaTutto();
         pv.refresh();
         GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
@@ -697,22 +692,19 @@ public class PannelloAggiungi extends JPanel {
         menuOrdina.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
             @Override
             public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent e) {
-                // Quando il menu si apre, la freccia punta in alto
                 btnOrdina.setText("Ordina ▲");
             }
             @Override
             public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent e) {
-                // Quando il menu si chiude, la freccia torna in basso
                 btnOrdina.setText("Ordina ▼");
             }
             @Override
             public void popupMenuCanceled(javax.swing.event.PopupMenuEvent e) {
-                // Se annulli cliccando fuori dal menu, la freccia torna in basso
                 btnOrdina.setText("Ordina ▼");
             }
         });
 
-        headerLista.add(btnOrdina, BorderLayout.EAST); // Aggiunto a DESTRA dell'header
+        headerLista.add(btnOrdina, BorderLayout.EAST);
 
         esamiAggiunti.add(headerLista, BorderLayout.NORTH);
         
@@ -721,11 +713,9 @@ public class PannelloAggiungi extends JPanel {
         esamiPanel = new JPanel();
         esamiPanel.setLayout(new BoxLayout(esamiPanel, BoxLayout.Y_AXIS));
         esamiPanel.setOpaque(false);
-        // Togliamo il margine superiore da qui...
         esamiPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
         JScrollPane scrollPane = new JScrollPane(esamiPanel);
-        // ...E LO SPOSTIAMO QUI! (15 pixel di distanza dalla linea superiore)
         scrollPane.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
         scrollPane.setOpaque(false);
         scrollPane.getViewport().setOpaque(false);
