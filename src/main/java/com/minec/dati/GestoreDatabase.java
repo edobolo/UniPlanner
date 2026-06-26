@@ -10,8 +10,16 @@ public class GestoreDatabase {
     private static final String PERCORSO_DB = "jdbc:sqlite:" + System.getProperty("user.home")
             + java.io.File.separator + "UniplannerDati" + java.io.File.separator + "uniplanner.db";
 
+    private static void assicuratiCartellaDatabase() {
+        java.io.File cartellaDati = new java.io.File(System.getProperty("user.home"), "UniplannerDati");
+        if (!cartellaDati.exists()) {
+            cartellaDati.mkdirs();
+        }
+    }
+
     // Metodo per ottenere la connessione
     public static Connection connect() throws SQLException {
+        assicuratiCartellaDatabase();
         return DriverManager.getConnection(PERCORSO_DB);
     }
 
