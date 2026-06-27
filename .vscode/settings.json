@@ -1,4 +1,8 @@
 {
     "java.debug.settings.onBuildFailureProceed": true,
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "terminal.integrated.env.windows": {
+        "JAVA_HOME": "C:\\Users\\edoar\\.jdk\\jdk-21.0.10",
+        "Path": "${env:PATH};C:\\Users\\edoar\\.maven\\maven-3.9.15\\bin;C:\\Users\\edoar\\.jdk\\jdk-21.0.10\\bin"
+    }
 }
