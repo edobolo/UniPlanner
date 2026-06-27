@@ -25,7 +25,6 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
@@ -215,7 +214,7 @@ public class PannelloScadenze extends JPanel {
         this.add(moduloPanel, BorderLayout.NORTH);
         this.add(cardPanel, BorderLayout.CENTER);
 
-        // --- LOGICA FINALE (Quella che mancava!) ---
+        // --- LOGICA FINALE ---
         setupResponsiveLayout();
         initListaScadenze();
         SwingUtilities.invokeLater(this::applyResponsiveLayout);
@@ -224,7 +223,7 @@ public class PannelloScadenze extends JPanel {
             String esameSelezionato = (String) comboEsami.getSelectedItem();
             LocalDate dataSelezionata = datePicker.getDate();
             if (esameSelezionato == null || dataSelezionata == null) {
-                JOptionPane.showMessageDialog(this, "Seleziona sia un esame che una data valida!");
+                DialoghiModerni.mostraMessaggio(this, "Attenzione!", "Selezione sia un esame che una data valida!", true);
                 return;
             }
             GestoreDatabase.salvaScadenza(esameSelezionato, dataSelezionata.toString());
@@ -287,7 +286,6 @@ public class PannelloScadenze extends JPanel {
             newCalendar.add(p);
         }
 
-        // Sostituiamo il vecchio calendario con quello nuovo
         JPanel oldCalendar = this.calendar;
         this.calendar = newCalendar;
         this.pnlGiorni = newPnlGiorni;
@@ -410,10 +408,10 @@ public class PannelloScadenze extends JPanel {
         if (ordinaPerData) {
             listaScadenze.sort((riga1, riga2) -> {
                 try {
-                    // Estraiamo le date (il secondo elemento della stringa)
+                    // Estraiamo le date
                     LocalDate data1 = LocalDate.parse(riga1.split(";")[1]);
                     LocalDate data2 = LocalDate.parse(riga2.split(";")[1]);
-                    // Confrontiamo le due date (la più vicina andrà in alto)
+                    // Confrontiamo le due date
                     return data1.compareTo(data2);
                 } catch (Exception e) {
                     return 0; // Se c'è un errore nella lettura, lasciali dove sono
@@ -473,11 +471,10 @@ public class PannelloScadenze extends JPanel {
                 btnRimuovi.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
                 btnRimuovi.addActionListener(e -> {
-                    int conferma = JOptionPane.showConfirmDialog(this,
-                            "Vuoi davvero rimuovere la data per " + nomeEsame + "?",
-                            "Conferma rimozione", JOptionPane.YES_NO_OPTION);
+                    boolean conferma = DialoghiModerni.chiediConferma(this, "Conferma rimozione",
+                            "Vuoi davvero rimuovere la data per " + nomeEsame + "?", "Si, elimina", true);
 
-                    if (conferma == JOptionPane.YES_OPTION) {
+                    if (conferma) {
                         GestoreDatabase.removeScadenza(nomeEsame);
                         aggiornaListaScadenze();
                         GestoreNotifiche.aggiornaTrofeiEAvvisa(this);
@@ -535,14 +532,13 @@ public class PannelloScadenze extends JPanel {
             }
         }
 
-        // Popola i pannelli dei giorni
         LocalDate oggi = LocalDate.now();
         for (int i = 0; i < pnlGiorni.length; i++) {
             JPanel p = pnlGiorni[i];
             p.removeAll();
             p.setLayout(new BorderLayout());
 
-            // Aggiungi il numero del giorno in NORTH (a sinistra)
+            // Aggiungi il numero del giorno in NORTH
             JLabel lblDay = new JLabel("" + (i + 1));
             lblDay.setBorder(new EmptyBorder(4, 6, 0, 0));
             lblDay.setHorizontalAlignment(JLabel.LEFT);

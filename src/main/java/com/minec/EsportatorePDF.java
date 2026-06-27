@@ -81,7 +81,7 @@ public class EsportatorePDF {
                 contenuto.showText("Riepilogo Carriera:");
                 contenuto.endText();
 
-                contenuto.setNonStrokingColor(0, 0, 0); // Torna al nero
+                contenuto.setNonStrokingColor(0f, 0f, 0f); // Torna al nero
                 contenuto.setFont(PDType1Font.HELVETICA, 12);
                 
                 y -= 25;

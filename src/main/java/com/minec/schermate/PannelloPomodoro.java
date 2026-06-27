@@ -39,7 +39,6 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButton;
@@ -162,7 +161,7 @@ public class PannelloPomodoro extends JPanel{
         radioStudio.addActionListener(e -> cambiaTipoSessione(true));
         radioPausa.addActionListener(e -> cambiaTipoSessione(false));
 
-        // Barra Progressi Moderna (Fina e senza bordi spigolosi)
+        // Barra Progressi Moderna
         barraProgressi = new JProgressBar(0, (isSessioneStudio ? MINUTI_STUDIO : MINUTI_PAUSA) * 60);
         barraProgressi.setForeground(new Color(231, 76, 60));
         barraProgressi.setBackground(temaScuro ? new Color(60, 63, 65) : new Color(240, 240, 240));
@@ -199,7 +198,6 @@ public class PannelloPomodoro extends JPanel{
         card.add(lblMaxPomodori);
         card.add(Box.createRigidArea(new Dimension(0, 25)));
 
-        // Pulsanti Moderni
         JPanel botPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 25, 0));
         botPanel.setOpaque(false);
         btnStartPause = new JButton("Avvia");
@@ -259,7 +257,7 @@ public class PannelloPomodoro extends JPanel{
     private void avviaTimer() {
         inEsecuzione = true;
         btnStartPause.setText("Pausa");
-        btnStartPause.setBackground(new Color(230, 126, 34)); // Diventa Arancione
+        btnStartPause.setBackground(new Color(230, 126, 34));
         if (isSessioneStudio) {
             lblStato.setIcon(new FlatSVGIcon("icone/books.svg", 20, 20));
             lblStato.setText(" Sessione di Studio...");
@@ -499,7 +497,7 @@ public class PannelloPomodoro extends JPanel{
             titolo = "Pausa Finita!";
             msg = "La pausa è finita, torna sui libri!";
         }
-        JOptionPane.showMessageDialog(this, msg, titolo, JOptionPane.INFORMATION_MESSAGE);
+        DialoghiModerni.mostraMessaggio(this, titolo, msg, false);
         // Cambia modalità (se era studio passa a pausa, e viceversa)
         isSessioneStudio = !isSessioneStudio;
         radioStudio.setSelected(isSessioneStudio);
@@ -591,7 +589,7 @@ public class PannelloPomodoro extends JPanel{
             Color coloreTitoloTrofei = temaScuro ? new Color(235, 235, 235) : new Color(20, 45, 87);
 
             JPanel pannelloTrofei = new JPanel();
-            pannelloTrofei.setPreferredSize(new Dimension(550, 450));
+            pannelloTrofei.setPreferredSize(new Dimension(500, 480));
             pannelloTrofei.setBorder(BorderFactory.createLineBorder(coloreBordoTrofei, 2));
             pannelloTrofei.setBackground(coloreSfondoTrofei);
             pannelloTrofei.setOpaque(true);
@@ -942,10 +940,10 @@ public class PannelloPomodoro extends JPanel{
             JPanel pnlHeader = new JPanel(new BorderLayout());
             pnlHeader.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
             pnlHeader.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            JLabel lblTitoloParam = new JLabel(" Parametri Timer:");
+            JLabel lblTitoloParam = new JLabel(" Parametri Timer");
             lblTitoloParam.setIcon(new FlatSVGIcon("icone/clock.svg", 22, 22));
             lblTitoloParam.setIconTextGap(5);
-            lblTitoloParam.setFont(new Font("Arial", Font.BOLD, 14));
+            lblTitoloParam.setFont(new Font("Arial", Font.BOLD, 15));
             lblTitoloParam.setBorder(BorderFactory.createEmptyBorder(0,65,0,0));
             JLabel lblFreccia = new JLabel("▼");
             pnlHeader.add(lblTitoloParam, BorderLayout.WEST);
@@ -982,9 +980,10 @@ public class PannelloPomodoro extends JPanel{
                     lblStato.setForeground(Color.GRAY);
                     lblStato.setIcon(new FlatSVGIcon(isSessioneStudio ? "icone/books.svg" : "icone/coffee.svg", 20, 20));
                     aggiornaTimerEProgressBar();
-                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Parametri salvati!");
+                    DialoghiModerni.mostraMessaggio(pannelloImpostazioni, "Successo", "Parametri salvati!", false);
                 } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Inserisci minuti validi (numeri interi maggiori di 0).");
+                    DialoghiModerni.mostraMessaggio(pannelloImpostazioni, "Attenzione!", 
+                            "Inserisci minuti validi\n" + "(numeri interi maggiori di 0)", true);
                 }
             });
             pnlContenuto.add(new JLabel(""));
@@ -1018,13 +1017,15 @@ public class PannelloPomodoro extends JPanel{
             btnReset.setForeground(Color.RED);
             btnReset.setFont(new Font("Arial", Font.BOLD, 14));
             btnReset.addActionListener(ev -> {
-                int conf1 = JOptionPane.showConfirmDialog(pannelloImpostazioni,
-                        "Vuoi davvero azzerare il max pomodori?", "Conferma Reset", JOptionPane.YES_NO_OPTION);
-                if (conf1 == JOptionPane.YES_OPTION) {
+                boolean conf1 = DialoghiModerni.chiediConferma(pannelloImpostazioni,
+                     "Conferma Reset", 
+                     "Vuoi davvero azzerare il max pomodori?", 
+                     "Si, azzera", true);
+                if (conf1) {
                     GestoreDatabase.salvaMaxPomodoriGiornalieri(0);
                     maxPomodoriGiornalieri = 0;
                     aggiornaLblContatore();
-                    JOptionPane.showMessageDialog(pannelloImpostazioni, "Max pomodori azzerato.");
+                    DialoghiModerni.mostraMessaggio(pannelloImpostazioni, "Successo", "Max pomodori azzerato", false);
                 }
             });
             pnlReset.add(btnReset);
