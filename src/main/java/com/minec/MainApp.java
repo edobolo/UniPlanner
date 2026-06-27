@@ -8,6 +8,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagLayout;
+import java.util.SimpleTimeZone;
+import java.util.TimeZone;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -27,6 +29,10 @@ public class MainApp {
     private static final String ICONA_APP = "icone/u.svg";
 
     public static void main(String[] args) {
+        impostaTimezonePredefinito();
+
+        com.minec.dati.GestoreDatabase.inizializzaDatabase();
+
         // Leggiamo la memoria
         if (com.minec.dati.GestoreDatabase.isTemaScuro()) {
             com.formdev.flatlaf.FlatDarkLaf.setup(); // Tema Scuro
@@ -34,7 +40,6 @@ public class MainApp {
             com.formdev.flatlaf.FlatLightLaf.setup(); // Tema Chiaro
         }
         GestoreNotifiche.avviaNotifiche(ICONA_APP);
-        com.minec.dati.GestoreDatabase.inizializzaDatabase();
         SwingUtilities.invokeLater(() -> creaEmostraGUI());
     }
 
@@ -190,6 +195,12 @@ public class MainApp {
 
         timerAvvio.setRepeats(false);
         timerAvvio.start();
+    }
+
+    private static void impostaTimezonePredefinito() {
+        TimeZone utc = new SimpleTimeZone(0, "UTC");
+        TimeZone.setDefault(utc);
+        System.setProperty("user.timezone", "UTC");
     }
 
     private static JButton creaBottoneMenu(String testo, Color coloreSfondo) {
