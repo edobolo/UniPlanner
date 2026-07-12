@@ -160,7 +160,7 @@ public class GestoreDatabase {
 
     public static String[] getVotiEsamiRaw() {
         java.util.List<String> voti = new java.util.ArrayList<>();
-        String sql = "SELECT voto, nome, cfu FROM esami WHERE completato = 1";
+        String sql = "SELECT voto, nome, cfu FROM esami WHERE completato = 1 OR idoneita = 1";
         try (Connection conn = connect();
                 Statement stmt = conn.createStatement();
                 java.sql.ResultSet rs = stmt.executeQuery(sql)) {
@@ -310,7 +310,7 @@ public class GestoreDatabase {
     }
 
     public static int numeroVoti() {
-        String sql = "SELECT COUNT(*) AS totale FROM esami WHERE completato = 1";
+        String sql = "SELECT COUNT(*) AS totale FROM esami WHERE completato = 1 OR idoneita = 1";
         try (Connection conn = connect();
                 Statement stmt = conn.createStatement();
                 java.sql.ResultSet rs = stmt.executeQuery(sql)) {

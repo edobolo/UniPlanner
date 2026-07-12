@@ -226,6 +226,7 @@ public class PannelloVoti extends JPanel {
         String[] voti = GestoreDatabase.getVotiEsamiRaw();
         int sommaVoti = 0;
         int sommaCfu = 0;
+        int cfuTotali = 0;
         int numeroLodi = 0;
         int pesoLode = GestoreDatabase.getPesoLode();
         int bonusLode = GestoreDatabase.getBonusLode();
@@ -234,15 +235,19 @@ public class PannelloVoti extends JPanel {
             if (pair.length >= 3) {
                 try {
                     int cfuSingolo = Integer.parseInt(pair[2]);
-                    int votoSingolo;
-                    if (pair[0].equalsIgnoreCase("30L") || pair[0].equalsIgnoreCase("30 e lode")) {
-                        votoSingolo = pesoLode;
-                        numeroLodi++;
-                    } else {
-                        votoSingolo = Integer.parseInt(pair[0]);
+                    cfuTotali += cfuSingolo;
+
+                    if (!pair[0].equalsIgnoreCase("IDONEO")) {
+                        int votoSingolo;
+                        if (pair[0].equalsIgnoreCase("30L") || pair[0].equalsIgnoreCase("30 e lode")) {
+                            votoSingolo = pesoLode;
+                            numeroLodi++;
+                        } else {
+                            votoSingolo = Integer.parseInt(pair[0]);
+                        }
+                        sommaVoti += votoSingolo * cfuSingolo;
+                        sommaCfu += cfuSingolo;
                     }
-                    sommaVoti += votoSingolo * cfuSingolo;
-                    sommaCfu += cfuSingolo;
                 } catch (NumberFormatException e) {
                 }
             }
@@ -313,11 +318,11 @@ public class PannelloVoti extends JPanel {
         t.setFont(new Font("Arial", Font.PLAIN, 12));
         t.setForeground(Color.GRAY);
 
-        JLabel lblCfu = new JLabel(sommaCfu + "/" + maxCfu, SwingConstants.CENTER);
+        JLabel lblCfu = new JLabel(cfuTotali + "/" + maxCfu, SwingConstants.CENTER);
         lblCfu.setFont(new Font("Arial", Font.BOLD, 18));
 
         JProgressBar jp = new JProgressBar(0, maxCfu);
-        jp.setValue(Math.min(sommaCfu, maxCfu));
+        jp.setValue(Math.min(cfuTotali, maxCfu));
         jp.setPreferredSize(new Dimension(100, 7));
         jp.setForeground(new Color(76, 175, 80));
         jp.setBorderPainted(false);
